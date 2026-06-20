@@ -1,0 +1,20 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "turbo/generators/templates/**",
+    "turbo/generators/config.ts",
+    "scripts/resolve-app-filter.ts",
+    "**/*.gen.ts",
+    "tmp/**",
+    "apps/test-project/**"
+  ],
+  "ignoreDependencies": [
+    "@mind-palace/biome-config",
+    "@mind-palace/tsconfig",
+    "@turbo/gen",
+    "babel-plugin-react-compiler",
+    "@dreamsicle.io/stylelint-config-tailwindcss",
+    "chokidar-cli"
+  ],
+  "ignoreExportsUsedInFile": true
+}

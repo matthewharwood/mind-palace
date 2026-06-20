@@ -1,0 +1,36 @@
+{
+  "name": "mind-palace",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.13",
+  "engines": {
+    "bun": ">=1.3.13",
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "APP_FILTER=$(bun scripts/resolve-app-filter.ts) && bash scripts/check-lockfile.sh && bash scripts/check-template.sh && biome ci && stylelint --allow-empty-input --max-warnings 0 \"**/*.css\" && turbo run typecheck check:sonar test:unit --filter=$APP_FILTER && turbo run test:e2e --filter=$APP_FILTER && npx -y react-doctor@latest . --diff main && RUST_LOG=error npx -y fallow@latest dead-code --fail-on-issues",
+    "check:fast": "APP_FILTER=$(bun scripts/resolve-app-filter.ts) && bash scripts/check-lockfile.sh && bash scripts/check-template.sh && biome ci && stylelint --allow-empty-input --max-warnings 0 \"**/*.css\" && turbo run typecheck check:sonar test:unit --filter=$APP_FILTER && turbo run test:e2e:fast --filter=$APP_FILTER && npx -y react-doctor@latest . --diff main && RUST_LOG=error npx -y fallow@latest dead-code --fail-on-issues",
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=$(bun scripts/resolve-app-filter.ts)",
+    "biome:watch": "biome check --write --watch .",
+    "gen:app": "turbo gen app",
+    "prepare": "bash scripts/install-hooks.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.0",
+    "@mind-palace/biome-config": "workspace:*",
+    "@mind-palace/stylelint-config": "workspace:*",
+    "@mind-palace/tsconfig": "workspace:*",
+    "@dreamsicle.io/stylelint-config-tailwindcss": "^1.0.0",
+    "@turbo/gen": "^2.9.0",
+    "chokidar-cli": "^3.0.0",
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^36.0.0",
+    "turbo": "^2.5.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260426.1"
+  }
+}

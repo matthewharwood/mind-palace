@@ -1,0 +1,4 @@
+{
+  "extends": "@mind-palace/tsconfig/base.json",
+  "include": ["src/**/*"]
+}
