@@ -1,0 +1,41 @@
+/*
+ * DropZone — a region drop target. Unsized by default (the consumer sets the
+ * footprint via className/content); only the border + tint feedback is owned
+ * here. Token-driven; do not edit to theme.
+ */
+.mp-zone {
+  position: relative;
+  border: 2px dashed var(--mp-zone-border);
+  border-radius: var(--mp-zone-radius);
+  background-color: transparent;
+  transition:
+    border-color var(--mp-card-state-ms) ease,
+    background-color var(--mp-card-state-ms) ease;
+}
+
+/* `data-state` = consumer-controlled; `data-dragover` = drag-engine transient. */
+.mp-zone[data-state="over"],
+.mp-zone[data-state="overValid"],
+.mp-zone[data-dragover="valid"],
+.mp-zone[data-dragover="swap"] {
+  border-style: solid;
+  border-color: var(--mp-card-ring-valid);
+  background-color: var(--mp-zone-valid-tint);
+}
+
+.mp-zone[data-state="overInvalid"],
+.mp-zone[data-dragover="invalid"] {
+  border-style: solid;
+  border-color: var(--mp-card-ring-invalid);
+  background-color: var(--mp-zone-invalid-tint);
+}
+
+.mp-zone[data-disabled="true"] {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-zone {
+    transition: none;
+  }
+}

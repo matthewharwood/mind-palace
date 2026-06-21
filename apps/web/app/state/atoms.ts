@@ -1,4 +1,8 @@
 import {
+  ALCHEMY_BOARD_DEFAULT,
+  AlchemyBoardSchema,
+  type CurriculumProgress,
+  CurriculumProgressSchema,
   type Progress,
   ProgressSchema,
   SETTINGS_DEFAULT,
@@ -8,13 +12,25 @@ import type { WritableAtom } from "jotai";
 
 import { atomWithIDB } from "~/lib/atom-with-idb";
 
-import { persistProgress, persistSettings } from "./persist";
+import {
+  persistAlchemyBoard,
+  persistCurriculumProgress,
+  persistProgress,
+  persistSettings,
+} from "./persist";
 
 export const settingsAtom = atomWithIDB(
   SettingsSchema,
   (snapshot) => snapshot.settings,
   persistSettings,
   SETTINGS_DEFAULT,
+);
+
+export const alchemyBoardAtom = atomWithIDB(
+  AlchemyBoardSchema,
+  (snapshot) => snapshot.alchemyBoard,
+  persistAlchemyBoard,
+  ALCHEMY_BOARD_DEFAULT,
 );
 
 // Parameterized atoms — prefer the IDB key over a family library.
@@ -41,6 +57,30 @@ export function getProgressAtom(id: string): ProgressAtom {
       ProgressSchema.parse({ id }),
     );
     progressAtoms.set(id, cached);
+  }
+  return cached;
+}
+
+// Spaced-repetition progress per curriculum (per-flashcard CardState). Same
+// parameterized-by-IDB-key pattern as progress: one atom instance per curriculum.
+type CurriculumProgressAtom = WritableAtom<
+  CurriculumProgress,
+  [CurriculumProgress | ((prev: CurriculumProgress) => CurriculumProgress)],
+  void
+>;
+
+const curriculumProgressAtoms = new Map<string, CurriculumProgressAtom>();
+
+export function getCurriculumProgressAtom(curriculumId: string): CurriculumProgressAtom {
+  let cached = curriculumProgressAtoms.get(curriculumId);
+  if (!cached) {
+    cached = atomWithIDB(
+      CurriculumProgressSchema,
+      (snapshot) => snapshot.curriculumProgress.get(curriculumId),
+      persistCurriculumProgress,
+      CurriculumProgressSchema.parse({ id: curriculumId }),
+    );
+    curriculumProgressAtoms.set(curriculumId, cached);
   }
   return cached;
 }

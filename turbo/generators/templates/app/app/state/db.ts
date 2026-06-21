@@ -6,7 +6,10 @@ export interface AppDB extends DBSchema {
   settings: { key: string; value: Settings };
 }
 
-const DB_NAME = "{{name}}";
+// Namespaced by repo scope + app name (the package.json `name`). IndexedDB is
+// keyed by origin, so a bare "{{name}}" would collide whenever two mind-palace
+// apps are served from the same origin (e.g. localhost:5173 across repos/apps).
+const DB_NAME = "@mind-palace/{{name}}";
 const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;

@@ -1,10 +1,12 @@
-import type { Progress, Settings } from "@mind-palace/schemas";
+import type { AlchemyBoard, CurriculumProgress, Progress, Settings } from "@mind-palace/schemas";
 
 import { getDB } from "./db";
 import type { StoreName } from "./hydration";
 
 const DEBOUNCE_MS = 150;
-const CHANNEL_NAME = "web:idb";
+// BroadcastChannel is origin-scoped too — namespace it like DB_NAME so apps
+// sharing an origin don't cross-talk on re-hydration broadcasts.
+const CHANNEL_NAME = "@mind-palace/web:idb";
 
 const channel = typeof window !== "undefined" ? new BroadcastChannel(CHANNEL_NAME) : null;
 const pending = new Map<string, ReturnType<typeof setTimeout>>();
@@ -33,6 +35,22 @@ export function persistSettings(value: Settings): void {
     const db = await getDB();
     await db.put("settings", value);
     channel?.postMessage({ store: "settings", key: value.id });
+  });
+}
+
+export function persistAlchemyBoard(value: AlchemyBoard): void {
+  schedule(`alchemyBoard:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("alchemyBoard", value);
+    channel?.postMessage({ store: "alchemyBoard", key: value.id });
+  });
+}
+
+export function persistCurriculumProgress(value: CurriculumProgress): void {
+  schedule(`curriculumProgress:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("curriculumProgress", value);
+    channel?.postMessage({ store: "curriculumProgress", key: value.id });
   });
 }
 

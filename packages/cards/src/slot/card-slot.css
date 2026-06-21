@@ -1,0 +1,107 @@
+/*
+ * CardSlot — a single-occupant drop target. The surface is a persistent
+ * affordance the occupant card overlays; it morphs (dashed → solid + tint) as
+ * the drag engine writes `data-state`. Footprint reuses the card size tokens so
+ * an empty slot is exactly card-sized. Token-driven; do not edit to theme.
+ */
+.mp-slot {
+  position: relative;
+  display: block;
+
+  /* Same overridable-dimension contract as the card, so a slot matches an
+   * arbitrarily-sized card (set --mp-card-w/--mp-card-h to override presets). */
+  width: var(--mp-card-w, var(--mp-card-w-md));
+  height: var(--mp-card-h, var(--mp-card-h-md));
+}
+
+.mp-slot[data-size="sm"] {
+  width: var(--mp-card-w, var(--mp-card-w-sm));
+  height: var(--mp-card-h, var(--mp-card-h-sm));
+}
+
+.mp-slot[data-size="lg"] {
+  width: var(--mp-card-w, var(--mp-card-w-lg));
+  height: var(--mp-card-h, var(--mp-card-h-lg));
+}
+
+.mp-slot[data-shape="circle"] {
+  width: var(--mp-card-h, var(--mp-card-h-md));
+}
+
+.mp-slot[data-shape="circle"][data-size="sm"] {
+  width: var(--mp-card-h, var(--mp-card-h-sm));
+}
+
+.mp-slot[data-shape="circle"][data-size="lg"] {
+  width: var(--mp-card-h, var(--mp-card-h-lg));
+}
+
+.mp-slot[data-disabled="true"],
+.mp-slot[data-locked="true"] {
+  opacity: 0.5;
+}
+
+.mp-slot-surface {
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--mp-slot-border);
+  border-radius: var(--mp-card-radius);
+  background-color: transparent;
+  transition:
+    border-color var(--mp-card-state-ms) ease,
+    background-color var(--mp-card-state-ms) ease,
+    opacity var(--mp-card-state-ms) ease;
+}
+
+.mp-slot[data-shape="rect"] .mp-slot-surface {
+  border-radius: 0;
+}
+
+.mp-slot[data-shape="circle"] .mp-slot-surface {
+  border-radius: 50%;
+}
+
+.mp-slot[data-shape="hex"] .mp-slot-surface {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* When a card sits in the slot, the empty affordance fades out … */
+.mp-slot[data-occupied="true"] .mp-slot-surface {
+  opacity: 0;
+}
+
+/* … but any active drag feedback brings the surface back on top of the occupant
+ * (these rules follow the occupied rule, so equal-specificity order wins).
+ * `data-state` is the consumer-controlled prop; `data-dragover` is written by the
+ * drag engine (transient, never clobbered by a React re-render). */
+.mp-slot[data-state="over"] .mp-slot-surface,
+.mp-slot[data-state="overValid"] .mp-slot-surface,
+.mp-slot[data-dragover="valid"] .mp-slot-surface {
+  border-style: solid;
+  border-color: var(--mp-card-ring-valid);
+  background-color: var(--mp-slot-valid-tint);
+  opacity: 1;
+}
+
+.mp-slot[data-state="overInvalid"] .mp-slot-surface,
+.mp-slot[data-dragover="invalid"] .mp-slot-surface {
+  border-style: solid;
+  border-color: var(--mp-card-ring-invalid);
+  background-color: var(--mp-slot-invalid-tint);
+  opacity: 1;
+}
+
+.mp-slot[data-state="overSwap"] .mp-slot-surface,
+.mp-slot[data-dragover="swap"] .mp-slot-surface {
+  border-style: solid;
+  border-color: var(--mp-slot-swap);
+  background-color: var(--mp-slot-swap-tint);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-slot-surface {
+    transition: none;
+  }
+}

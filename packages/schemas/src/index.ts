@@ -1,3 +1,4 @@
+import { CardStateSchema } from "@mind-palace/srs";
 import * as z from "zod";
 
 // Pillar 3 contract — every IDB-backed schema declares its zero via `.default()`
@@ -21,3 +22,22 @@ export const ProgressSchema = z.object({
   completed: z.boolean().default(false),
 });
 export type Progress = z.infer<typeof ProgressSchema>;
+
+// Singleton board for the alchemy drag-and-drop demo (proves @mind-palace/cards
+// dovetails with the IDB-first / Jotai stack). `slots` maps a reagent slot id to
+// the element-card id placed there; absent ids sit in the tray.
+export const AlchemyBoardSchema = z.object({
+  id: z.literal("board").default("board"),
+  slots: z.record(z.string(), z.string()).default({}),
+});
+export type AlchemyBoard = z.infer<typeof AlchemyBoardSchema>;
+export const ALCHEMY_BOARD_DEFAULT: AlchemyBoard = AlchemyBoardSchema.parse({});
+
+// Spaced-repetition progress for one curriculum: per-flashcard scheduling state
+// keyed by flashcard id. Static curriculum content lives in @mind-palace/curriculum;
+// this is the mutable, IDB-persisted overlay. `id` = the curriculum id.
+export const CurriculumProgressSchema = z.object({
+  id: z.string().min(1),
+  states: z.record(z.string(), CardStateSchema).default({}),
+});
+export type CurriculumProgress = z.infer<typeof CurriculumProgressSchema>;

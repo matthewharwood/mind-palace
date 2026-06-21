@@ -1,13 +1,83 @@
 @import "tailwindcss";
 
+/*
+ * Self-hosted brand fonts. Files live in the source tree (not public/) so Vite
+ * fingerprints them and rewrites the url() against the GH Pages base path —
+ * a public/ asset referenced as /fonts/* would 404 under a /<repo>/ base.
+ *
+ * PP Editorial Sans ships no Regular(400) weight, so Medium covers the 400–500
+ * range and Ultrabold covers 600–800 — no synthetic faux-bold.
+ */
+@font-face {
+  font-family: "PP Editorial Sans";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("./fonts/PPEditorialSans-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "PP Editorial Sans";
+  font-style: italic;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("./fonts/PPEditorialSans-MediumItalic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "PP Editorial Sans";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("./fonts/PPEditorialSans-Ultrabold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "PP Editorial Old";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/PPEditorialOld-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "PP Editorial Old";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/PPEditorialOld-Italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "PP Editorial Old";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/PPEditorialOld-Bold.woff2") format("woff2");
+}
+
 @theme {
   --color-brand-500: oklch(62% 0.20 260deg);
   --color-brand-900: oklch(30% 0.10 260deg);
-  --font-display: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "PP Editorial Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "PP Editorial Old", ui-serif, "Georgia", serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --spacing: 0.25rem;
   --radius-card: 1rem;
   --breakpoint-3xl: 120rem;
+}
+
+/* Headlines default to the display face; a `font-sans`/`font-mono` utility
+   still wins since utilities layer above base. */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+  }
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

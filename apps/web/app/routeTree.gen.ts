@@ -10,33 +10,87 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
+import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
+import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
+import { Route as CurriculumCurriculumIdNodeNodeIdRouteImport } from './routes/curriculum.$curriculumId.node.$nodeId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoalGoalIdRoute = GoalGoalIdRouteImport.update({
+  id: '/goal/$goalId',
+  path: '/goal/$goalId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CurriculumCurriculumIdRoute = CurriculumCurriculumIdRouteImport.update({
+  id: '/curriculum/$curriculumId',
+  path: '/curriculum/$curriculumId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CurriculumCurriculumIdIndexRoute =
+  CurriculumCurriculumIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => CurriculumCurriculumIdRoute,
+  } as any)
+const CurriculumCurriculumIdNodeNodeIdRoute =
+  CurriculumCurriculumIdNodeNodeIdRouteImport.update({
+    id: '/node/$nodeId',
+    path: '/node/$nodeId',
+    getParentRoute: () => CurriculumCurriculumIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
+  '/goal/$goalId': typeof GoalGoalIdRoute
+  '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
+  '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/goal/$goalId': typeof GoalGoalIdRoute
+  '/curriculum/$curriculumId': typeof CurriculumCurriculumIdIndexRoute
+  '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
+  '/goal/$goalId': typeof GoalGoalIdRoute
+  '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
+  '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/curriculum/$curriculumId'
+    | '/goal/$goalId'
+    | '/curriculum/$curriculumId/'
+    | '/curriculum/$curriculumId/node/$nodeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/goal/$goalId'
+    | '/curriculum/$curriculumId'
+    | '/curriculum/$curriculumId/node/$nodeId'
+  id:
+    | '__root__'
+    | '/'
+    | '/curriculum/$curriculumId'
+    | '/goal/$goalId'
+    | '/curriculum/$curriculumId/'
+    | '/curriculum/$curriculumId/node/$nodeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CurriculumCurriculumIdRoute: typeof CurriculumCurriculumIdRouteWithChildren
+  GoalGoalIdRoute: typeof GoalGoalIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +102,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/goal/$goalId': {
+      id: '/goal/$goalId'
+      path: '/goal/$goalId'
+      fullPath: '/goal/$goalId'
+      preLoaderRoute: typeof GoalGoalIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/curriculum/$curriculumId': {
+      id: '/curriculum/$curriculumId'
+      path: '/curriculum/$curriculumId'
+      fullPath: '/curriculum/$curriculumId'
+      preLoaderRoute: typeof CurriculumCurriculumIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/curriculum/$curriculumId/': {
+      id: '/curriculum/$curriculumId/'
+      path: '/'
+      fullPath: '/curriculum/$curriculumId/'
+      preLoaderRoute: typeof CurriculumCurriculumIdIndexRouteImport
+      parentRoute: typeof CurriculumCurriculumIdRoute
+    }
+    '/curriculum/$curriculumId/node/$nodeId': {
+      id: '/curriculum/$curriculumId/node/$nodeId'
+      path: '/node/$nodeId'
+      fullPath: '/curriculum/$curriculumId/node/$nodeId'
+      preLoaderRoute: typeof CurriculumCurriculumIdNodeNodeIdRouteImport
+      parentRoute: typeof CurriculumCurriculumIdRoute
+    }
   }
 }
 
+interface CurriculumCurriculumIdRouteChildren {
+  CurriculumCurriculumIdIndexRoute: typeof CurriculumCurriculumIdIndexRoute
+  CurriculumCurriculumIdNodeNodeIdRoute: typeof CurriculumCurriculumIdNodeNodeIdRoute
+}
+
+const CurriculumCurriculumIdRouteChildren: CurriculumCurriculumIdRouteChildren =
+  {
+    CurriculumCurriculumIdIndexRoute: CurriculumCurriculumIdIndexRoute,
+    CurriculumCurriculumIdNodeNodeIdRoute:
+      CurriculumCurriculumIdNodeNodeIdRoute,
+  }
+
+const CurriculumCurriculumIdRouteWithChildren =
+  CurriculumCurriculumIdRoute._addFileChildren(
+    CurriculumCurriculumIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CurriculumCurriculumIdRoute: CurriculumCurriculumIdRouteWithChildren,
+  GoalGoalIdRoute: GoalGoalIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

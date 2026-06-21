@@ -1,0 +1,120 @@
+/*
+ * Structural card styles. Self-contained (no Tailwind dependency) so the
+ * package renders correctly the moment it is cloned into any project. All
+ * values resolve to `--mp-card-*` tokens (see ../theme/tokens.css) so theming
+ * happens by overriding tokens, never by editing this file.
+ */
+.mp-card {
+  position: relative;
+  display: block;
+
+  /* Dimensions read an overridable var first; the size preset only supplies the
+   * fallback. Set --mp-card-w/--mp-card-h on the element (class/style/token) for
+   * ANY size — e.g. an iPhone-SE-sized card — and it wins over every preset. */
+  width: var(--mp-card-w, var(--mp-card-w-md));
+  height: var(--mp-card-h, var(--mp-card-h-md));
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--mp-card-fg);
+  perspective: 1000px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+}
+
+.mp-card[data-size="sm"] {
+  width: var(--mp-card-w, var(--mp-card-w-sm));
+  height: var(--mp-card-h, var(--mp-card-h-sm));
+}
+
+.mp-card[data-size="lg"] {
+  width: var(--mp-card-w, var(--mp-card-w-lg));
+  height: var(--mp-card-h, var(--mp-card-h-lg));
+}
+
+.mp-card[data-shape="circle"] {
+  width: var(--mp-card-h, var(--mp-card-h-md));
+}
+
+.mp-card[data-shape="circle"][data-size="sm"] {
+  width: var(--mp-card-h, var(--mp-card-h-sm));
+}
+
+.mp-card[data-shape="circle"][data-size="lg"] {
+  width: var(--mp-card-h, var(--mp-card-h-lg));
+}
+
+.mp-card[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.mp-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--mp-card-flip-ms) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.mp-card[data-face="back"] .mp-card-inner {
+  transform: rotateY(180deg);
+}
+
+.mp-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--mp-card-bg);
+  border: var(--mp-card-border-width) solid var(--mp-card-border-color);
+  border-radius: var(--mp-card-radius);
+  box-shadow: var(--mp-card-shadow);
+  backface-visibility: hidden;
+  transition:
+    box-shadow var(--mp-card-state-ms) ease,
+    outline-color var(--mp-card-state-ms) ease;
+}
+
+.mp-card[data-shape="rect"] .mp-card-face {
+  border-radius: 0;
+}
+
+.mp-card[data-shape="circle"] .mp-card-face {
+  border-radius: 50%;
+}
+
+.mp-card[data-shape="hex"] .mp-card-face {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.mp-card-face-back {
+  transform: rotateY(180deg);
+}
+
+/* Feedback states — outline rings + lift, all token-driven. */
+.mp-card[data-state="overValid"] .mp-card-face {
+  outline: var(--mp-card-ring-width) solid var(--mp-card-ring-valid);
+  outline-offset: 2px;
+}
+
+.mp-card[data-state="overInvalid"] .mp-card-face {
+  outline: var(--mp-card-ring-width) solid var(--mp-card-ring-invalid);
+  outline-offset: 2px;
+}
+
+.mp-card[data-state="pickedUp"] .mp-card-face,
+.mp-card[data-state="dragging"] .mp-card-face {
+  box-shadow: var(--mp-card-lift-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-card-inner,
+  .mp-card-face {
+    transition: none;
+  }
+}

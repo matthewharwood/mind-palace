@@ -1,0 +1,48 @@
+/*
+ * @mind-palace/cards — theme tokens.
+ *
+ * Every visual is driven by a `--mp-card-*` custom property. Override any of
+ * these in your app (a later, normal-specificity `:root { ... }` rule wins,
+ * because the defaults below are declared at zero specificity via `:where`) to
+ * re-theme the whole package without forking it.
+ */
+:where(:root) {
+  /* Surface */
+  --mp-card-bg: #fff;
+  --mp-card-fg: #1a1a1a;
+  --mp-card-radius: 0.75rem;
+  --mp-card-border-width: 1px;
+  --mp-card-border-color: rgb(0 0 0 / 12%);
+  --mp-card-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 4px 12px rgb(0 0 0 / 10%);
+  --mp-card-lift-shadow: 0 8px 16px rgb(0 0 0 / 14%), 0 18px 40px rgb(0 0 0 / 20%);
+
+  /* Feedback rings */
+  --mp-card-ring-valid: #10b981;
+  --mp-card-ring-invalid: #f43f5e;
+  --mp-card-ring-width: 3px;
+
+  /* Dimensions per size */
+  --mp-card-w-sm: 5rem;
+  --mp-card-h-sm: 7rem;
+  --mp-card-w-md: 9rem;
+  --mp-card-h-md: 12.6rem;
+  --mp-card-w-lg: 13rem;
+  --mp-card-h-lg: 18.2rem;
+
+  /* Motion */
+  --mp-card-flip-ms: 420ms;
+  --mp-card-state-ms: 120ms;
+
+  /* Slots (single-occupant drop targets) */
+  --mp-slot-border: rgb(0 0 0 / 22%);
+  --mp-slot-valid-tint: rgb(16 185 129 / 12%);
+  --mp-slot-invalid-tint: rgb(244 63 94 / 12%);
+  --mp-slot-swap: #f59e0b;
+  --mp-slot-swap-tint: rgb(245 158 11 / 14%);
+
+  /* Drop zones (region targets) */
+  --mp-zone-radius: 1rem;
+  --mp-zone-border: rgb(0 0 0 / 18%);
+  --mp-zone-valid-tint: rgb(16 185 129 / 10%);
+  --mp-zone-invalid-tint: rgb(244 63 94 / 10%);
+}

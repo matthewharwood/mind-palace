@@ -1,4 +1,9 @@
 import {
+  ALCHEMY_BOARD_DEFAULT,
+  type AlchemyBoard,
+  AlchemyBoardSchema,
+  type CurriculumProgress,
+  CurriculumProgressSchema,
   type Progress,
   ProgressSchema,
   SETTINGS_DEFAULT,
@@ -11,6 +16,8 @@ import { getDB } from "./db";
 export type HydratedState = {
   progress: ReadonlyMap<string, Progress>;
   settings: Settings;
+  alchemyBoard: AlchemyBoard;
+  curriculumProgress: ReadonlyMap<string, CurriculumProgress>;
 };
 
 export type StoreName = keyof HydratedState;
@@ -26,14 +33,21 @@ export function getHydratedSnapshot(): HydratedState | null {
 // In a prerender / SSR-shell context (no indexedDB), resolves with empty state.
 export const idbHydrationPromise: Promise<HydratedState> = (async () => {
   if (typeof indexedDB === "undefined") {
-    const empty: HydratedState = { progress: new Map(), settings: SETTINGS_DEFAULT };
+    const empty: HydratedState = {
+      progress: new Map(),
+      settings: SETTINGS_DEFAULT,
+      alchemyBoard: ALCHEMY_BOARD_DEFAULT,
+      curriculumProgress: new Map(),
+    };
     resolvedSnapshot = empty;
     return empty;
   }
   const db = await getDB();
-  const [rawProgress, rawSettings] = await Promise.all([
+  const [rawProgress, rawSettings, rawBoard, rawCurriculum] = await Promise.all([
     db.getAll("progress"),
     db.get("settings", "settings"),
+    db.get("alchemyBoard", "board"),
+    db.getAll("curriculumProgress"),
   ]);
   const progress = new Map<string, Progress>();
   for (const raw of rawProgress) {
@@ -41,7 +55,13 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     if (parsed.success) progress.set(parsed.data.id, parsed.data);
   }
   const settings = SettingsSchema.parse(rawSettings ?? SETTINGS_DEFAULT);
-  const snapshot: HydratedState = { progress, settings };
+  const alchemyBoard = AlchemyBoardSchema.parse(rawBoard ?? ALCHEMY_BOARD_DEFAULT);
+  const curriculumProgress = new Map<string, CurriculumProgress>();
+  for (const raw of rawCurriculum) {
+    const parsed = CurriculumProgressSchema.safeParse(raw);
+    if (parsed.success) curriculumProgress.set(parsed.data.id, parsed.data);
+  }
+  const snapshot: HydratedState = { progress, settings, alchemyBoard, curriculumProgress };
   resolvedSnapshot = snapshot;
   return snapshot;
 })();
