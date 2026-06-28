@@ -20,6 +20,8 @@ async function metaContent(page: Page, selector: string): Promise<string> {
 }
 
 test("home (/) renders default SEO meta + JSON-LD", async ({ page }) => {
+  // Skip the /welcome splash redirect so we assert the `/` document's own meta.
+  await page.addInitScript(() => sessionStorage.setItem("mp-entered", "1"));
   await page.goto("/");
 
   await expect(page).toHaveTitle(/.+/);

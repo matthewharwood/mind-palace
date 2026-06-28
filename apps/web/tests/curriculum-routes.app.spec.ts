@@ -45,6 +45,8 @@ test.describe("curriculum routes — deep linking, navigation, SRS persistence",
   });
 
   test("navigate home → goal → curriculum → node via links", async ({ page }) => {
+    // Skip the /welcome splash redirect so `/` lands directly on the goal list.
+    await page.addInitScript(() => sessionStorage.setItem("mp-entered", "1"));
     await page.goto("/");
     // Scope to the center main stage: the app-shell rail also exposes a nav link
     // with the same name, so target the home card specifically.
