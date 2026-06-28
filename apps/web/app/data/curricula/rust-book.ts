@@ -9,6 +9,7 @@ import { keywords } from "./rust/keywords";
 import { modules } from "./rust/modules";
 import { ownership } from "./rust/ownership";
 import { structsEnums } from "./rust/structs-enums";
+import { types } from "./rust/types";
 
 // "The Rust Programming Language" (2024 book) split into a learning path of topic
 // curricula, so the path tree is multi-node. Each curriculum's internal flashcard
@@ -16,6 +17,7 @@ import { structsEnums } from "./rust/structs-enums";
 // scripts/verify-rust-cards.ts (run `bun scripts/verify-rust-cards.ts`).
 export const rustCurricula: Curriculum[] = [
   foundations,
+  types,
   keywords,
   ownership,
   structsEnums,
@@ -32,6 +34,7 @@ export const rustPath = {
   title: "Learn Rust",
   nodes: rustCurricula.map((c) => ({ curriculumId: c.id, title: c.title })),
   edges: [
+    { from: "c-rust-foundations", to: "c-rust-types" },
     { from: "c-rust-foundations", to: "c-rust-keywords" },
     { from: "c-rust-foundations", to: "c-rust-ownership" },
     { from: "c-rust-foundations", to: "c-rust-structs-enums" },
