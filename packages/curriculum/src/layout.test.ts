@@ -1,57 +1,82 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildCurriculumGraph } from "./graph";
-import { forceLayout, layeredTree } from "./layout";
-import type { Curriculum, Edge } from "./schema";
+import { type LayoutNode, layeredDag, radialNetwork } from "./layout";
+import type { Edge } from "./schema";
 
-describe("layeredTree", () => {
+const sized = (ids: string[], w = 100, h = 50): LayoutNode[] =>
+  ids.map((id) => ({ id, width: w, height: h }));
+
+describe("layeredDag", () => {
   test("a linear chain stacks by depth", () => {
     const edges: Edge[] = [
       { from: "a", to: "b" },
       { from: "b", to: "c" },
     ];
-    const pos = layeredTree(["a", "b", "c"], edges, { gapY: 100 });
-    expect(pos.a?.y).toBe(0);
-    expect(pos.b?.y).toBe(100);
-    expect(pos.c?.y).toBe(200);
+    const { positions } = layeredDag(sized(["a", "b", "c"]), edges, { layerGap: 100 });
+    expect(positions.a?.y).toBeLessThan(positions.b?.y ?? 0);
+    expect(positions.b?.y).toBeLessThan(positions.c?.y ?? 0);
   });
 
-  test("siblings share a layer (same y, different x)", () => {
-    const pos = layeredTree(
-      ["root", "l", "r"],
-      [
-        { from: "root", to: "l" },
-        { from: "root", to: "r" },
-      ],
-    );
-    expect(pos.l?.y).toBe(pos.r?.y);
-    expect(pos.l?.x).not.toBe(pos.r?.x);
-    expect(pos.root?.y).toBe(0);
+  test("siblings share a layer (same y) and never overlap in x", () => {
+    const { positions } = layeredDag(sized(["root", "l", "r"], 100, 50), [
+      { from: "root", to: "l" },
+      { from: "root", to: "r" },
+    ]);
+    expect(positions.l?.y).toBe(positions.r?.y);
+    expect(Math.abs((positions.l?.x ?? 0) - (positions.r?.x ?? 0))).toBeGreaterThanOrEqual(100);
+    expect(positions.root?.y).toBeLessThan(positions.l?.y ?? 0);
   });
 
-  test("positions every node", () => {
-    const pos = layeredTree(["x", "y", "z"], []);
-    expect(Object.keys(pos).sort()).toEqual(["x", "y", "z"]);
+  test("positions every node and reports bounds", () => {
+    const result = layeredDag(sized(["x", "y", "z"]), []);
+    expect(Object.keys(result.positions).sort()).toEqual(["x", "y", "z"]);
+    expect(result.width).toBeGreaterThan(0);
+    expect(result.height).toBeGreaterThan(0);
+  });
+
+  test("is deterministic", () => {
+    const nodes = sized(["a", "b", "c", "d"]);
+    const edges: Edge[] = [
+      { from: "a", to: "b" },
+      { from: "a", to: "c" },
+      { from: "b", to: "d" },
+      { from: "c", to: "d" },
+    ];
+    expect(layeredDag(nodes, edges)).toEqual(layeredDag(nodes, edges));
   });
 });
 
-describe("forceLayout", () => {
-  const curriculum: Curriculum = {
-    id: "c1",
-    title: "t",
-    source: { kind: "pdf", href: "/a.pdf" },
-    nodes: [
-      { id: "n1", title: "1", content: { type: "read", markdown: "a" } },
-      { id: "n2", title: "2", content: { type: "read", markdown: "b" } },
-      { id: "n3", title: "3", content: { type: "read", markdown: "c" } },
-    ],
-    edges: [{ from: "n1", to: "n2" }],
-  };
+describe("radialNetwork", () => {
+  test("a single root sits at the center; children radiate outward", () => {
+    const { positions } = radialNetwork(sized(["root", "a", "b", "c"]), [
+      { from: "root", to: "a" },
+      { from: "root", to: "b" },
+      { from: "root", to: "c" },
+    ]);
+    const root = positions.root;
+    const center = { x: root?.x ?? 0, y: root?.y ?? 0 };
+    // Children sit further from the root than its own (near-zero) radius.
+    for (const id of ["a", "b", "c"]) {
+      const p = positions[id];
+      const dist = Math.hypot((p?.x ?? 0) - center.x, (p?.y ?? 0) - center.y);
+      expect(dist).toBeGreaterThan(50);
+    }
+  });
 
-  test("places every node and is deterministic", () => {
-    const a = forceLayout(buildCurriculumGraph(curriculum), { iterations: 50 });
-    const b = forceLayout(buildCurriculumGraph(curriculum), { iterations: 50 });
-    expect(Object.keys(a).sort()).toEqual(["n1", "n2", "n3"]);
-    expect(a).toEqual(b); // seeded + fixed iterations → reproducible
+  test("positions every node, including disconnected ones, and reports bounds", () => {
+    const result = radialNetwork(sized(["x", "y", "lonely"]), [{ from: "x", to: "y" }]);
+    expect(Object.keys(result.positions).sort()).toEqual(["lonely", "x", "y"]);
+    expect(result.width).toBeGreaterThan(0);
+    expect(result.height).toBeGreaterThan(0);
+  });
+
+  test("is deterministic", () => {
+    const nodes = sized(["a", "b", "c", "d"]);
+    const edges: Edge[] = [
+      { from: "a", to: "b" },
+      { from: "a", to: "c" },
+      { from: "c", to: "d" },
+    ];
+    expect(radialNetwork(nodes, edges)).toEqual(radialNetwork(nodes, edges));
   });
 });

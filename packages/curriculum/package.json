@@ -16,7 +16,6 @@
   "dependencies": {
     "@mind-palace/srs": "workspace:*",
     "graphology": "^0.26.0",
-    "graphology-layout-forceatlas2": "^0.10.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {

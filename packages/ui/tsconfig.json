@@ -1,0 +1,7 @@
+{
+  "extends": "@mind-palace/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["src/**/*"]
+}

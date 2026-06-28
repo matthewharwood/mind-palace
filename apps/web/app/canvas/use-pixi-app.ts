@@ -9,7 +9,18 @@ import { Application } from "pixi.js";
 import { type DependencyList, type RefObject, useEffect } from "react";
 
 const PRM = "(prefers-reduced-motion: reduce)";
-const DEFAULT_MAX_RESOLUTION = 2;
+// Cap the backing-store density. Retina/iPad are DPR 2; some phones are DPR 3.
+// Render at the true device pixel ratio up to this cap so shapes/text are sharp
+// without over-allocating on extreme-DPR displays.
+const DEFAULT_MAX_RESOLUTION = 3;
+
+// React's dev StrictMode double-mounts effects (mount → unmount → mount). Two
+// `Application.init()` on the SAME canvas would otherwise run concurrently and
+// share the canvas's single WebGL context — the cancelled one's `destroy()`
+// then tears down the context the live app is using, leaving an intermittent
+// blank/white canvas. We serialize init/teardown per canvas through this chain
+// so a new init never starts until the previous app is fully torn down.
+const canvasChain = new WeakMap<HTMLCanvasElement, Promise<unknown>>();
 
 type SetupCleanup = (() => void) | void;
 type SetupContext = { reducedMotion: boolean };
@@ -48,7 +59,11 @@ export function usePixiApp(
       let userCleanup: SetupCleanup;
       let cancelled = false;
 
-      void (async () => {
+      // Wait for any prior init/teardown on this canvas to finish before
+      // starting ours — never two live apps (or inits) on one canvas at once.
+      const previous = canvasChain.get(canvas) ?? Promise.resolve();
+      const ready = previous.then(async () => {
+        if (cancelled) return;
         const next = new Application();
         const resolution = getDeviceResolution(options.maxResolution ?? DEFAULT_MAX_RESOLUTION);
 
@@ -73,12 +88,24 @@ export function usePixiApp(
         }
         app = next;
         userCleanup = setup(next, { reducedMotion });
-      })();
+      });
+      canvasChain.set(
+        canvas,
+        ready.catch(() => undefined),
+      );
 
       return () => {
         cancelled = true;
-        if (typeof userCleanup === "function") userCleanup();
-        if (app) app.destroy(false, { children: true, texture: true });
+        // Tear down only after our own init settles, and publish the teardown
+        // as the chain tail so the next mount waits for it.
+        const done = ready.then(() => {
+          if (typeof userCleanup === "function") userCleanup();
+          if (app) app.destroy(false, { children: true, texture: true });
+        });
+        canvasChain.set(
+          canvas,
+          done.catch(() => undefined),
+        );
       };
     },
     // KEEP — same API-design escape as `useAnime`. `deps` is the

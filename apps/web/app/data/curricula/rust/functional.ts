@@ -230,19 +230,6 @@ export const functional: Curriculum = {
       },
     },
     {
-      id: "count-words",
-      title: "Write: count words",
-      content: {
-        type: "code",
-        language: "rust",
-        prompt:
-          "Write `fn count_words(s: &str) -> usize` returning the count of whitespace-separated words via `split_whitespace().count()`.",
-        solution: `fn count_words(s: &str) -> usize {
-    s.split_whitespace().count()
-}`,
-      },
-    },
-    {
       id: "test-add",
       title: "Write: a unit test",
       content: {
@@ -283,7 +270,6 @@ mod tests {
     { from: "iterators", to: "filter-evens" },
     { from: "iterators", to: "sum-fold" },
     { from: "iterators", to: "zip-pairs" },
-    { from: "iterators", to: "count-words" },
     { from: "testing", to: "test-add" },
   ],
 };

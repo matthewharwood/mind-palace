@@ -20,7 +20,7 @@ import type { ReactNode } from "react";
 
 export function NotFound(): ReactNode {
   return (
-    <main className="flex flex-col items-center gap-4 min-h-screen justify-center font-display">
+    <main className="flex flex-col items-center gap-4 min-h-screen justify-center">
       <h1 className="text-3xl">404: page not found</h1>
       <Link to="/" className="rounded-card bg-brand-500 px-4 py-2 text-white shadow-md">
         Go home
@@ -35,7 +35,7 @@ export function RouteError({ error, reset }: { error: Error; reset: () => void }
     console.error("[Route error boundary caught]", error);
   }
   return (
-    <main className="flex flex-col items-center gap-4 min-h-screen justify-center font-display">
+    <main className="flex flex-col items-center gap-4 min-h-screen justify-center">
       <h1 className="text-3xl">Something broke</h1>
       {import.meta.env.DEV ? (
         <pre className="text-sm text-red-700 max-w-2xl whitespace-pre-wrap">

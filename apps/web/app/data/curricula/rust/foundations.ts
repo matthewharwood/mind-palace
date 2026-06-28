@@ -16,7 +16,7 @@ export const foundations: Curriculum = {
       content: {
         type: "read",
         markdown:
-          "Bindings are **immutable by default** — `let x = 5;` can't be reassigned. Add `mut` for a mutable binding. `const` is always immutable, must be type-annotated, and is evaluated at compile time. *Shadowing* (`let x = x + 1;`) creates a new binding, and may change the type.",
+          "Every value you name in Rust lives in a **binding**, introduced with `let`. By default a binding is ==immutable== — once `let x = 5;` runs, `x` can never be reassigned.\n\n## Opt in to change with mut\nWhen you genuinely need to mutate, add the `mut` keyword:\n\n- `let x = 5;` — fixed for its entire scope\n- `let mut x = 5;` — `x` may be reassigned later\n\nThe compiler makes immutability the *default*, so change is always **explicit**.\n\n## const is more than an immutable let\nA `const` is always immutable, **must** carry a type annotation, and is evaluated at ==compile time== — ideal for fixed values like `const MAX_POINTS: u32 = 100_000;`.\n\n## Shadowing reuses a name\nRe-declaring with `let` *shadows* the previous binding — a brand-new variable that may even change type.",
       },
     },
     {
@@ -25,7 +25,7 @@ export const foundations: Curriculum = {
       content: {
         type: "read",
         markdown:
-          "Scalars: integers (`i32` is the default), floats (`f64`), `bool`, `char`. Compound: **tuples** `(i32, f64)` (fixed, mixed) and **arrays** `[i32; 3]` (fixed length, one type). Integer literals default to `i32`; arithmetic overflow panics in debug builds.",
+          "Rust's types split into two families, and the compiler always knows which one it's working with.\n\n## Scalars hold one value\n- **integers** — `i32` is the default; also `u8`, `u64`, `usize`, and more\n- **floats** — `f64` by default, `f32` for half precision\n- **bool** — `true` or `false`\n- **char** — a single ==Unicode scalar==, in single quotes like `'z'`\n\n## Compounds group values\n- **tuples** group a *fixed* number of **mixed** types: `(i32, f64, char)`\n- **arrays** hold a *fixed* number of **one** type: `[i32; 3]`\n\nInteger literals default to `i32`, and arithmetic that ==overflows panics in debug builds== — so a bug is never silent while you develop.",
       },
     },
     {
@@ -34,7 +34,7 @@ export const foundations: Curriculum = {
       content: {
         type: "read",
         markdown:
-          "Functions annotate every parameter and use `-> T` for returns; the final **expression** (no semicolon) is returned. `if` is an expression, so `let y = if c { 1 } else { 2 };` works. `loop` can return a value via `break`; also `while` and `for x in iter`.",
+          '## Functions\nEvery parameter is annotated, and the return type follows `->`. The body\'s **final expression** — written *without* a trailing semicolon — is what the function returns:\n\n- `fn double(n: i32) -> i32 { n * 2 }` returns `n * 2`\n- add a `;` and it becomes a statement that returns `()`\n\n## Almost everything is an expression\nBecause `if` is an ==expression==, it yields a value you can bind directly: `let parity = if n % 2 == 0 { "even" } else { "odd" };`.\n\n## Three kinds of loop\n- `loop { … }` — runs until you `break`; a `break value` can even **return** a value\n- `while cond { … }` — repeats while a condition holds\n- `for x in iter { … }` — the idiomatic way to walk a range or collection',
       },
     },
     {

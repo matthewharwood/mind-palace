@@ -9,6 +9,14 @@ import { createRootRoute } from "@tanstack/react-router";
 import { RootShell } from "~/lib/root-shell";
 import { NotFound, RouteError } from "~/lib/route-boundaries";
 import { buildJsonLd, buildSeoMeta } from "~/lib/seo";
+import ppOldRegular from "~/styles/fonts/PPEditorialOld-Regular.woff2?url";
+import ppSansMedium from "~/styles/fonts/PPEditorialSans-Medium.woff2?url";
+// Global CSS as an explicit `?url` stylesheet link (the TanStack Start pattern):
+// it lands in the prerendered <head> as a render-blocking <link> AND is a real
+// blocking stylesheet in dev — eliminating the flash of unstyled content that a
+// bare side-effect import (injected via JS) produces. The two brand fonts used
+// at first paint are preloaded so they're ready before paint (no font swap).
+import appCss from "~/styles/index.css?url";
 
 // This file is route config only — components live in ~/lib/root-shell and
 // ~/lib/route-boundaries. react-doctor's `only-export-components` rule treats
@@ -28,6 +36,21 @@ export const Route = createRootRoute({
     // canonical via buildSeoLinks({ path }).
     meta: buildSeoMeta({ path: "/" }),
     links: [
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: ppOldRegular,
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: ppSansMedium,
+        crossOrigin: "anonymous",
+      },
+      { rel: "stylesheet", href: appCss },
       // Inline data-URI favicon — silences the browser's auto `/favicon.ico`
       // request without needing a public/ asset.
       {

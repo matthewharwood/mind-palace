@@ -13,7 +13,7 @@ export default meta;
 
 export const Default: StoryObj<typeof LearningPathTree> = {
   render: () => {
-    const path = getPath("p-periodic");
+    const path = getPath("p-rust");
     return path ? <LearningPathTree path={path} onSelect={() => undefined} /> : <div>no path</div>;
   },
 };
