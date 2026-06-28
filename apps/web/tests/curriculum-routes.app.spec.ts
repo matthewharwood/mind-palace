@@ -44,16 +44,20 @@ test.describe("curriculum routes — deep linking, navigation, SRS persistence",
     await expect(page.getByTestId("flashcard-view")).toContainText("Variables & Mutability");
   });
 
-  test("reviewing a node persists SRS state across reload (IDB)", async ({ page }) => {
-    await page.goto("/curriculum/c-rust-foundations/node/variables-and-mutability");
+  test("rating a node advances to the next card and persists SRS (IDB)", async ({ page }) => {
+    const firstNode = "/curriculum/c-rust-foundations/node/variables-and-mutability";
+    await page.goto(firstNode);
     await expect(page.getByTestId("flashcard-view")).toContainText("new");
 
     await page.getByTestId("rate-good").click();
-    // Debounced write (~150ms) reaches IndexedDB.
+    // Rating advances to the next card in the curriculum's authored order.
+    await expect(page).toHaveURL(/\/curriculum\/c-rust-foundations\/node\/types-overview$/);
+    // ...and the debounced write (~150ms) for the rated node reached IndexedDB.
     await expect.poll(() => page.evaluate(readNodePhase)).toBe("learning");
 
+    // Revisit the rated node and reload: hydration re-reads the persisted phase.
+    await page.goto(firstNode);
     await page.reload();
-    // Hydration re-reads the persisted state; the node is no longer "new".
     await expect(page.getByTestId("flashcard-view")).toContainText("learning");
   });
 });
