@@ -29,7 +29,10 @@ export const FlashcardView = defineComponent(
         data-test="flashcard-view"
       >
         <header className="flex flex-col gap-2 border-black/[0.07] border-b pb-5">
-          <span className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.2em]">
+          <span
+            className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.2em]"
+            data-read-aloud-skip
+          >
             {phase}
           </span>
           <h1 className="text-pretty text-[clamp(1.6rem,1.1rem+2vw,2.25rem)] text-midnight-ink leading-[1.12]">
@@ -37,7 +40,10 @@ export const FlashcardView = defineComponent(
           </h1>
         </header>
         <Body flashcard={flashcard} />
-        <footer className="flex flex-col gap-2.5 border-black/[0.07] border-t pt-5">
+        <footer
+          className="flex flex-col gap-2.5 border-black/[0.07] border-t pt-5"
+          data-read-aloud-skip
+        >
           <p className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.15em]">
             How well did you know this?
           </p>

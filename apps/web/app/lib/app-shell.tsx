@@ -20,6 +20,18 @@ import { useTheme } from "~/lib/use-theme";
 // to root-shell.tsx (so the route file stays a single Route export and
 // react-doctor's only-export-components rule stays green).
 
+// Text the read-aloud button speaks: the current <main>, minus any region marked
+// `data-read-aloud-skip` (the card's phase eyebrow and the rating footer) — so it
+// reads the lesson, not the chrome. Clones so the live DOM is untouched.
+function readableMainText(): string {
+  const main = document.querySelector("main");
+  if (!main) return "";
+  const clone = main.cloneNode(true);
+  if (!(clone instanceof Element)) return main.textContent ?? "";
+  for (const skip of clone.querySelectorAll("[data-read-aloud-skip]")) skip.remove();
+  return clone.textContent ?? "";
+}
+
 function HomeIcon(): ReactNode {
   return (
     <svg
@@ -391,10 +403,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
                 </span>
               ))}
             </div>
-            <ReadAloudButton
-              key={pathname}
-              getText={() => document.querySelector("main")?.textContent ?? ""}
-            />
+            <ReadAloudButton key={pathname} getText={readableMainText} />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <button
               type="button"

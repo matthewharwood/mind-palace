@@ -350,6 +350,49 @@ fn add(a: Meters, b: Meters) -> Meters {
 }`,
       },
     },
+    {
+      id: "kw-const-vs-let",
+      title: "const vs let",
+      content: {
+        type: "multiple-choice",
+        question: "How does a `const` differ from a `let` binding?",
+        options: [
+          "const is compile-time, always immutable (no `mut`), must be type-annotated, and may be declared at global scope",
+          "const is just a let that lives longer",
+          "const can be reassigned with `mut`; let cannot",
+        ],
+        answerIndex: 0,
+      },
+    },
+    {
+      id: "kw-const-scope",
+      title: "Where const can live",
+      content: {
+        type: "multiple-choice",
+        question: "Where may a `const` be declared?",
+        options: [
+          "Anywhere — module/global scope or inside a function",
+          "Only at the top of a file",
+          "Only inside a function body, like `let`",
+        ],
+        answerIndex: 0,
+      },
+    },
+    {
+      id: "kw-const-write",
+      title: "Write: a const",
+      content: {
+        type: "code",
+        language: "rust",
+        prompt:
+          "Declare a module-level `const MAX_POINTS: u32 = 100_000;` and `fn cap() -> u32` that returns it.",
+        solution: `const MAX_POINTS: u32 = 100_000;
+
+fn cap() -> u32 {
+    MAX_POINTS
+}`,
+      },
+    },
 
     // ----- Control-flow keywords -----------------------------------------
     {
@@ -712,6 +755,9 @@ fn main() {
     { from: "kw-items", to: "kw-const-naming" },
     { from: "kw-items", to: "kw-static-lifetime" },
     { from: "kw-items", to: "kw-const-fn" },
+    { from: "kw-items", to: "kw-const-vs-let" },
+    { from: "kw-items", to: "kw-const-scope" },
+    { from: "kw-items", to: "kw-const-write" },
     { from: "kw-items", to: "kw-type-alias" },
     { from: "kw-items", to: "kw-struct-vs-enum" },
     { from: "kw-items", to: "kw-trait-impl" },
