@@ -28,6 +28,15 @@ const TARGET_RADIUS = 1; // model bounding-sphere radius after normalization (sc
 // to module scope so it isn't a deeply nested inline arrow inside the effect.
 const ignoreRenderRejection = (): undefined => undefined;
 
+// Lazy-load the engine + loader chunks in parallel, from MODULE scope. The
+// dynamic import() must live outside the hook: the React Compiler bails when it
+// tries to lower an Import expression inside a compiled hook/component (react-
+// doctor flags it as an error). A plain module-scope function isn't compiled, so
+// the import is fine here — same pattern as `createRenderer` above.
+function loadThreeAndLoader() {
+  return Promise.all([import("three"), import("three/addons/loaders/GLTFLoader.js")]);
+}
+
 type GlbRenderer = {
   domElement: HTMLCanvasElement;
   toneMapping: number;
@@ -90,11 +99,7 @@ export function useGlbViewer(
     let dispose: (() => void) | undefined;
 
     void (async () => {
-      // Independent dynamic imports — load the engine + loader chunks in parallel.
-      const [three, { GLTFLoader }] = await Promise.all([
-        import("three"),
-        import("three/addons/loaders/GLTFLoader.js"),
-      ]);
+      const [three, { GLTFLoader }] = await loadThreeAndLoader();
       if (cancelled) return;
 
       const { renderer, isWebGPU } = await createRenderer(three, canvas);
