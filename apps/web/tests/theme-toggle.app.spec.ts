@@ -28,6 +28,8 @@ function readTheme(): Promise<string | null> {
 
 test.describe("theme toggle — IDB-first dark mode", () => {
   test("toggling persists theme to IDB and survives reload", async ({ page }) => {
+    // Skip the /welcome splash redirect so the shell (with the theme toggle) shows.
+    await page.addInitScript(() => sessionStorage.setItem("mp-entered", "1"));
     await page.goto("/");
 
     // Default is light → the control offers to switch to dark.

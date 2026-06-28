@@ -18,6 +18,8 @@ import { expect, test } from "./fixtures";
 // `dist/client/`. This contract is load-bearing — track separately and re-enable
 // once the build emits a service worker.
 test.skip("home renders while offline after first visit", async ({ page, context }) => {
+  // Skip the /welcome splash redirect so `/` renders the shell directly.
+  await page.addInitScript(() => sessionStorage.setItem("mp-entered", "1"));
   await page.goto("/");
 
   await page.waitForFunction(
