@@ -2,6 +2,7 @@ import type { Goal } from "@mind-palace/curriculum";
 import { ThemeToggle } from "@mind-palace/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
+import { ReadAloudButton } from "~/components/read-aloud";
 import {
   getCurriculum,
   getFlashcard,
@@ -9,7 +10,6 @@ import {
   getGoalForCurriculum,
   listGoals,
 } from "~/data/curriculum-data";
-
 import { AskDrawer } from "~/lib/ask-drawer";
 import { useTheme } from "~/lib/use-theme";
 
@@ -391,6 +391,10 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
                 </span>
               ))}
             </div>
+            <ReadAloudButton
+              key={pathname}
+              getText={() => document.querySelector("main")?.textContent ?? ""}
+            />
             <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <button
               type="button"

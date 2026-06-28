@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 
-import { CodeEditor } from "~/components/code-editor";
+import { CodeBlock } from "~/components/code-block";
 
 // The lesson-card prose system: a small, uniform typographic renderer for the
 // curriculum content. Supports headings (## / ###), bullet & numbered lists,
@@ -49,14 +49,7 @@ export function parseInline(text: string): InlineSegment[] {
 function renderSegment(segment: InlineSegment): ReactNode {
   switch (segment.kind) {
     case "code":
-      return (
-        <code
-          key={segment.id}
-          className="rounded bg-midnight-ink/[0.06] px-1.5 py-0.5 font-mono text-[0.85em] text-midnight-ink"
-        >
-          {segment.text}
-        </code>
-      );
+      return <CodeBlock key={segment.id} inline code={segment.text} />;
     case "highlight":
       return (
         <mark
@@ -195,16 +188,7 @@ function renderBlock(block: Block): ReactNode {
     );
   }
   if (block.kind === "code") {
-    return (
-      <div key={block.id} className="overflow-hidden rounded-lg border border-black/10">
-        <CodeEditor
-          initialValue={block.text}
-          language={block.lang}
-          readOnly
-          ariaLabel="Code example"
-        />
-      </div>
-    );
+    return <CodeBlock key={block.id} code={block.text} language={block.lang} />;
   }
   if (block.kind === "list") {
     const ListTag = block.ordered ? "ol" : "ul";
