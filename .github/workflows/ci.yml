@@ -7,8 +7,6 @@ name: ci
 # PR means a green deploy.
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
 
 permissions:
   contents: read
@@ -29,7 +27,12 @@ jobs:
       VITE_AUTHOR_URL: ${{ vars.VITE_AUTHOR_URL }}
       VITE_TWITTER_HANDLE: ${{ vars.VITE_TWITTER_HANDLE }}
     steps:
+      # Full history + the `main` ref so `react-doctor . --diff main` (and the
+      # fallow base) can compute the PR diff; a shallow PR checkout omits main.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch origin main:main
       - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
