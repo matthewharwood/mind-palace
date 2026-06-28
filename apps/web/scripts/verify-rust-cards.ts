@@ -26,13 +26,6 @@ const BEHAVIORAL = /\b(print|prints|printed|output|outputs|display|displays)\b/i
 const HAS_MAIN = /fn\s+main\s*\(/;
 const TEST_ATTR = /#\[\s*(test\b|cfg\(test\))/;
 
-const arg = process.argv[2];
-const target = arg
-  ? new URL(arg, `file://${process.cwd()}/`)
-  : new URL("../app/data/curricula/rust-book.ts", import.meta.url);
-
-const mod = (await import(target.pathname)) as Record<string, unknown>;
-
 type Curriculum = { id: string; nodes: { id: string; content: Record<string, unknown> }[] };
 const isCurriculum = (v: unknown): v is Curriculum => {
   const c = v as Curriculum;
@@ -44,12 +37,42 @@ const isCurriculum = (v: unknown): v is Curriculum => {
     c.nodes.every((n) => n && typeof n === "object" && "content" in n)
   );
 };
+
+const arg = process.argv[2];
 const curricula: Curriculum[] = [];
-for (const value of Object.values(mod)) {
-  if (Array.isArray(value)) {
-    for (const c of value) if (isCurriculum(c)) curricula.push(c);
-  } else if (isCurriculum(value)) {
-    curricula.push(value);
+if (arg) {
+  // Single-module mode: verify every curriculum exported by the given file.
+  const mod = (await import(new URL(arg, `file://${process.cwd()}/`).pathname)) as Record<
+    string,
+    unknown
+  >;
+  for (const value of Object.values(mod)) {
+    if (Array.isArray(value)) {
+      for (const c of value) if (isCurriculum(c)) curricula.push(c);
+    } else if (isCurriculum(value)) {
+      curricula.push(value);
+    }
+  }
+} else {
+  // Default: walk every registered goal → path → curriculum.
+  const data = (await import(
+    new URL("../app/data/curriculum-data.ts", import.meta.url).pathname
+  )) as {
+    listGoals: () => { pathId: string }[];
+    getPath: (id: string) => { nodes: { curriculumId: string }[] } | undefined;
+    getCurriculum: (id: string) => Curriculum | undefined;
+  };
+  const seen = new Set<string>();
+  for (const goal of data.listGoals()) {
+    const path = data.getPath(goal.pathId);
+    if (!path) continue;
+    for (const ref of path.nodes) {
+      const c = data.getCurriculum(ref.curriculumId);
+      if (c && isCurriculum(c) && !seen.has(c.id)) {
+        seen.add(c.id);
+        curricula.push(c);
+      }
+    }
   }
 }
 
@@ -91,6 +114,7 @@ function verify(job: Job): { ok: boolean; err?: string } {
     writeFileSync(file, job.code);
     if (job.run) {
       const bin = join(dir, "prog");
+      // eslint-disable-next-line sonarjs/no-os-command-from-path -- KEEP: local authoring tool invoking the developer's installed rustc by name
       const compile = spawnSync("rustc", ["--edition", "2024", file, "-o", bin], {
         encoding: "utf8",
       });
@@ -107,10 +131,11 @@ function verify(job: Job): { ok: boolean; err?: string } {
     }
     // #[test]/#[cfg(test)] code is excluded under --crate-type lib, so compile
     // those as a test binary to actually type-check the test bodies.
-    const isTest = /#\[\s*(test\b|cfg\(test\))/.test(job.code);
+    const isTest = TEST_ATTR.test(job.code);
     const args = isTest
       ? ["--edition", "2024", "--test", file, "-o", join(dir, "out")]
       : ["--edition", "2024", "--crate-type", "lib", file, "-o", join(dir, "out.rlib")];
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- KEEP: local authoring tool invoking the developer's installed rustc by name
     const compile = spawnSync("rustc", args, { encoding: "utf8" });
     if (compile.status !== 0) return { ok: false, err: `compile failed:\n${compile.stderr}` };
     return { ok: true };
@@ -130,7 +155,7 @@ for (const job of jobs) {
   }
 }
 
-console.log(
-  `\nverified ${jobs.length} snippets across ${curricula.length} curricula (${behavioral} behavioral run-checks) — ${failures} failure(s)`,
+process.stdout.write(
+  `\nverified ${jobs.length} snippets across ${curricula.length} curricula (${behavioral} behavioral run-checks) — ${failures} failure(s)\n`,
 );
 process.exit(failures === 0 ? 0 : 1);

@@ -13,7 +13,7 @@ export default meta;
 
 export const Default: StoryObj<typeof CurriculumGraph> = {
   render: () => {
-    const curriculum = getCurriculum("c-metals");
+    const curriculum = getCurriculum("c-std-io-slices");
     return curriculum ? (
       <CurriculumGraph curriculum={curriculum} states={{}} onSelect={() => undefined} />
     ) : (

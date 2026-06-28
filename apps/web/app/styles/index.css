@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* @mind-palace/ui semantic tokens (light + dark) + the `dark` variant + the
+   package's own Tailwind source scan. Must follow the tailwindcss import. */
+@import "@mind-palace/ui/theme";
+
 /*
  * Self-hosted brand fonts. Files live in the source tree (not public/) so Vite
  * fingerprints them and rewrites the url() against the GH Pages base path —
@@ -56,28 +60,57 @@
   src: url("./fonts/PPEditorialOld-Bold.woff2") format("woff2");
 }
 
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("./fonts/JetBrainsMono-Bold.woff2") format("woff2");
+}
+
 @theme {
   --color-brand-500: oklch(62% 0.20 260deg);
   --color-brand-900: oklch(30% 0.10 260deg);
+
+  /* App-shell neutrals (adapted from the engmanager-invoice shell): a
+     Canvas-White card on a Whisper-Gray substrate, Midnight-Ink text, with a
+     single Intelligence-Blue accent for the active nav state. */
+  --color-canvas-white: #fff;
+  --color-whisper-gray: #f4f3ef;
+  --color-light-taupe: #ecebea;
+  --color-midnight-ink: #111;
+  --color-surface-charcoal: #272625;
+  --color-muted-ash: #6d6c6b;
+  --color-intelligence-blue: #328efa;
   --font-sans: "PP Editorial Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "PP Editorial Old", ui-serif, "Georgia", serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --spacing: 0.25rem;
   --radius-card: 1rem;
   --breakpoint-3xl: 120rem;
+
+  /* Soft card lift for the windowed-canvas main stage. */
+  --shadow-card:
+    rgb(17 17 17 / 4%) 0 1px 2px 0, rgb(17 17 17 / 4%) 0 4px 8px 0,
+    rgb(17 17 17 / 4%) 0 0 1px 0;
 }
 
-/* Headlines default to the display face; a `font-sans`/`font-mono` utility
-   still wins since utilities layer above base. */
+/* PP Editorial Old (the serif display face) is reserved for the single main
+   h1 headline of a page. Every other heading and all body copy use the sans
+   face (the Tailwind default). A `font-sans`/`font-mono` utility still wins
+   since utilities layer above base. */
 @layer base {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
+  h1 {
     font-family: var(--font-display);
   }
 }
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* `dark` variant now declared by @mind-palace/ui/theme (imported above). */

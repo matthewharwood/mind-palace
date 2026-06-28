@@ -25,6 +25,7 @@
     "@mind-palace/curriculum": "workspace:*",
     "@mind-palace/schemas": "workspace:*",
     "@mind-palace/srs": "workspace:*",
+    "@mind-palace/ui": "workspace:*",
     "@t3-oss/env-core": "^0.13.0",
     "@tanstack/react-router": "^1.168.0",
     "@tanstack/react-start": "^1.167.0",

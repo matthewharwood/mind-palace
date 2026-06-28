@@ -1,0 +1,45 @@
+name: ci
+
+# Gate every pull request (and every non-main branch push) with the full
+# quality gate — the same `bun run check` the deploy workflow runs before
+# publishing. `deploy.yml` only fires on push to main, so this is what makes
+# PR checks green/red. Mirrors the deploy job's toolchain + env so a green
+# PR means a green deploy.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      VITE_GAME_TITLE: ${{ vars.VITE_GAME_TITLE || 'mind-palace' }}
+      VITE_SITE_URL: ${{ vars.VITE_SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+      VITE_SITE_DESCRIPTION: ${{ vars.VITE_SITE_DESCRIPTION || 'Rapid-prototyping platform for browser games, deployed static to GitHub Pages with local-first IndexedDB state.' }}
+      VITE_OG_IMAGE: ${{ vars.VITE_OG_IMAGE }}
+      VITE_AUTHOR_NAME: ${{ vars.VITE_AUTHOR_NAME }}
+      VITE_AUTHOR_URL: ${{ vars.VITE_AUTHOR_URL }}
+      VITE_TWITTER_HANDLE: ${{ vars.VITE_TWITTER_HANDLE }}
+    steps:
+      # Full history + the `main` ref so `react-doctor . --diff main` (and the
+      # fallow base) can compute the PR diff; a shallow PR checkout omits main.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git fetch origin main:main
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: "package.json"
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+        working-directory: apps/web
+      - run: bun run check

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "rules": {
+    "react-doctor/no-multi-comp": "off",
+    "react-doctor/jsx-no-constructed-context-values": "off"
+  }
+}

@@ -63,6 +63,13 @@ export default defineConfig(async ({ mode }) => {
 
   return {
     base: resolveBase(),
+    server: {
+      // Allow Tailscale `serve` (HTTPS over the tailnet) to reverse-proxy the
+      // dev server: those requests arrive with a `*.ts.net` Host header that
+      // Vite's DNS-rebinding guard would otherwise block. LAN IPs (the
+      // iPad-over-LAN workflow) are already allowed by default.
+      allowedHosts: [".ts.net"],
+    },
     build: {
       // TanStack Start + Router form one intentionally shared vendor bucket.
       // Keep Vite warning-free for the current baseline while still catching

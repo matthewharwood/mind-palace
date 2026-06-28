@@ -1,32 +1,39 @@
-import { buildCurriculumGraph, type Curriculum, forceLayout } from "@mind-palace/curriculum";
+import type { Curriculum } from "@mind-palace/curriculum";
 import { type CardState, isDue } from "@mind-palace/srs";
-import { Container, Graphics, Text } from "pixi.js";
 import { type ReactNode, useRef } from "react";
 import * as z from "zod";
 
+import { drawGraph, type GraphNodeSpec } from "~/canvas/draw-graph";
 import { usePixiApp } from "~/canvas/use-pixi-app";
 import { defineComponent } from "~/lib/define-component";
 
-// PixiJS network graph of a curriculum's flashcards (graphology forceatlas2
-// layout). Nodes are colored by spaced-repetition phase and ringed green when
-// due. Selecting a node navigates to it. Side channel (usePixiApp setup); SRS
-// state flows in as a plain prop the route derives from the IDB-backed atom.
+// Curriculum graph — flashcards as a radial prerequisite network (shared
+// drawGraph renderer, "network" layout). Nodes are colored by spaced-repetition
+// phase and ringed when due; an HTML legend explains the colors. Side channel
+// per the Pillar.
+const NODE_TEXT = 0xffffff;
+const DUE_RING = 0x34d399;
 
-const RADIUS = 24;
-
-function nodeFill(state: CardState | undefined): number {
-  if (!state) return 0x9ca3af; // new / unseen
+function phaseFill(state: CardState | undefined): number {
+  if (!state) return 0x475569; // new / unseen — slate
   switch (state.phase) {
     case "learning":
-      return 0xf59e0b;
+      return 0xb45309; // amber
     case "relearning":
-      return 0xf43f5e;
+      return 0xb91c1c; // red
     case "review":
-      return 0x3b82f6;
+      return 0x1d4ed8; // blue
     default:
-      return 0x9ca3af;
+      return 0x475569;
   }
 }
+
+const LEGEND: { label: string; className: string }[] = [
+  { label: "new", className: "bg-[#475569]" },
+  { label: "learning", className: "bg-[#b45309]" },
+  { label: "review", className: "bg-[#1d4ed8]" },
+  { label: "due", className: "bg-transparent ring-2 ring-emerald-400" },
+];
 
 export const CurriculumGraphPropsSchema = z.object({
   curriculum: z.custom<Curriculum>(),
@@ -44,73 +51,46 @@ export const CurriculumGraph = defineComponent(
 
     usePixiApp(
       canvasRef,
-      (app) => {
-        const positions = forceLayout(buildCurriculumGraph(curriculum), { iterations: 120 });
-        const pts = Object.values(positions);
-        if (pts.length === 0) return undefined;
-
-        const xs = pts.map((p) => p.x);
-        const ys = pts.map((p) => p.y);
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const minY = Math.min(...ys);
-        const maxY = Math.max(...ys);
-        const midX = (minX + maxX) / 2;
-        const midY = (minY + maxY) / 2;
-
-        const root = new Container();
-        app.stage.addChild(root);
-
-        const edges = new Graphics();
-        for (const edge of curriculum.edges) {
-          const a = positions[edge.from];
-          const b = positions[edge.to];
-          if (a && b) edges.moveTo(a.x - midX, a.y - midY).lineTo(b.x - midX, b.y - midY);
-        }
-        edges.stroke({ width: 2, color: 0xc0c0d0 });
-        root.addChild(edges);
-
-        for (const node of curriculum.nodes) {
-          const p = positions[node.id];
-          if (!p) continue;
-          const state = states[node.id];
-          const due = state === undefined || isDue(state);
-          const container = new Container();
-          container.x = p.x - midX;
-          container.y = p.y - midY;
-          const circle = new Graphics().circle(0, 0, RADIUS).fill(nodeFill(state));
-          if (due) circle.stroke({ width: 4, color: 0x10b981 });
-          const label = new Text({
-            text: node.id,
-            style: { fontSize: 13, fill: 0xffffff, fontFamily: "sans-serif" },
-          });
-          label.anchor.set(0.5);
-          container.addChild(circle, label);
-          container.eventMode = "static";
-          container.cursor = "pointer";
-          const id = node.id;
-          container.on("pointertap", () => onSelectRef.current(id));
-          root.addChild(container);
-        }
-
-        const gw = Math.max(1, maxX - minX);
-        const gh = Math.max(1, maxY - minY);
-        const scale = Math.min((app.screen.width * 0.85) / gw, (app.screen.height * 0.85) / gh, 3);
-        root.scale.set(scale);
-        root.x = app.screen.width / 2;
-        root.y = app.screen.height / 2;
-        app.render();
-
-        return () => {
-          root.destroy({ children: true });
-        };
-      },
-      [curriculum, states],
+      (app) =>
+        drawGraph(app, {
+          nodes: curriculum.nodes.map((node): GraphNodeSpec => {
+            const state = states[node.id];
+            const due = state === undefined || isDue(state);
+            const phase = state?.phase ?? "new";
+            return {
+              id: node.id,
+              title: node.title,
+              caption: due ? `${phase} · due` : phase,
+              fill: phaseFill(state),
+              textColor: NODE_TEXT,
+              ...(due ? { ring: DUE_RING } : {}),
+            };
+          }),
+          edges: curriculum.edges,
+          // A curriculum is interrelated concepts + drills → radial network.
+          layout: "network",
+          onSelect: (id) => onSelectRef.current(id),
+        }),
+      // Rebuild per curriculum only — SRS colors are snapshotted at mount (you
+      // always arrive on this route fresh, after reviewing on the node route).
+      // This keeps the canvas key (curriculum.id) aligned with the re-init
+      // trigger, so a rebuild always lands on a FRESH canvas (a Pixi app can't
+      // re-init on a canvas whose WebGL context was destroyed → it freezes).
+      [curriculum],
+      { autoStart: false, backgroundAlpha: 0 },
     );
 
     return (
-      <div className="h-[70vh] w-full">
-        <canvas ref={canvasRef} className="size-full" />
+      <div className="relative h-[70vh] w-full">
+        <canvas key={curriculum.id} ref={canvasRef} className="size-full" />
+        <div className="pointer-events-none absolute top-3 left-3 flex flex-wrap items-center gap-3 rounded-md bg-black/50 px-3 py-2 text-white text-xs">
+          {LEGEND.map((item) => (
+            <span key={item.label} className="flex items-center gap-1.5">
+              <span className={`inline-block size-3 rounded-full ${item.className}`} />
+              {item.label}
+            </span>
+          ))}
+        </div>
       </div>
     );
   },

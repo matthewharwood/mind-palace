@@ -3,7 +3,10 @@ import { StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 
 import { applyEngineDefaults } from "./motion/engine-defaults";
-import "./styles/index.css";
+
+// Global CSS is wired as a `?url` stylesheet <link> in __root.tsx's head (a
+// render-blocking stylesheet in dev + prod — no flash of unstyled content). A
+// bare side-effect import here would instead be injected via JS after hydration.
 
 applyEngineDefaults();
 
