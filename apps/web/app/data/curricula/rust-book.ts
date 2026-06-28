@@ -9,6 +9,7 @@ import { keywords } from "./rust/keywords";
 import { modules } from "./rust/modules";
 import { ownership } from "./rust/ownership";
 import { structsEnums } from "./rust/structs-enums";
+import { syntax } from "./rust/syntax";
 import { types } from "./rust/types";
 
 // "The Rust Programming Language" (2024 book) split into a learning path of topic
@@ -18,6 +19,7 @@ import { types } from "./rust/types";
 export const rustCurricula: Curriculum[] = [
   foundations,
   types,
+  syntax,
   keywords,
   ownership,
   structsEnums,
@@ -35,6 +37,7 @@ export const rustPath = {
   nodes: rustCurricula.map((c) => ({ curriculumId: c.id, title: c.title })),
   edges: [
     { from: "c-rust-foundations", to: "c-rust-types" },
+    { from: "c-rust-foundations", to: "c-rust-syntax" },
     { from: "c-rust-foundations", to: "c-rust-keywords" },
     { from: "c-rust-foundations", to: "c-rust-ownership" },
     { from: "c-rust-foundations", to: "c-rust-structs-enums" },
