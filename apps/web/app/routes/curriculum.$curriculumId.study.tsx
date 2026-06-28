@@ -4,6 +4,7 @@ import { animate } from "animejs";
 import { useAtom } from "jotai";
 import { useRef, useState } from "react";
 
+import { RatingButtons } from "~/components/rating-buttons";
 import { StudyCard } from "~/components/study-card";
 import { getCurriculum, getFlashcard } from "~/data/curriculum-data";
 import { buildSeoLinks } from "~/lib/seo";
@@ -16,13 +17,6 @@ export const Route = createFileRoute("/curriculum/$curriculumId/study")({
   }),
   component: StudyView,
 });
-
-const RATINGS: { rating: Rating; label: string }[] = [
-  { rating: "again", label: "Again" },
-  { rating: "hard", label: "Hard" },
-  { rating: "good", label: "Good" },
-  { rating: "easy", label: "Easy" },
-];
 
 function StudyView() {
   const { curriculumId } = Route.useParams();
@@ -127,18 +121,8 @@ function StudyView() {
 
       {flashcard ? (
         <footer className="shrink-0 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2">
-            {RATINGS.map(({ rating, label }) => (
-              <button
-                key={rating}
-                type="button"
-                data-test={`rate-${rating}`}
-                onClick={() => rate(rating)}
-                className="rounded-xl border border-black/10 bg-canvas-white py-3 text-[15px] text-midnight-ink leading-none transition-colors hover:bg-black/[0.03]"
-              >
-                {label}
-              </button>
-            ))}
+          <div className="mx-auto w-full max-w-md">
+            <RatingButtons onRate={rate} />
           </div>
         </footer>
       ) : null}

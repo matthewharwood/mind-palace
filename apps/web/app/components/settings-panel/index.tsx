@@ -76,7 +76,7 @@ export const SettingsPanel = defineComponent(
                 type="button"
                 data-test="settings-clear"
                 onClick={() => setConfirming(true)}
-                className="rounded-lg border border-rose-300 px-4 py-2 font-medium text-rose-700 text-sm transition-colors hover:bg-rose-50"
+                className="rounded-lg border border-rose-300 px-4 py-2 font-medium text-rose-700 text-sm transition-colors hover:bg-rose-50 dark:border-rose-500/50 dark:text-rose-300 dark:hover:bg-rose-500/10"
               >
                 Clear local data & update
               </button>

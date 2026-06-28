@@ -113,6 +113,24 @@
   }
 }
 
+/* Dark theme. The toggle (use-theme.ts) flips the `.dark` class on <html>; these
+   override the app's neutral tokens so the whole UI re-skins in one place. The
+   card surface sits lighter than the substrate so cards read by contrast even
+   though the black hairline borders fade out, and the card shadow becomes a
+   faint light ring instead of an (invisible) dark drop shadow. */
+.dark {
+  color-scheme: dark;
+
+  --color-canvas-white: #1b1b21;
+  --color-whisper-gray: #101015;
+  --color-light-taupe: #26262e;
+  --color-midnight-ink: #f3f3f6;
+  --color-surface-charcoal: #e6e6ea;
+  --color-muted-ash: #a0a0ad;
+  --shadow-card:
+    rgb(255 255 255 / 8%) 0 0 0 1px, rgb(0 0 0 / 45%) 0 8px 24px 0;
+}
+
 /* `dark` variant now declared by @mind-palace/ui/theme (imported above). */
 
 /* Shiki read-only code highlighting (lib/highlighter + components/code-block).
