@@ -20,7 +20,7 @@ function Stage({ nodeId }: { nodeId: string }) {
     <div className="grid h-[100dvh] place-items-center bg-whisper-gray p-4">
       {fc ? (
         <div className="grid h-full max-h-[680px] w-full max-w-md place-items-stretch">
-          <StudyCard flashcard={fc} onRate={() => undefined} />
+          <StudyCard flashcard={fc} />
         </div>
       ) : (
         <div>no card</div>

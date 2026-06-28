@@ -127,6 +127,11 @@
   margin: 0;
   padding: 0.75rem 0.85rem;
   overflow-x: auto;
+
+  /* Claim horizontal swipes for scrolling the snippet; let vertical gestures
+     bubble to the page scroller. */
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
   background-color: transparent;
   color: var(--shiki-light);
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
