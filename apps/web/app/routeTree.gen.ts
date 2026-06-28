@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
@@ -21,6 +22,11 @@ import { Route as CurriculumCurriculumIdNodeNodeIdRouteImport } from './routes/c
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProgressRoute = ProgressRouteImport.update({
@@ -65,6 +71,7 @@ const CurriculumCurriculumIdNodeNodeIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/progress': typeof ProgressRoute
+  '/settings': typeof SettingsRoute
   '/welcome': typeof WelcomeRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/progress': typeof ProgressRoute
+  '/settings': typeof SettingsRoute
   '/welcome': typeof WelcomeRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/progress': typeof ProgressRoute
+  '/settings': typeof SettingsRoute
   '/welcome': typeof WelcomeRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/progress'
+    | '/settings'
     | '/welcome'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/progress'
+    | '/settings'
     | '/welcome'
     | '/goal/$goalId'
     | '/curriculum/$curriculumId/study'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/progress'
+    | '/settings'
     | '/welcome'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProgressRoute: typeof ProgressRoute
+  SettingsRoute: typeof SettingsRoute
   WelcomeRoute: typeof WelcomeRoute
   CurriculumCurriculumIdRoute: typeof CurriculumCurriculumIdRouteWithChildren
   GoalGoalIdRoute: typeof GoalGoalIdRoute
@@ -139,6 +152,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/progress': {
@@ -215,6 +235,7 @@ const CurriculumCurriculumIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProgressRoute: ProgressRoute,
+  SettingsRoute: SettingsRoute,
   WelcomeRoute: WelcomeRoute,
   CurriculumCurriculumIdRoute: CurriculumCurriculumIdRouteWithChildren,
   GoalGoalIdRoute: GoalGoalIdRoute,

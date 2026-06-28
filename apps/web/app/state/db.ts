@@ -11,8 +11,8 @@ export interface AppDB extends DBSchema {
 // Namespaced by repo scope + app name (the package.json `name`). IndexedDB is
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
-const DB_NAME = "@mind-palace/web";
-const DB_VERSION = 4;
+export const DB_NAME = "@mind-palace/web";
+export const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
