@@ -112,6 +112,27 @@ function ProgressIcon(): ReactNode {
   );
 }
 
+function SettingsIcon(): ReactNode {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.214 1.281c.06.43.39.78.81.93.32.114.62.26.91.43.36.21.79.27 1.18.12l1.21-.485c.51-.205 1.1-.005 1.36.46l1.3 2.25c.26.465.13 1.05-.31 1.36l-1.03.73c-.34.24-.51.66-.46 1.08.02.18.03.36.03.55s-.01.37-.03.55c-.05.42.12.84.46 1.08l1.03.73c.44.31.57.895.31 1.36l-1.3 2.25c-.26.465-.85.665-1.36.46l-1.21-.485c-.39-.15-.82-.09-1.18.12-.29.17-.59.316-.91.43-.42.15-.75.5-.81.93l-.214 1.281c-.09.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.214-1.281c-.06-.43-.39-.78-.81-.93a6.47 6.47 0 0 1-.91-.43c-.36-.21-.79-.27-1.18-.12l-1.21.485c-.51.205-1.1.005-1.36-.46l-1.3-2.25c-.26-.465-.13-1.05.31-1.36l1.03-.73c.34-.24.51-.66.46-1.08a8.06 8.06 0 0 1-.03-.55c0-.19.01-.37.03-.55.05-.42-.12-.84-.46-1.08l-1.03-.73c-.44-.31-.57-.895-.31-1.36l1.3-2.25c.26-.465.85-.665 1.36-.46l1.21.485c.39.15.82.09 1.18-.12.29-.17.59-.316.91-.43.42-.15.75-.5.81-.93l.214-1.281Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+    </svg>
+  );
+}
+
 // Sidebar toggle glyph: a panel with the side strip filled when the rail is
 // expanded, hollow when collapsed.
 function PanelIcon({ filled }: { filled: boolean }): ReactNode {
@@ -155,6 +176,7 @@ function navItemClass(active: boolean, collapsed: boolean): string {
 type Crumb =
   | { kind: "home"; label: string; current: boolean }
   | { kind: "progress"; label: string; current: boolean }
+  | { kind: "settings"; label: string; current: boolean }
   | { kind: "goal"; goalId: string; label: string; current: boolean }
   | { kind: "curriculum"; curriculumId: string; label: string; current: boolean }
   | { kind: "node"; label: string };
@@ -174,6 +196,13 @@ function CrumbLink(crumb: Crumb): ReactNode {
   if (crumb.kind === "progress") {
     return (
       <Link to="/progress" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "settings") {
+    return (
+      <Link to="/settings" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -200,6 +229,8 @@ function buildCrumbs(segments: string[]): Crumb[] {
   const crumbs: Crumb[] = [{ kind: "home", label: "Goals", current: segments.length === 0 }];
   if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });
+  } else if (segments[0] === "settings") {
+    crumbs.push({ kind: "settings", label: "Settings", current: true });
   } else if (segments[0] === "goal" && segments[1]) {
     crumbs.push({
       kind: "goal",
@@ -250,6 +281,7 @@ function RailNav({
   activeGoalId,
   onHome,
   onProgress,
+  onSettings,
   onNavigate,
 }: {
   collapsed: boolean;
@@ -257,6 +289,7 @@ function RailNav({
   activeGoalId: string | undefined;
   onHome: boolean;
   onProgress: boolean;
+  onSettings: boolean;
   onNavigate?: () => void;
 }): ReactNode {
   return (
@@ -332,6 +365,18 @@ function RailNav({
           </span>
           {!collapsed && <span className="truncate">Progress</span>}
         </Link>
+        <Link
+          to="/settings"
+          onClick={onNavigate}
+          aria-current={onSettings ? "page" : undefined}
+          title={collapsed ? "Settings" : undefined}
+          className={navItemClass(onSettings, collapsed)}
+        >
+          <span className={onSettings ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
+            <SettingsIcon />
+          </span>
+          {!collapsed && <span className="truncate">Settings</span>}
+        </Link>
       </nav>
     </>
   );
@@ -350,6 +395,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   }
   const onHome = segments.length === 0;
   const onProgress = segments[0] === "progress";
+  const onSettings = segments[0] === "settings";
   const [askOpen, setAskOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const crumbs = buildCrumbs(segments);
@@ -370,6 +416,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             activeGoalId={activeGoalId}
             onHome={onHome}
             onProgress={onProgress}
+            onSettings={onSettings}
           />
         </aside>
 
@@ -450,6 +497,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               activeGoalId={activeGoalId}
               onHome={onHome}
               onProgress={onProgress}
+              onSettings={onSettings}
               onNavigate={() => setMobileNavOpen(false)}
             />
           </aside>
