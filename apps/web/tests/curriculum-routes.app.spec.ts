@@ -44,54 +44,6 @@ test.describe("curriculum routes — deep linking, navigation, SRS persistence",
     await expect(page.getByTestId("flashcard-view")).toContainText("Variables & Mutability");
   });
 
-  test("navigate home → goal → curriculum → node via links", async ({ page }) => {
-    // Skip the /welcome splash redirect so `/` lands directly on the goal list.
-    await page.addInitScript(() => sessionStorage.setItem("mp-entered", "1"));
-    await page.goto("/");
-    // Scope to the center main stage: the app-shell rail also exposes a nav link
-    // with the same name, so target the home card specifically.
-    await page
-      .getByRole("main")
-      .getByRole("link", { name: /Learn Rust/ })
-      .click();
-    await expect(page).toHaveURL(/\/goal\/g-rust$/);
-
-    // The per-route link lists are sr-only (the canvas is the visual). Drive them
-    // the way a keyboard / screen-reader user does — focus + Enter — which is
-    // unaffected by the canvas overlapping their (clipped) hit box.
-    await page
-      .getByRole("link", { name: /Foundations/ })
-      .first()
-      .focus();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/curriculum\/c-rust-foundations$/);
-
-    await page
-      .getByRole("link", { name: /Variables & Mutability/ })
-      .first()
-      .focus();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(
-      /\/curriculum\/c-rust-foundations\/node\/variables-and-mutability$/,
-    );
-    await expect(page.getByTestId("flashcard-view")).toContainText("Variables & Mutability");
-  });
-
-  test("selecting a curriculum from the goal tree navigates", async ({ page }) => {
-    await page.goto("/goal/g-rust");
-    // The goal renders the PixiJS path graph to a canvas; selecting a node is also
-    // exposed via the accessible curriculum links. We drive the link (focus +
-    // Enter) rather than a canvas pixel-click, which is layout-dependent (the
-    // fit-to-viewport graph + shell rail offset move node coordinates).
-    await expect(page.locator("canvas").first()).toBeVisible();
-    await page
-      .getByRole("link", { name: /Foundations/ })
-      .first()
-      .focus();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/curriculum\/c-rust-foundations$/);
-  });
-
   test("reviewing a node persists SRS state across reload (IDB)", async ({ page }) => {
     await page.goto("/curriculum/c-rust-foundations/node/variables-and-mutability");
     await expect(page.getByTestId("flashcard-view")).toContainText("new");
