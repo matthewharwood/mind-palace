@@ -1,7 +1,8 @@
 import { createCardState, type Rating, review } from "@mind-palace/srs";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { animate } from "animejs";
 import { useAtom } from "jotai";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { StudyCard } from "~/components/study-card";
 import { getCurriculum, getFlashcard } from "~/data/curriculum-data";
@@ -16,11 +17,11 @@ export const Route = createFileRoute("/curriculum/$curriculumId/study")({
   component: StudyView,
 });
 
-const RATINGS: { rating: Rating; label: string; hint: string }[] = [
-  { rating: "again", label: "Again", hint: "←" },
-  { rating: "hard", label: "Hard", hint: "↓" },
-  { rating: "good", label: "Good", hint: "→" },
-  { rating: "easy", label: "Easy", hint: "↑" },
+const RATINGS: { rating: Rating; label: string }[] = [
+  { rating: "again", label: "Again" },
+  { rating: "hard", label: "Hard" },
+  { rating: "good", label: "Good" },
+  { rating: "easy", label: "Easy" },
 ];
 
 function StudyView() {
@@ -33,15 +34,42 @@ function StudyView() {
   // reshuffle the order under the learner.
   const [deck] = useState(() => buildStudyDeck(curriculum, progress.states, Date.now()));
   const [index, setIndex] = useState(0);
+  const animatingRef = useRef(false);
 
   const currentId = deck[index];
   const flashcard = currentId ? getFlashcard(curriculumId, currentId) : undefined;
 
   function rate(rating: Rating): void {
-    if (!currentId) return;
-    const next = review(progress.states[currentId] ?? createCardState(), rating).state;
-    setProgress((prev) => ({ ...prev, states: { ...prev.states, [currentId]: next } }));
-    setIndex((i) => i + 1);
+    if (!currentId || animatingRef.current) return;
+    const card = document.querySelector<HTMLElement>('[data-test="study-card"]');
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Commit the rating to SRS/IDB and reveal the next card (which plays its own
+    // enter animation on mount).
+    const advance = (): void => {
+      const next = review(progress.states[currentId] ?? createCardState(), rating).state;
+      setProgress((prev) => ({ ...prev, states: { ...prev.states, [currentId]: next } }));
+      setIndex((i) => i + 1);
+      animatingRef.current = false;
+    };
+
+    if (!card || reduced) {
+      advance();
+      return;
+    }
+    // GPU-composited exit: the answered card recedes up + fades (transform +
+    // opacity only — no layout/paint), then we swap to the next card.
+    animatingRef.current = true;
+    animate(card, {
+      y: [0, -18],
+      scale: [1, 0.94],
+      opacity: [1, 0],
+      duration: 200,
+      ease: "in(2)",
+      onComplete: advance,
+    });
   }
 
   const done = !flashcard;
@@ -77,7 +105,7 @@ function StudyView() {
 
       <div className="grid min-h-0 flex-1 place-items-center overflow-hidden px-4">
         {flashcard ? (
-          <StudyCard key={currentId} flashcard={flashcard} onRate={rate} />
+          <StudyCard key={currentId} flashcard={flashcard} />
         ) : (
           <div
             className="flex max-w-xs flex-col items-center gap-4 text-center"
@@ -100,18 +128,15 @@ function StudyView() {
       {flashcard ? (
         <footer className="shrink-0 px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2">
-            {RATINGS.map(({ rating, label, hint }) => (
+            {RATINGS.map(({ rating, label }) => (
               <button
                 key={rating}
                 type="button"
                 data-test={`rate-${rating}`}
                 onClick={() => rate(rating)}
-                className="flex flex-col items-center gap-0.5 rounded-xl border border-black/10 bg-canvas-white py-2.5 text-midnight-ink transition-colors hover:bg-black/[0.03]"
+                className="rounded-xl border border-black/10 bg-canvas-white py-3 text-[15px] text-midnight-ink leading-none transition-colors hover:bg-black/[0.03]"
               >
-                <span className="text-[15px] leading-none">{label}</span>
-                <span aria-hidden="true" className="text-[11px] text-muted-ash leading-none">
-                  {hint}
-                </span>
+                {label}
               </button>
             ))}
           </div>
