@@ -6,10 +6,15 @@ import { InlineText } from "./markdown";
 
 // Class for an option after a pick — early returns avoid a nested ternary.
 function optionTone(picked: number | null, index: number, answerIndex: number): string {
-  if (picked === null) return "border-black/15 hover:bg-black/5";
-  if (index === answerIndex) return "border-emerald-500 bg-emerald-50";
-  if (index === picked) return "border-rose-500 bg-rose-50";
-  return "border-black/10 opacity-60";
+  if (picked === null) {
+    return "border-black/15 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5";
+  }
+  if (index === answerIndex) {
+    return "border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/15";
+  }
+  if (index === picked)
+    return "border-rose-500 bg-rose-50 dark:border-rose-400 dark:bg-rose-500/15";
+  return "border-black/10 opacity-60 dark:border-white/10";
 }
 
 export function ChoiceBody({

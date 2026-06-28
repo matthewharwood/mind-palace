@@ -3,6 +3,7 @@ import type { CardState, Rating } from "@mind-palace/srs";
 import type { ReactNode } from "react";
 import * as z from "zod";
 
+import { RatingButtons } from "~/components/rating-buttons";
 import { defineComponent } from "~/lib/define-component";
 
 import { Body } from "./body";
@@ -10,8 +11,6 @@ import { Body } from "./body";
 // The lesson-node view: header + the polymorphic content body + the SRS rating
 // row. The per-content-type renderers live in sibling files (read/choice/code/
 // video/mini-game). Presentational — the route owns SRS state and passes onRate.
-
-const RATINGS: Rating[] = ["again", "hard", "good", "easy"];
 
 export const FlashcardViewPropsSchema = z.object({
   flashcard: z.custom<Flashcard>(),
@@ -47,19 +46,7 @@ export const FlashcardView = defineComponent(
           <p className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.15em]">
             How well did you know this?
           </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {RATINGS.map((rating) => (
-              <button
-                key={rating}
-                type="button"
-                data-test={`rate-${rating}`}
-                onClick={() => onRate(rating)}
-                className="rounded-lg border border-black/15 px-3 py-2.5 text-midnight-ink text-sm capitalize transition-colors hover:border-black/25 hover:bg-whisper-gray"
-              >
-                {rating}
-              </button>
-            ))}
-          </div>
+          <RatingButtons onRate={onRate} />
         </footer>
       </section>
     );

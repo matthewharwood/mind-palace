@@ -54,7 +54,7 @@ function renderSegment(segment: InlineSegment): ReactNode {
       return (
         <mark
           key={segment.id}
-          className="box-decoration-clone rounded-[3px] bg-amber-200/55 px-1 py-0.5 font-medium text-midnight-ink"
+          className="box-decoration-clone rounded-[3px] bg-amber-200/55 px-1 py-0.5 font-medium text-amber-950 dark:bg-amber-300/20 dark:text-amber-100"
         >
           {segment.text}
         </mark>
