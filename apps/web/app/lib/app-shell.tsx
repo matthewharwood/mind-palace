@@ -356,7 +356,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   const { theme, toggle: toggleTheme } = useTheme();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-whisper-gray font-sans text-midnight-ink sm:gap-3 sm:p-3">
+    <div className="flex h-dvh overflow-hidden bg-whisper-gray font-sans text-midnight-ink sm:gap-3 sm:p-3">
       <div className="flex min-w-0 flex-1 overflow-hidden bg-canvas-white sm:rounded-2xl sm:shadow-card">
         <aside
           className={[
@@ -417,7 +417,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               Ask
             </button>
           </div>
-          <main className="min-h-0 flex-1 overflow-auto">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
         </div>
       </div>
 
