@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from "react";
 
-import { CodeEditor } from "~/components/code-editor";
+import { CodeBlock } from "~/components/code-block";
 
 import { InlineText } from "./markdown";
 
@@ -31,11 +31,7 @@ export function ChoiceBody({
       <p className="text-pretty font-medium text-[15px] text-midnight-ink leading-7 sm:text-base">
         <InlineText text={question} />
       </p>
-      {code ? (
-        <div className="overflow-hidden rounded-lg border border-black/10">
-          <CodeEditor initialValue={code} language={language ?? "rust"} readOnly ariaLabel="Code" />
-        </div>
-      ) : null}
+      {code ? <CodeBlock code={code} language={language ?? "rust"} /> : null}
       <ul className="flex flex-col gap-2">
         {options.map((option, i) => {
           const tone = optionTone(picked, i, answerIndex);

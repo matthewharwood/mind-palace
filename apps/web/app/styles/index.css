@@ -114,3 +114,37 @@
 }
 
 /* `dark` variant now declared by @mind-palace/ui/theme (imported above). */
+
+/* Shiki read-only code highlighting (lib/highlighter + components/code-block).
+   defaultColor:false emits --shiki-light / --shiki-dark CSS vars per token, so
+   the theme swaps under .dark with no !important and no layout shift. Rules are
+   ordered by ascending specificity to satisfy no-descending-specificity. */
+.mp-inline-code span {
+  color: var(--shiki-light);
+}
+
+.mp-code-block .shiki {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  overflow-x: auto;
+  background-color: transparent;
+  color: var(--shiki-light);
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  line-height: 1.65;
+}
+
+.mp-code-block .shiki span {
+  color: var(--shiki-light);
+}
+
+.dark .mp-inline-code span {
+  color: var(--shiki-dark);
+}
+
+.dark .mp-code-block .shiki {
+  color: var(--shiki-dark);
+}
+
+.dark .mp-code-block .shiki span {
+  color: var(--shiki-dark);
+}

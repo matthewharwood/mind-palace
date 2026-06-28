@@ -5,6 +5,7 @@ import { errors } from "./rust/errors";
 import { foundations } from "./rust/foundations";
 import { functional } from "./rust/functional";
 import { genericsTraits } from "./rust/generics-traits";
+import { keywords } from "./rust/keywords";
 import { modules } from "./rust/modules";
 import { ownership } from "./rust/ownership";
 import { structsEnums } from "./rust/structs-enums";
@@ -15,6 +16,7 @@ import { structsEnums } from "./rust/structs-enums";
 // scripts/verify-rust-cards.ts (run `bun scripts/verify-rust-cards.ts`).
 export const rustCurricula: Curriculum[] = [
   foundations,
+  keywords,
   ownership,
   structsEnums,
   modules,
@@ -30,6 +32,7 @@ export const rustPath = {
   title: "Learn Rust",
   nodes: rustCurricula.map((c) => ({ curriculumId: c.id, title: c.title })),
   edges: [
+    { from: "c-rust-foundations", to: "c-rust-keywords" },
     { from: "c-rust-foundations", to: "c-rust-ownership" },
     { from: "c-rust-foundations", to: "c-rust-structs-enums" },
     { from: "c-rust-ownership", to: "c-rust-modules" },
