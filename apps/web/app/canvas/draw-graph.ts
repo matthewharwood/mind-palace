@@ -183,10 +183,22 @@ export function drawGraph(app: Application, opts: DrawGraphOptions): () => void 
     b.node.eventMode = "static";
     b.node.cursor = "pointer";
     const id = b.spec.id;
-    b.node.on("pointertap", () => {
+    const node = b.node;
+    node.on("pointertap", () => {
       if (!moved) opts.onSelect(id);
     });
-    world.addChild(b.node);
+    // Mouse feedback (canvas nodes get no CSS :hover): lift + grow slightly and
+    // come to the front so the larger node isn't clipped by its neighbours.
+    node.on("pointerover", () => {
+      node.scale.set(1.05);
+      world.addChild(node);
+      app.render();
+    });
+    node.on("pointerout", () => {
+      node.scale.set(1);
+      app.render();
+    });
+    world.addChild(node);
   }
 
   // Fit the graph into the viewport, centered.
