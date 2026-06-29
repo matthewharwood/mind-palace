@@ -1,4 +1,4 @@
-import { isDue } from "@mind-palace/srs";
+import { type CardPhase, isDue } from "@mind-palace/srs";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useAtomValue } from "jotai";
 
@@ -7,6 +7,14 @@ import { GraphView } from "~/components/graph-view";
 import { getCurriculum } from "~/data/curriculum-data";
 import { buildSeoLinks } from "~/lib/seo";
 import { getCurriculumProgressAtom } from "~/state/atoms";
+
+// At-a-glance SRS phase, matching the MasteryBar segment colours.
+const PHASE_DOT: Record<CardPhase, string> = {
+  review: "bg-[#47d096]",
+  learning: "bg-[#fbc768]",
+  relearning: "bg-[#e16540]",
+  new: "bg-light-taupe",
+};
 
 export const Route = createFileRoute("/curriculum/$curriculumId/")({
   head: ({ params }) => ({
@@ -66,16 +74,18 @@ function CurriculumView() {
               {curriculum.nodes.map((node) => {
                 const state = progress.states[node.id];
                 const due = state === undefined || isDue(state);
+                const phase = state?.phase ?? "new";
                 return (
                   <li key={node.id}>
                     <Link
                       to="/curriculum/$curriculumId/node/$nodeId"
                       params={{ curriculumId, nodeId: node.id }}
-                      className="flex items-center justify-between gap-3 rounded-md bg-white/5 px-3 py-2 hover:bg-white/10"
+                      className="flex items-center justify-between gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-black/[0.04] focus-visible:bg-black/[0.04] dark:hover:bg-white/[0.06] dark:focus-visible:bg-white/[0.06]"
                     >
-                      <span>{node.title}</span>
-                      <span className="text-xs opacity-60">
-                        {state?.phase ?? "new"}
+                      <span className="text-midnight-ink">{node.title}</span>
+                      <span className="flex shrink-0 items-center gap-1.5 font-mono text-[11px] text-muted-ash tracking-[0.04em]">
+                        <span className={`size-2 rounded-full ${PHASE_DOT[phase]}`} aria-hidden />
+                        {phase}
                         {due ? " · due" : ""}
                       </span>
                     </Link>

@@ -40,7 +40,7 @@ function PathSection({ report }: { report: PathReport }): ReactNode {
                 <span
                   className={
                     curriculum.id === report.weakestCurriculumId
-                      ? "font-medium text-red-700"
+                      ? "font-medium text-amber-700 dark:text-amber-400"
                       : "font-medium"
                   }
                 >
