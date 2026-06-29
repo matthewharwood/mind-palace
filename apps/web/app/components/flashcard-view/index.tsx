@@ -1,7 +1,7 @@
 import type { Flashcard } from "@mind-palace/curriculum";
 import type { CardState, Rating } from "@mind-palace/srs";
-import { createTimeline, stagger } from "animejs";
-import { type ReactNode, useEffect, useRef } from "react";
+import { createTimeline, stagger, utils } from "animejs";
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import * as z from "zod";
 
 import { RatingButtons } from "~/components/rating-buttons";
@@ -9,6 +9,11 @@ import { ReadAloudButton } from "~/components/read-aloud";
 import { defineComponent } from "~/lib/define-component";
 
 import { Body } from "./body";
+
+// useLayoutEffect on the client (fires before paint, so the entrance start-state
+// lands before the first paint = no flash); falls back to useEffect during
+// prerender, where layout effects don't run and would warn.
+const useIsomorphicLayoutEffect = typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
 // The lesson-node view: header (phase + title + read-aloud) + the polymorphic
 // content body + the SRS rating row. The route keys this by nodeId, so it
@@ -36,8 +41,10 @@ export const FlashcardView = defineComponent(
     const footerRef = useRef<HTMLElement>(null);
 
     // Mount-only — the route remounts this per nodeId (via key), so the entrance
-    // + scroll-to-top replay per card.
-    useEffect(() => {
+    // + scroll-to-top replay per card. A layout effect + a synchronous utils.set
+    // applies the hidden start state BEFORE the browser paints, so the card
+    // animates INTO view instead of flashing fully-rendered for a frame first.
+    useIsomorphicLayoutEffect(() => {
       // A new card always starts at the top (rate-advance otherwise inherits the
       // old scroll position near the footer).
       document.querySelector("main")?.scrollTo({ top: 0 });
@@ -49,9 +56,11 @@ export const FlashcardView = defineComponent(
       const blocks = [headerRef.current, bodyRef.current, footerRef.current].filter(
         (el): el is HTMLElement => el !== null,
       );
+      utils.set(section, { opacity: 0, scale: 0.96 });
+      utils.set(blocks, { y: 26 });
       const tl = createTimeline();
-      tl.add(section, { opacity: [0, 1], scale: [0.96, 1], duration: 300, ease: "out(3)" });
-      tl.add(blocks, { y: [26, 0], delay: stagger(75), duration: 400, ease: "out(4)" }, "<+=80");
+      tl.add(section, { opacity: 1, scale: 1, duration: 300, ease: "out(3)" });
+      tl.add(blocks, { y: 0, delay: stagger(75), duration: 400, ease: "out(4)" }, "<+=80");
       return () => {
         tl.revert();
       };
