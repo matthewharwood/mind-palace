@@ -1,16 +1,20 @@
+import { ThemeToggle } from "@mind-palace/ui";
 import { type ReactNode, useState } from "react";
 import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
 
 // SettingsPanel — presentational settings surface (rendered by the /settings
-// route into the main stage). The destructive reset action is injected as
-// `onClear` so the route owns the real clear-storage + reload while the story
-// can pass a no-op (Pillar 2). Inline two-step confirm; no modal dependency.
+// route into the main stage). Appearance (theme) + the destructive reset action
+// are injected by the route (which owns useTheme + clear-storage); the story
+// passes no-ops (Pillar 2). Inline two-step confirm; no modal dependency.
 
 export const SettingsPanelPropsSchema = z.object({
   /** Wipe local data + reload to the latest version. Awaited; the page reloads after. */
   onClear: z.custom<() => void | Promise<void>>(),
+  /** Current theme + toggle, for the Appearance control. */
+  theme: z.enum(["light", "dark"]),
+  onToggleTheme: z.custom<() => void>(),
   /** The IDB schema version, shown for support/debugging. */
   version: z.number().optional(),
 });
@@ -18,7 +22,7 @@ export type SettingsPanelProps = z.infer<typeof SettingsPanelPropsSchema>;
 
 export const SettingsPanel = defineComponent(
   SettingsPanelPropsSchema,
-  ({ onClear, version }: SettingsPanelProps): ReactNode => {
+  ({ onClear, theme, onToggleTheme, version }: SettingsPanelProps): ReactNode => {
     const [confirming, setConfirming] = useState(false);
     const [busy, setBusy] = useState(false);
 
@@ -35,12 +39,22 @@ export const SettingsPanel = defineComponent(
             Settings
           </h1>
           <p className="text-muted-ash text-sm">
-            Manage local data on this device.
+            Manage appearance and local data on this device.
             {version !== undefined ? ` Data format v${version}.` : ""}
           </p>
         </header>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-canvas-white p-5">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-black/10 bg-canvas-white p-5 dark:border-white/10">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-semibold text-base text-midnight-ink">Appearance</h2>
+            <p className="text-[15px] text-muted-ash">
+              {theme === "dark" ? "Dark theme" : "Light theme"}
+            </p>
+          </div>
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-canvas-white p-5 dark:border-white/10">
           <h2 className="font-semibold text-base text-midnight-ink">Reset & update</h2>
           <p className="text-[15px] text-midnight-ink/80 leading-7">
             Clears all saved progress and cached data on this device, then reloads to the latest

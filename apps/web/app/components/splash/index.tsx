@@ -21,16 +21,13 @@ export const Splash = defineComponent(
     return (
       <div
         data-test="splash"
-        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_28%,#143442_0%,#0a1622_56%,#05080d_100%)] text-white"
+        className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_26%,#eef2ff_0%,#f4f3ef_58%,#e7e4df_100%)] text-midnight-ink dark:bg-[radial-gradient(circle_at_50%_28%,#143442_0%,#0a1622_56%,#05080d_100%)]"
       >
         <header className="shrink-0 px-6 pt-[max(2rem,env(safe-area-inset-top))] text-center">
-          <p className="font-mono text-[11px] text-white/45 uppercase tracking-[0.32em]">
-            Mind Palace
-          </p>
-          <h1 className="mt-2.5 font-display text-[clamp(2.4rem,2rem+5vw,3.6rem)] leading-[1.04]">
+          <h1 className="font-display text-[clamp(2.4rem,2rem+5vw,3.6rem)] text-midnight-ink leading-[1.04]">
             {title}
           </h1>
-          <p className="mx-auto mt-3 max-w-xs text-balance text-sm text-white/55">
+          <p className="mx-auto mt-3 max-w-xs text-balance text-muted-ash text-sm">
             Build a palace of memory — one connected idea at a time.
           </p>
         </header>
@@ -46,7 +43,7 @@ export const Splash = defineComponent(
             type="button"
             data-test="splash-enter"
             onClick={onEnter}
-            className="mx-auto block w-full max-w-xs rounded-full bg-white px-8 py-3.5 text-center font-medium text-[#0a1622] text-[15px] transition-transform active:scale-[0.98]"
+            className="mx-auto block w-full max-w-xs rounded-full bg-midnight-ink px-8 py-3.5 text-center font-medium text-[15px] text-canvas-white transition-transform active:scale-[0.98]"
           >
             Enter the palace
           </button>
