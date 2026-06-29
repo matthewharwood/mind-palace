@@ -1,8 +1,9 @@
 import type { Rating } from "@mind-palace/srs";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
+import { isTypingTarget } from "~/lib/keyboard";
 
 // RatingButtons — the SRS self-grade row shared by the lesson view and the study
 // deck. Numbered 1–4 (Again → Easy) and colour-ramped by difficulty (rose →
@@ -33,6 +34,22 @@ export type RatingButtonsProps = z.infer<typeof RatingButtonsPropsSchema>;
 export const RatingButtons = defineComponent(
   RatingButtonsPropsSchema,
   ({ onRate }: RatingButtonsProps): ReactNode => {
+    const onRateRef = useRef(onRate);
+    onRateRef.current = onRate;
+    // Keyboard grading: 1–4 submit Again→Easy (Anki-style), unless the learner is
+    // typing in the code editor / an input.
+    useEffect(() => {
+      function onKey(event: KeyboardEvent): void {
+        if (isTypingTarget(event.target)) return;
+        const match = RATINGS.find((entry) => entry.num === event.key);
+        if (!match) return;
+        event.preventDefault();
+        onRateRef.current(match.rating);
+      }
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, []);
+
     return (
       <div className="grid grid-cols-4 gap-2">
         {RATINGS.map(({ rating, label, num, tone }) => (
