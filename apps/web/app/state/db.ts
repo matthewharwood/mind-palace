@@ -32,7 +32,12 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 2) {
         const settings = db.createObjectStore("settings", { keyPath: "id" });
-        void settings.put({ id: "settings", theme: "light", reducedMotion: false });
+        void settings.put({
+          id: "settings",
+          theme: "light",
+          reducedMotion: false,
+          graphView: "auto",
+        });
       }
       if (oldVersion < 3) {
         db.createObjectStore("alchemyBoard", { keyPath: "id" });

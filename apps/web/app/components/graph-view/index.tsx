@@ -1,8 +1,10 @@
-import { type ReactNode, useState } from "react";
+import { useAtom } from "jotai";
+import type { ReactNode } from "react";
 import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
 import { DESKTOP_QUERY, useMediaQuery } from "~/lib/use-media-query";
+import { settingsAtom } from "~/state/atoms";
 
 // GraphView — presentational toggle between a visual diagram and a list of the
 // same content. Defaults follow the viewport: list on a phone (`<md`), diagram
@@ -17,6 +19,12 @@ import { DESKTOP_QUERY, useMediaQuery } from "~/lib/use-media-query";
 // accessible tree, so the real <Link> list is the keyboard/screen-reader/crawler
 // surface in BOTH views (this is also what the app-level route tests drive).
 type View = "list" | "diagram";
+
+// Resolve the persisted preference against the viewport (flat — no nested ternary).
+function resolveView(pref: "list" | "diagram" | "auto", isDesktop: boolean): View {
+  if (pref !== "auto") return pref;
+  return isDesktop ? "diagram" : "list";
+}
 
 function ViewTab({
   label,
@@ -55,22 +63,20 @@ export const GraphView = defineComponent(
   GraphViewPropsSchema,
   ({ diagram, list, diagramLabel = "Diagram", listLabel = "List" }: GraphViewProps): ReactNode => {
     const isDesktop = useMediaQuery(DESKTOP_QUERY);
-    // null = follow the viewport default; a click pins an explicit choice.
-    const [override, setOverride] = useState<View | null>(null);
-    const view: View = override ?? (isDesktop ? "diagram" : "list");
+    const [settings, setSettings] = useAtom(settingsAtom);
+    // "auto" follows the viewport; an explicit pick is persisted to IDB, so the
+    // choice survives reloads AND carries as you navigate deeper into the tree.
+    const view = resolveView(settings.graphView, isDesktop);
+    const pick = (next: View): void => setSettings((prev) => ({ ...prev, graphView: next }));
 
     return (
       <div className="flex flex-col gap-3">
-        <div className="flex w-fit gap-1 self-start rounded-lg bg-white/5 p-1">
-          <ViewTab
-            label={listLabel}
-            active={view === "list"}
-            onSelect={() => setOverride("list")}
-          />
+        <div className="flex w-fit gap-1 self-start rounded-lg bg-black/[0.04] p-1 dark:bg-white/5">
+          <ViewTab label={listLabel} active={view === "list"} onSelect={() => pick("list")} />
           <ViewTab
             label={diagramLabel}
             active={view === "diagram"}
-            onSelect={() => setOverride("diagram")}
+            onSelect={() => pick("diagram")}
           />
         </div>
         {view === "diagram" ? (
