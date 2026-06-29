@@ -14,7 +14,7 @@ type Story = StoryObj<typeof Splash>;
 export const Default: Story = {
   render: () => (
     <Splash
-      title="mind-palace"
+      title="Mind Palace"
       modelUrl={`${import.meta.env.BASE_URL}splash/hero.glb`}
       onEnter={() => undefined}
     />

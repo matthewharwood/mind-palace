@@ -14,6 +14,8 @@ type Story = StoryObj<typeof SettingsPanel>;
 export const Default: Story = {
   args: {
     version: 4,
+    theme: "light",
+    onToggleTheme: () => undefined,
     onClear: () => undefined,
   },
 };

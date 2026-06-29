@@ -9,7 +9,7 @@ const runtimeEnv: Record<string, string | undefined> = {
 export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
-    VITE_GAME_TITLE: z.string().min(1),
+    VITE_GAME_TITLE: z.string().min(1).default("Mind Palace"),
     VITE_API_BASE: z.url().optional(),
 
     VITE_SITE_URL: z

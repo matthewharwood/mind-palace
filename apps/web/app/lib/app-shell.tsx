@@ -1,8 +1,7 @@
 import type { Goal } from "@mind-palace/curriculum";
-import { ThemeToggle } from "@mind-palace/ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { type ReactNode, useState } from "react";
-import { ReadAloudButton } from "~/components/read-aloud";
+
 import {
   getCurriculum,
   getFlashcard,
@@ -19,18 +18,6 @@ import { useTheme } from "~/lib/use-theme";
 // route's center main stage. Router-coupled infrastructure — lives in lib/ next
 // to root-shell.tsx (so the route file stays a single Route export and
 // react-doctor's only-export-components rule stays green).
-
-// Text the read-aloud button speaks: the current <main>, minus any region marked
-// `data-read-aloud-skip` (the card's phase eyebrow and the rating footer) — so it
-// reads the lesson, not the chrome. Clones so the live DOM is untouched.
-function readableMainText(): string {
-  const main = document.querySelector("main");
-  if (!main) return "";
-  const clone = main.cloneNode(true);
-  if (!(clone instanceof Element)) return main.textContent ?? "";
-  for (const skip of clone.querySelectorAll("[data-read-aloud-skip]")) skip.remove();
-  return clone.textContent ?? "";
-}
 
 function HomeIcon(): ReactNode {
   return (
@@ -188,7 +175,7 @@ function CrumbLink(crumb: Crumb): ReactNode {
   }
   if (crumb.kind === "home") {
     return (
-      <Link to="/" className={linkClass}>
+      <Link to="/goals" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -226,7 +213,7 @@ function CrumbLink(crumb: Crumb): ReactNode {
 }
 
 function buildCrumbs(segments: string[]): Crumb[] {
-  const crumbs: Crumb[] = [{ kind: "home", label: "Goals", current: segments.length === 0 }];
+  const crumbs: Crumb[] = [{ kind: "home", label: "Goals", current: segments[0] === "goals" }];
   if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });
   } else if (segments[0] === "settings") {
@@ -279,7 +266,7 @@ function RailNav({
   collapsed,
   goals,
   activeGoalId,
-  onHome,
+  onGoals,
   onProgress,
   onSettings,
   onNavigate,
@@ -287,7 +274,7 @@ function RailNav({
   collapsed: boolean;
   goals: readonly Goal[];
   activeGoalId: string | undefined;
-  onHome: boolean;
+  onGoals: boolean;
   onProgress: boolean;
   onSettings: boolean;
   onNavigate?: () => void;
@@ -300,7 +287,7 @@ function RailNav({
         )}
       >
         <Link
-          to="/"
+          to="/goals"
           aria-label="Mind Palace — Goals"
           onClick={onNavigate}
           className={[
@@ -322,13 +309,13 @@ function RailNav({
         className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-2 pb-4"
       >
         <Link
-          to="/"
+          to="/goals"
           onClick={onNavigate}
-          aria-current={onHome ? "page" : undefined}
+          aria-current={onGoals ? "page" : undefined}
           title={collapsed ? "Goals" : undefined}
-          className={navItemClass(onHome, collapsed)}
+          className={navItemClass(onGoals, collapsed)}
         >
-          <span className={onHome ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
+          <span className={onGoals ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
             <HomeIcon />
           </span>
           {!collapsed && <span className="truncate">Goals</span>}
@@ -393,13 +380,15 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   else if (segments[0] === "curriculum" && segments[1]) {
     activeGoalId = getGoalForCurriculum(segments[1])?.id;
   }
-  const onHome = segments.length === 0;
+  const onGoals = segments[0] === "goals";
   const onProgress = segments[0] === "progress";
   const onSettings = segments[0] === "settings";
   const [askOpen, setAskOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const crumbs = buildCrumbs(segments);
-  const { theme, toggle: toggleTheme } = useTheme();
+  // Apply the persisted theme (.dark on <html>) app-wide; the toggle UI itself
+  // now lives on the Settings page, not in the chrome.
+  useTheme();
 
   return (
     <div className="flex h-dvh overflow-hidden bg-whisper-gray font-sans text-midnight-ink sm:gap-3 sm:p-3">
@@ -414,7 +403,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             collapsed={collapsed}
             goals={goals}
             activeGoalId={activeGoalId}
-            onHome={onHome}
+            onGoals={onGoals}
             onProgress={onProgress}
             onSettings={onSettings}
           />
@@ -450,8 +439,6 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
                 </span>
               ))}
             </div>
-            <ReadAloudButton key={pathname} getText={readableMainText} />
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
             <button
               type="button"
               onClick={() => setAskOpen((value) => !value)}
@@ -495,7 +482,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               collapsed={false}
               goals={goals}
               activeGoalId={activeGoalId}
-              onHome={onHome}
+              onGoals={onGoals}
               onProgress={onProgress}
               onSettings={onSettings}
               onNavigate={() => setMobileNavOpen(false)}
