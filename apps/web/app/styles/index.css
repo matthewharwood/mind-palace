@@ -113,6 +113,22 @@
   }
 }
 
+/* Syntax colours for the EDITABLE CodeMirror editor (code-editor), as vars the
+   editor's HighlightStyle references via var(--cm-*). Light values here; the
+   .dark block below overrides them (it MUST come after, since both target <html>
+   at equal specificity — source order decides). Tuned toward the Shiki blocks. */
+:root {
+  --cm-fg: #1f2328;
+  --cm-keyword: #cf222e;
+  --cm-string: #0a3069;
+  --cm-number: #0550ae;
+  --cm-comment: #6e7781;
+  --cm-function: #8250df;
+  --cm-type: #116329;
+  --cm-punct: #4b5563;
+  --cm-variable: #1f2328;
+}
+
 /* Dark theme. The toggle (use-theme.ts) flips the `.dark` class on <html>; these
    override the app's neutral tokens so the whole UI re-skins in one place. The
    card surface sits lighter than the substrate so cards read by contrast even
@@ -129,6 +145,15 @@
   --color-muted-ash: #a0a0ad;
   --shadow-card:
     rgb(255 255 255 / 8%) 0 0 0 1px, rgb(0 0 0 / 45%) 0 8px 24px 0;
+  --cm-fg: #e6edf3;
+  --cm-keyword: #ff7b72;
+  --cm-string: #a5d6ff;
+  --cm-number: #79c0ff;
+  --cm-comment: #8b949e;
+  --cm-function: #d2a8ff;
+  --cm-type: #7ee787;
+  --cm-punct: #c9d1d9;
+  --cm-variable: #e6edf3;
 }
 
 /* `dark` variant now declared by @mind-palace/ui/theme (imported above). */
