@@ -34,11 +34,11 @@ function GoalView() {
   if (!path) throw notFound();
 
   const roots = new Set(rootIds(buildPathGraph(path)));
-  const byCurriculum = new Map(
-    (reports?.find((report) => report.goalId === goalId)?.curricula ?? []).map((curriculum) => [
-      curriculum.id,
-      curriculum,
-    ]),
+  const curricula = reports?.find((report) => report.goalId === goalId)?.curricula ?? [];
+  const byCurriculum = new Map(curricula.map((curriculum) => [curriculum.id, curriculum]));
+  // curriculumId → 0–1 mastery, for the flow tree's per-node progress badges.
+  const progressById = Object.fromEntries(
+    curricula.map((curriculum) => [curriculum.id, curriculum.masteryPct / 100]),
   );
 
   return (
@@ -55,6 +55,7 @@ function GoalView() {
         diagram={
           <LearningPathTree
             path={path}
+            progressById={progressById}
             onSelect={(curriculumId) =>
               navigate({ to: "/curriculum/$curriculumId", params: { curriculumId } })
             }
