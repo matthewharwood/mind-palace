@@ -36,11 +36,18 @@ export const StudyCard = defineComponent(
       [flashcard.id],
     );
 
+    // Code-bearing cards get a wider stage on desktop so the snippet fits without
+    // a horizontal scrollbar (clamped to the viewport); plain cards stay compact.
+    const content = flashcard.content;
+    const hasCode =
+      content.type === "code" || (content.type === "multiple-choice" && Boolean(content.code));
+    const widthClass = hasCode ? "max-w-md md:max-w-[min(56rem,92vw)]" : "max-w-md";
+
     return (
       <article
         ref={cardRef}
         data-test="study-card"
-        className="flex h-full w-full max-w-md select-none flex-col gap-3 overflow-hidden rounded-3xl border border-black/10 bg-canvas-white p-5 text-midnight-ink shadow-[0_12px_48px_rgba(17,17,17,0.14)]"
+        className={`flex h-full w-full ${widthClass} select-none flex-col gap-3 overflow-hidden rounded-3xl border border-black/10 bg-canvas-white p-5 text-midnight-ink shadow-[0_12px_48px_rgba(17,17,17,0.14)] dark:border-white/10`}
       >
         <span className="font-mono text-[10px] text-muted-ash uppercase tracking-[0.22em]">
           {TYPE_LABEL[flashcard.content.type] ?? "Card"}

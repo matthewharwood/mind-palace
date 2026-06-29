@@ -171,3 +171,17 @@
 .dark .mp-code-block .shiki span {
   color: var(--shiki-dark);
 }
+
+/* Every actionable control shows a pointer cursor (native <button> defaults to
+   the arrow). */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* Keyboard focus affordance everywhere. `:focus-visible` only fires for
+   keyboard / assistive-tech users, so mouse clicks stay ring-free. */
+:focus-visible {
+  outline: 2px solid var(--color-intelligence-blue);
+  outline-offset: 2px;
+}
