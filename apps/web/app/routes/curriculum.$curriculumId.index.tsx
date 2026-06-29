@@ -1,6 +1,7 @@
 import { type CardPhase, isDue } from "@mind-palace/srs";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useAtomValue } from "jotai";
+import { useState } from "react";
 
 import { CurriculumGraph } from "~/components/curriculum-graph";
 import { GraphView } from "~/components/graph-view";
@@ -31,6 +32,8 @@ function CurriculumView() {
 
   // Persistent SRS progress (IDB) — read synchronously after root hydration.
   const progress = useAtomValue(getCurriculumProgressAtom(curriculumId));
+  // Which lesson's (sr-only) list link has keyboard focus → ring it on the canvas.
+  const [focusedId, setFocusedId] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4 p-6">
@@ -60,6 +63,7 @@ function CurriculumView() {
           <CurriculumGraph
             curriculum={curriculum}
             states={progress.states}
+            focusedId={focusedId}
             onSelect={(nodeId) =>
               navigate({
                 to: "/curriculum/$curriculumId/node/$nodeId",
@@ -80,6 +84,8 @@ function CurriculumView() {
                     <Link
                       to="/curriculum/$curriculumId/node/$nodeId"
                       params={{ curriculumId, nodeId: node.id }}
+                      onFocus={() => setFocusedId(node.id)}
+                      onBlur={() => setFocusedId(null)}
                       className="flex items-center justify-between gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-black/[0.04] focus-visible:bg-black/[0.04] dark:hover:bg-white/[0.06] dark:focus-visible:bg-white/[0.06]"
                     >
                       <span className="text-midnight-ink">{node.title}</span>

@@ -1,9 +1,9 @@
 import type { Curriculum } from "@mind-palace/curriculum";
 import { type CardState, isDue } from "@mind-palace/srs";
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import * as z from "zod";
 
-import { drawGraph, type GraphNodeSpec } from "~/canvas/draw-graph";
+import { drawGraph, type GraphHandle, type GraphNodeSpec } from "~/canvas/draw-graph";
 import { usePixiApp } from "~/canvas/use-pixi-app";
 import { defineComponent } from "~/lib/define-component";
 
@@ -55,20 +55,23 @@ export const CurriculumGraphPropsSchema = z.object({
   curriculum: z.custom<Curriculum>(),
   states: z.custom<Readonly<Record<string, CardState>>>(),
   onSelect: z.custom<(nodeId: string) => void>(),
+  /** Node id whose list link has keyboard focus → ring it on the canvas. */
+  focusedId: z.string().nullable().optional(),
 });
 export type CurriculumGraphProps = z.infer<typeof CurriculumGraphPropsSchema>;
 
 export const CurriculumGraph = defineComponent(
   CurriculumGraphPropsSchema,
-  ({ curriculum, states, onSelect }: CurriculumGraphProps): ReactNode => {
+  ({ curriculum, states, onSelect, focusedId = null }: CurriculumGraphProps): ReactNode => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
+    const handleRef = useRef<GraphHandle | null>(null);
 
     usePixiApp(
       canvasRef,
-      (app) =>
-        drawGraph(app, {
+      (app) => {
+        const graph = drawGraph(app, {
           nodes: curriculum.nodes.map((node): GraphNodeSpec => {
             const state = states[node.id];
             const due = state === undefined || isDue(state);
@@ -88,7 +91,13 @@ export const CurriculumGraph = defineComponent(
           // A curriculum is interrelated concepts + drills → radial network.
           layout: "network",
           onSelect: (id) => onSelectRef.current(id),
-        }),
+        });
+        handleRef.current = graph;
+        return () => {
+          handleRef.current = null;
+          graph.destroy();
+        };
+      },
       // Rebuild per curriculum only — SRS colors are snapshotted at mount (you
       // always arrive on this route fresh, after reviewing on the node route).
       // This keeps the canvas key (curriculum.id) aligned with the re-init
@@ -97,6 +106,10 @@ export const CurriculumGraph = defineComponent(
       [curriculum],
       { autoStart: false, backgroundAlpha: 0 },
     );
+
+    useEffect(() => {
+      handleRef.current?.setFocusedNode(focusedId);
+    }, [focusedId]);
 
     return (
       <div className="relative h-[70vh] w-full">
