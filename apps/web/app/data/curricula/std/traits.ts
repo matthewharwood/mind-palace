@@ -6,7 +6,7 @@ import { source } from "./_source";
 // Display/Debug, AsRef, Iterator. Every snippet rustc-verified (edition 2024).
 export const traits: Curriculum = {
   id: "c-std-traits",
-  title: "Common Traits",
+  title: "Standard-Library Traits",
   source,
   nodes: [
     {
