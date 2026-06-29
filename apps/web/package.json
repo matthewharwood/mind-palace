@@ -20,7 +20,9 @@
   },
   "dependencies": {
     "@codemirror/lang-rust": "^6",
+    "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6",
+    "@lezer/highlight": "^1.2.3",
     "@mind-palace/cards": "workspace:*",
     "@mind-palace/curriculum": "workspace:*",
     "@mind-palace/schemas": "workspace:*",
