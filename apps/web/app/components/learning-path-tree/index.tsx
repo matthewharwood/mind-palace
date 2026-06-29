@@ -1,9 +1,9 @@
 import type { LearningPath } from "@mind-palace/curriculum";
 import { useAtomValue } from "jotai";
-import { type ReactNode, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import * as z from "zod";
 
-import { drawGraph } from "~/canvas/draw-graph";
+import { drawGraph, type GraphHandle } from "~/canvas/draw-graph";
 import { usePixiApp } from "~/canvas/use-pixi-app";
 import { defineComponent } from "~/lib/define-component";
 import { settingsAtom } from "~/state/atoms";
@@ -21,15 +21,18 @@ export const LearningPathTreePropsSchema = z.object({
   onSelect: z.custom<(curriculumId: string) => void>(),
   /** curriculumId → 0–1 mastery, for the per-node progress badge. */
   progressById: z.custom<Record<string, number>>().optional(),
+  /** curriculumId whose list link has keyboard focus → ring it on the canvas. */
+  focusedId: z.string().nullable().optional(),
 });
 export type LearningPathTreeProps = z.infer<typeof LearningPathTreePropsSchema>;
 
 export const LearningPathTree = defineComponent(
   LearningPathTreePropsSchema,
-  ({ path, onSelect, progressById }: LearningPathTreeProps): ReactNode => {
+  ({ path, onSelect, progressById, focusedId = null }: LearningPathTreeProps): ReactNode => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
+    const handleRef = useRef<GraphHandle | null>(null);
     const dark = useAtomValue(settingsAtom).theme === "dark";
     const c = dark ? DARK : LIGHT;
     // Stable dep: re-init the canvas only when the progress VALUES change (the
@@ -38,8 +41,8 @@ export const LearningPathTree = defineComponent(
 
     usePixiApp(
       canvasRef,
-      (app) =>
-        drawGraph(app, {
+      (app) => {
+        const graph = drawGraph(app, {
           nodes: path.nodes.map((node) => {
             const progress = progressById?.[node.curriculumId];
             return {
@@ -55,10 +58,20 @@ export const LearningPathTree = defineComponent(
           // A learning path is an ordered prerequisite sequence → top-down flow.
           layout: "flow",
           onSelect: (id) => onSelectRef.current(id),
-        }),
+        });
+        handleRef.current = graph;
+        return () => {
+          handleRef.current = null;
+          graph.destroy();
+        };
+      },
       [path, dark, progressKey],
       { autoStart: false, backgroundAlpha: 0 },
     );
+
+    useEffect(() => {
+      handleRef.current?.setFocusedNode(focusedId);
+    }, [focusedId]);
 
     return (
       <div className="h-[70vh] w-full">

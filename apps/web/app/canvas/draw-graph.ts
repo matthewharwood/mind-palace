@@ -66,6 +66,12 @@ export interface DrawGraphOptions {
   onSelect: (id: string) => void;
 }
 
+export interface GraphHandle {
+  destroy: () => void;
+  /** Ring the node with `id` (or clear with null) — driven by list-link focus. */
+  setFocusedNode: (id: string | null) => void;
+}
+
 const MAX_W = 210;
 const MIN_W = 120;
 const PAD_X = 16;
@@ -74,11 +80,12 @@ const MIN_H = 56;
 const TITLE_SIZE = 15;
 const CAPTION_SIZE = 12;
 const EDGE_COLOR = 0x5b6275;
+const FOCUS_RING = 0x328efa;
 const MIN_SCALE = 0.3;
 const MAX_SCALE = 1.6;
 const MAX_TEXT_RESOLUTION = 4;
 
-export function drawGraph(app: Application, opts: DrawGraphOptions): () => void {
+export function drawGraph(app: Application, opts: DrawGraphOptions): GraphHandle {
   // Pixi rasterizes Text to a texture at a fixed density that does NOT track the
   // world's scale, so text blurs when zoomed in. Render glyphs at the device
   // pixel ratio times the max zoom (capped) so they stay crisp at any zoom and
@@ -305,13 +312,42 @@ export function drawGraph(app: Application, opts: DrawGraphOptions): () => void 
 
   app.render();
 
-  return () => {
-    app.canvas.removeEventListener("wheel", onWheel);
-    app.renderer.off("resize", onResize);
-    app.stage.off("pointerdown", onDown);
-    app.stage.off("pointermove", onMove);
-    app.stage.off("pointerup", onUp);
-    app.stage.off("pointerupoutside", onUp);
-    world.destroy({ children: true });
+  // Keyboard focus highlight. The accessible surface is the sr-only <Link> list;
+  // when one of its links gains focus the component calls setFocusedNode, and we
+  // ring the matching node so a sighted keyboard user sees where they are. The
+  // ring lives in the node's local space, so it tracks pan/zoom for free.
+  const focusRing = new Graphics();
+  let focusedNode: Container | null = null;
+  function setFocusedNode(id: string | null): void {
+    if (focusedNode) {
+      focusedNode.removeChild(focusRing);
+      focusedNode = null;
+    }
+    if (id !== null) {
+      const b = sizeById.get(id);
+      if (b) {
+        focusRing
+          .clear()
+          .roundRect(-b.w / 2 - 4, -b.h / 2 - 4, b.w + 8, b.h + 8, 15)
+          .stroke({ width: 3, color: FOCUS_RING });
+        b.node.addChild(focusRing);
+        world.addChild(b.node); // bring to front so the ring isn't clipped
+        focusedNode = b.node;
+      }
+    }
+    app.render();
+  }
+
+  return {
+    destroy: () => {
+      app.canvas.removeEventListener("wheel", onWheel);
+      app.renderer.off("resize", onResize);
+      app.stage.off("pointerdown", onDown);
+      app.stage.off("pointermove", onMove);
+      app.stage.off("pointerup", onUp);
+      app.stage.off("pointerupoutside", onUp);
+      world.destroy({ children: true });
+    },
+    setFocusedNode,
   };
 }

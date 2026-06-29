@@ -1,5 +1,6 @@
 import { buildPathGraph, rootIds } from "@mind-palace/curriculum";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { GraphView } from "~/components/graph-view";
 import { LearningPathTree } from "~/components/learning-path-tree";
@@ -34,6 +35,8 @@ function GoalView() {
   if (!path) throw notFound();
 
   const roots = new Set(rootIds(buildPathGraph(path)));
+  // Which curriculum's (sr-only) list link has keyboard focus → ring it on canvas.
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const curricula = reports?.find((report) => report.goalId === goalId)?.curricula ?? [];
   const byCurriculum = new Map(curricula.map((curriculum) => [curriculum.id, curriculum]));
   // curriculumId → 0–1 mastery, for the flow tree's per-node progress badges.
@@ -56,6 +59,7 @@ function GoalView() {
           <LearningPathTree
             path={path}
             progressById={progressById}
+            focusedId={focusedId}
             onSelect={(curriculumId) =>
               navigate({ to: "/curriculum/$curriculumId", params: { curriculumId } })
             }
@@ -71,6 +75,8 @@ function GoalView() {
                     <Link
                       to="/curriculum/$curriculumId"
                       params={{ curriculumId: node.curriculumId }}
+                      onFocus={() => setFocusedId(node.curriculumId)}
+                      onBlur={() => setFocusedId(null)}
                       className="flex flex-col gap-2 rounded-md px-3 py-2.5 transition-colors hover:bg-black/[0.04] focus-visible:bg-black/[0.04] dark:hover:bg-white/[0.06] dark:focus-visible:bg-white/[0.06]"
                     >
                       <div className="flex items-center justify-between gap-3">
