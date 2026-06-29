@@ -1,10 +1,29 @@
 import { checkCode } from "@mind-palace/curriculum";
 import { type ReactNode, useState } from "react";
 
-import { CodeBlock } from "~/components/code-block";
 import { CodeEditor } from "~/components/code-editor";
+import { type DiffOp, lineDiff } from "~/lib/line-diff";
 
 import { InlineText } from "./markdown";
+
+// Per-line styling for the diff (flat — no nested ternary). Removed = the
+// learner's line that isn't in the solution; added = the solution line they're
+// missing.
+function diffLineClass(type: DiffOp["type"]): string {
+  if (type === "add") {
+    return "whitespace-pre bg-emerald-500/12 text-emerald-800 dark:text-emerald-300";
+  }
+  if (type === "remove") {
+    return "whitespace-pre bg-rose-500/12 text-rose-800 dark:text-rose-300";
+  }
+  return "whitespace-pre text-muted-ash";
+}
+
+function diffSign(type: DiffOp["type"]): string {
+  if (type === "add") return "+";
+  if (type === "remove") return "−";
+  return " ";
+}
 
 export function CodeBody({
   prompt,
@@ -46,16 +65,29 @@ export function CodeBody({
         ) : null}
         {status === "fail" ? (
           <span data-test="code-fail" className="text-rose-600 text-sm dark:text-rose-400">
-            Not quite — compare with the expected solution below.
+            Not quite — the diff below shows your answer vs the expected solution.
           </span>
         ) : null}
       </div>
       {status === "fail" ? (
-        <div className="flex flex-col gap-1.5" data-test="code-expected">
-          <p className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.15em]">
-            Expected solution
-          </p>
-          <CodeBlock code={solution} language={language ?? "rust"} />
+        <div className="flex flex-col gap-2" data-test="code-diff">
+          <div className="flex items-center gap-3 font-mono text-[11px] text-muted-ash uppercase tracking-[0.12em]">
+            <span>Your answer vs expected</span>
+            <span className="flex items-center gap-2 normal-case tracking-normal">
+              <span className="text-rose-600 dark:text-rose-300">− yours</span>
+              <span className="text-emerald-700 dark:text-emerald-300">+ expected</span>
+            </span>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-black/10 bg-whisper-gray p-3 font-mono text-[13px] leading-relaxed dark:border-white/10 dark:bg-white/[0.04]">
+            {lineDiff(typed.split("\n"), solution.split("\n")).map((op) => (
+              <div key={op.id} className={diffLineClass(op.type)}>
+                <span className="mr-2 inline-block w-2 select-none opacity-50">
+                  {diffSign(op.type)}
+                </span>
+                {op.text || " "}
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
