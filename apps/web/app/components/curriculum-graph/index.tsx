@@ -28,6 +28,22 @@ function phaseFill(state: CardState | undefined): number {
   }
 }
 
+// Mastery fraction for the corner badge — only for started cards (unseen cards
+// stay badge-free so a fresh network isn't littered with 0% discs).
+function phaseProgress(state: CardState | undefined): number | undefined {
+  if (!state) return undefined;
+  switch (state.phase) {
+    case "review":
+      return 1;
+    case "learning":
+      return 0.5;
+    case "relearning":
+      return 0.34;
+    default:
+      return 0;
+  }
+}
+
 const LEGEND: { label: string; className: string }[] = [
   { label: "new", className: "bg-[#475569]" },
   { label: "learning", className: "bg-[#b45309]" },
@@ -57,6 +73,7 @@ export const CurriculumGraph = defineComponent(
             const state = states[node.id];
             const due = state === undefined || isDue(state);
             const phase = state?.phase ?? "new";
+            const progress = phaseProgress(state);
             return {
               id: node.id,
               title: node.title,
@@ -64,6 +81,7 @@ export const CurriculumGraph = defineComponent(
               fill: phaseFill(state),
               textColor: NODE_TEXT,
               ...(due ? { ring: DUE_RING } : {}),
+              ...(progress !== undefined ? { progress } : {}),
             };
           }),
           edges: curriculum.edges,

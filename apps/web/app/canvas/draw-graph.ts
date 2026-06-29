@@ -48,7 +48,13 @@ export interface GraphNodeSpec {
   textColor: number;
   /** Optional accent border (e.g. "due"). */
   ring?: number;
+  /** 0–1 mastery; when set, a corner badge shows the % as a ring + number. */
+  progress?: number;
 }
+
+const BADGE_TRACK = 0xffffff;
+const BADGE_ARC = 0x34d399;
+const BADGE_BG = 0x0b1220;
 
 export type GraphLayout = "flow" | "network";
 
@@ -128,6 +134,32 @@ export function drawGraph(app: Application, opts: DrawGraphOptions): () => void 
     if (caption) {
       caption.position.set(0, -contentH / 2 + title.height + 4);
       node.addChild(caption);
+    }
+
+    // Progress badge in the top-right corner: a dark disc, a faint track ring, an
+    // emerald arc swept to `progress`, and the % number — so mastery reads at a
+    // glance over any node fill.
+    if (spec.progress !== undefined) {
+      const pr = Math.max(0, Math.min(1, spec.progress));
+      const r = 13;
+      const bx = w / 2 - 3;
+      const by = -h / 2 + 3;
+      const badge = new Graphics();
+      badge.circle(bx, by, r).fill({ color: BADGE_BG, alpha: 0.92 });
+      badge.circle(bx, by, r - 2.5).stroke({ width: 3, color: BADGE_TRACK, alpha: 0.22 });
+      if (pr > 0) {
+        const sweep = -Math.PI / 2 + pr * Math.PI * 2;
+        badge.arc(bx, by, r - 2.5, -Math.PI / 2, sweep).stroke({ width: 3, color: BADGE_ARC });
+      }
+      node.addChild(badge);
+      const pct = new Text({
+        text: `${Math.round(pr * 100)}`,
+        resolution: textResolution,
+        style: { fontSize: 9, fill: 0xffffff, fontFamily: "sans-serif", align: "center" },
+      });
+      pct.anchor.set(0.5);
+      pct.position.set(bx, by);
+      node.addChild(pct);
     }
     return { spec, node, w, h };
   });
