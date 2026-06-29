@@ -14,15 +14,16 @@ const PATHS: LearningPath[] = [rustPath, stdPath];
 const GOALS: Goal[] = [
   {
     id: "g-rust",
-    title: "Learn Rust",
-    description: "Work through The Rust Programming Language, from ownership to concurrency.",
+    title: "Learn Rust — the language",
+    description:
+      "The language itself: ownership, types & syntax, keywords, traits, generics, and error handling. Start here to learn to read and write Rust from the ground up.",
     pathId: "p-rust",
   } satisfies Goal,
   {
     id: "g-std",
-    title: "Master the Rust Standard Library",
+    title: "Master the Standard Library",
     description:
-      "Go deep on std: Option/Result, collections, iterators, traits, smart pointers, and concurrency.",
+      "The batteries-included toolkit you reach for daily: Option/Result, collections, iterators, the common std traits (From, Display, Iterator…), smart pointers, and concurrency. Come here after Learn Rust to get fluent with what ships in std.",
     pathId: "p-std",
   } satisfies Goal,
 ];
