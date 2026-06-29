@@ -32,8 +32,10 @@ function ViewTab({
       type="button"
       aria-pressed={active}
       onClick={onSelect}
-      className={`rounded-md px-3 py-1.5 font-medium text-sm transition-colors ${
-        active ? "bg-blue-600 text-white" : "text-slate-300 hover:text-white"
+      className={`rounded-md px-3.5 py-1.5 font-medium text-sm transition-colors ${
+        active
+          ? "bg-canvas-white text-midnight-ink shadow-sm dark:bg-white/10"
+          : "text-muted-ash hover:text-midnight-ink"
       }`}
     >
       {label}
