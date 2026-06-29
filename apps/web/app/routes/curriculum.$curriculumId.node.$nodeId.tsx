@@ -1,6 +1,5 @@
 import { createCardState, type Rating, review } from "@mind-palace/srs";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { animate } from "animejs";
 import { useAtom } from "jotai";
 import { useRef } from "react";
 
@@ -37,46 +36,34 @@ function NodeView() {
   const nextNode = curriculum.nodes[index + 1];
 
   function rate(rating: Rating): void {
+    // Guard double-taps; the ref resets for free when the route remounts (new key).
     if (animatingRef.current) return;
-
-    // Commit the rating + paginate. The next card (keyed by nodeId) remounts and
-    // plays its own entrance + scroll-to-top.
-    const advance = (): void => {
-      const next = review(state ?? createCardState(), rating).state;
-      setProgress((prev) => ({ ...prev, states: { ...prev.states, [nodeId]: next } }));
-      if (nextNode) {
-        void navigate({
-          to: "/curriculum/$curriculumId/node/$nodeId",
-          params: { curriculumId, nodeId: nextNode.id },
-        });
-      } else {
-        void navigate({ to: "/curriculum/$curriculumId", params: { curriculumId } });
-      }
-      animatingRef.current = false;
-    };
-
-    const card = document.querySelector<HTMLElement>('[data-test="flashcard-view"]');
-    const reduced = typeof window !== "undefined" && window.matchMedia(PRM).matches;
-    if (!card || reduced) {
-      advance();
-      return;
-    }
-    // Exit: the answered card lifts, shrinks, tips away and fades (GPU transform +
-    // opacity only), then we swap in the next card.
     animatingRef.current = true;
-    animate(card, {
-      opacity: [1, 0],
-      scale: [1, 0.96],
-      y: [0, -18],
-      rotate: [0, -3],
-      duration: 200,
-      ease: "in(3)",
-      onComplete: advance,
-    });
+
+    const next = review(state ?? createCardState(), rating).state;
+    setProgress((prev) => ({ ...prev, states: { ...prev.states, [nodeId]: next } }));
+
+    // Cross-route card transition via the View Transition API: TanStack wraps the
+    // navigation in document.startViewTransition, so the browser captures the
+    // outgoing + incoming card and animates the swap in ONE coordinated pass (CSS
+    // ::view-transition-old/new in index.css) — no exit-then-enter jitter. The new
+    // card's section stagger (anime.js, in FlashcardView) plays on top. Skip the
+    // transition under reduced-motion for an instant swap.
+    const reduced = typeof window !== "undefined" && window.matchMedia(PRM).matches;
+    const viewTransition = !reduced;
+    if (nextNode) {
+      void navigate({
+        to: "/curriculum/$curriculumId/node/$nodeId",
+        params: { curriculumId, nodeId: nextNode.id },
+        viewTransition,
+      });
+    } else {
+      void navigate({ to: "/curriculum/$curriculumId", params: { curriculumId }, viewTransition });
+    }
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
+    <div className="mp-card-vt mx-auto w-full max-w-3xl px-5 py-8 sm:px-8 sm:py-12">
       <FlashcardView
         key={nodeId}
         flashcard={flashcard}

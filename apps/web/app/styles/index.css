@@ -210,3 +210,33 @@ button:not(:disabled),
   outline: 2px solid var(--color-intelligence-blue);
   outline-offset: 2px;
 }
+
+/* Cross-route flashcard transition (node → node). The node route navigates with
+   TanStack's viewTransition flag, so the browser captures the outgoing + incoming
+   card and runs ONE coordinated pass — no exit-then-enter jitter. To avoid double
+   animation, the View Transition owns the OUTGOING card (it lifts + fades away)
+   and anime.js (FlashcardView's entrance) owns the INCOMING card's section
+   stagger. The route skips the transition entirely under reduced-motion. */
+.mp-card-vt {
+  view-transition-name: flashcard;
+}
+
+/* stylelint-disable selector-pseudo-element-no-unknown -- ::view-transition-* are standard CSS, not yet in stylelint's dictionary. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(flashcard) {
+    animation: mp-card-exit 240ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+
+  ::view-transition-new(flashcard) {
+    /* anime.js plays the entrance on the live card, so the VT leaves it alone. */
+    animation: none;
+  }
+}
+/* stylelint-enable selector-pseudo-element-no-unknown */
+
+@keyframes mp-card-exit {
+  to {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.97);
+  }
+}
