@@ -10,6 +10,10 @@ export const SettingsSchema = z.object({
   id: z.literal("settings").default("settings"),
   theme: z.enum(["light", "dark"]).default("light"),
   reducedMotion: z.boolean().default(false),
+  // Graph view preference, shared by every GraphView (goal flow + curriculum
+  // network). "auto" follows the viewport; an explicit pick persists. Read-parse
+  // supplies the default for pre-existing records, so no DB migration is needed.
+  graphView: z.enum(["list", "diagram", "auto"]).default("auto"),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 export const SETTINGS_DEFAULT: Settings = SettingsSchema.parse({});
