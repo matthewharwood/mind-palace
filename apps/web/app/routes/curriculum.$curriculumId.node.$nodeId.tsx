@@ -1,14 +1,59 @@
+import type { Curriculum, Source } from "@mind-palace/curriculum";
 import { createCardState, type Rating, review } from "@mind-palace/srs";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { useRef } from "react";
 
 import { FlashcardView } from "~/components/flashcard-view";
-import { getCurriculum, getFlashcard } from "~/data/curriculum-data";
+import { getCurriculum, getFlashcard, getGoalForCurriculum, getPath } from "~/data/curriculum-data";
+import type { LessonContextItem, LessonCopyContext } from "~/lib/lesson-context-markdown";
 import { buildSeoLinks } from "~/lib/seo";
 import { getCurriculumProgressAtom } from "~/state/atoms";
 
 const PRM = "(prefers-reduced-motion: reduce)";
+
+function sourceLabel(source: Source): string {
+  if (source.kind === "github-repo") {
+    const ref = source.ref ? ` @ ${source.ref}` : "";
+    return `github-repo: ${source.url}${ref}`;
+  }
+  const pages = source.pages ? ` pages ${source.pages[0]}-${source.pages[1]}` : "";
+  return `pdf: ${source.href}${pages}`;
+}
+
+function itemForNode(node: Curriculum["nodes"][number] | undefined): LessonContextItem | undefined {
+  return node ? { id: node.id, title: node.title } : undefined;
+}
+
+function buildLessonCopyContext(curriculum: Curriculum, nodeId: string): LessonCopyContext {
+  const nodeIndex = curriculum.nodes.findIndex((node) => node.id === nodeId);
+  const byId = new Map(curriculum.nodes.map((node) => [node.id, node]));
+  const goal = getGoalForCurriculum(curriculum.id);
+  const path = goal ? getPath(goal.pathId) : undefined;
+  const previousLesson = itemForNode(curriculum.nodes[nodeIndex - 1]);
+  const nextLesson = itemForNode(curriculum.nodes[nodeIndex + 1]);
+  const prerequisites: LessonContextItem[] = [];
+  for (const edge of curriculum.edges) {
+    if (edge.to !== nodeId) continue;
+    const item = itemForNode(byId.get(edge.from));
+    if (item) prerequisites.push(item);
+  }
+
+  return {
+    ...(goal ? { goalTitle: goal.title, goalDescription: goal.description } : {}),
+    ...(path ? { pathTitle: path.title } : {}),
+    curriculumId: curriculum.id,
+    curriculumTitle: curriculum.title,
+    curriculumSource: sourceLabel(curriculum.source),
+    lessonId: nodeId,
+    lessonIndex: Math.max(0, nodeIndex),
+    lessonCount: curriculum.nodes.length,
+    prerequisites,
+    ...(previousLesson ? { previousLesson } : {}),
+    ...(nextLesson ? { nextLesson } : {}),
+    canonicalPath: `/curriculum/${curriculum.id}/node/${nodeId}`,
+  };
+}
 
 export const Route = createFileRoute("/curriculum/$curriculumId/node/$nodeId")({
   head: ({ params }) => ({
@@ -69,6 +114,7 @@ function NodeView() {
         flashcard={flashcard}
         phase={state?.phase ?? "new"}
         onRate={rate}
+        copyContext={buildLessonCopyContext(curriculum, nodeId)}
       />
     </div>
   );
