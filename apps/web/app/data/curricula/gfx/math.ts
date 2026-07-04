@@ -85,6 +85,15 @@ export const gfxMath: Curriculum = {
       },
     },
     {
+      id: "parametric-paths",
+      title: "Paths: Curves You Can Walk",
+      content: {
+        type: "read",
+        markdown:
+          "A tween walks a straight line. A ==parametric path== generalizes it: `position = path(u)` — any function that turns a 0–1 progress into a point. Fireball arcs, meteor falls, and orbiting sparks are all just different `path` functions.\n\n## Build a curve from the line you already have\nThe recipe that unlocks everything: take the straight-line answer, then push it sideways.\n\n- **Base**: `start + (target - start) * u` — where the straight tween would be\n- **Offset**: `normal * amplitude * sin(pi * u)` — a perpendicular lift that starts at zero, peaks mid-flight, and lands back at zero\n\n==Straight-line position + curved offset = curved-path position.== The `normal` is the direction perpendicular to the line (for a shot flying right, that is up; in 2D, perpendicular to `(x, y)` is `(-y, x)`). Because `sin(0)` and `sin(pi)` are both zero, the arc is *guaranteed* to start at start and land on target.\n\n## More wiggle, same trick\n`sin(waves * pi * u)` sets the hump count: `1` is a clean arc, `2` rises and dips like a serpent, `3` wiggles harder. One integer knob, whole families of trajectories.\n\n## Two curves, two jobs\nKeep these separate in your head — they compose but never mix:\n\n- The ==path curve== decides *where* the point travels: `position = path(u)`\n- The ==easing curve== decides *how fast* `u` advances: `u = ease(elapsed / duration)`\n\nTogether: ==`position = path(ease(time))`== — the cleanest expression of designed motion. Same path with ease-in: the spark creeps up the arc, then whips down onto the target.\n\n## Steering vs paths\nThe vectors card taught homing: `target - position`, re-aimed every frame. That is ==steering== — reactive, chases a moving target, path emerges. `path(u)` is the opposite contract: the trajectory is *designed up front* and arrival is guaranteed. Cutscenes, spell arcs, and UI flourishes want paths; heat-seeking missiles want steering.\n\n## Bézier: the hand-authored path\nThe artist-friendly version of the same idea: a ==Bézier curve== runs start → target while one or more **control points** pull the path toward themselves like magnets. Under the hood it is lerps stacked on lerps — `lerp(lerp(S, C, u), lerp(C, T, u), u)` IS the quadratic Bézier. The sine arc is procedural; Bézier is authored; both are `path(u)`.",
+      },
+    },
+    {
       id: "matrices-basis",
       title: "Matrices: Where Basis Lands",
       content: {
@@ -226,6 +235,24 @@ fn main() {
 }`,
         options: ["(2, 2)", "(1, 1)", "(0.25, 0.25)"],
         answerIndex: 1,
+      },
+    },
+    {
+      id: "arc-position-output",
+      title: "The arc at its peak",
+      content: {
+        type: "multiple-choice",
+        question: "What does this program print?",
+        language: "rust",
+        code: `fn main() {
+    let (s, t) = ((0.0_f32, 0.0_f32), (4.0_f32, 0.0_f32));
+    let (amplitude, u) = (2.0_f32, 0.5_f32);
+    let base = (s.0 + (t.0 - s.0) * u, s.1 + (t.1 - s.1) * u);
+    let lift = amplitude * (std::f32::consts::PI * u).sin();
+    println!("({}, {})", base.0, base.1 + lift);
+}`,
+        options: ["(2, 0)", "(4, 2)", "(2, 2)"],
+        answerIndex: 2,
       },
     },
     {
@@ -450,6 +477,9 @@ pub fn world_matrix(scale: Vec3, rotation: Quat, translation: Vec3) -> Mat4 {
     { from: "vectors-arrows-points", to: "integrate-vs-tween" },
     { from: "smoothstep-easing", to: "integrate-vs-tween" },
     { from: "integrate-vs-tween", to: "tween-position-output" },
+    { from: "integrate-vs-tween", to: "parametric-paths" },
+    { from: "trig-polar", to: "parametric-paths" },
+    { from: "parametric-paths", to: "arc-position-output" },
     { from: "write-remap", to: "write-smoothstep" },
     { from: "matrices-basis", to: "trs-order" },
     { from: "matrices-basis", to: "write-rotate-point" },
