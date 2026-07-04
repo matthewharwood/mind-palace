@@ -75,10 +75,16 @@ export const LearningPathTree = defineComponent(
 
     return (
       <div className="h-[70vh] w-full">
-        {/* key by path id: navigating between goals mounts a FRESH canvas (and
-            WebGL context). Pixi can't reliably re-init on a canvas whose prior
-            context was destroyed — reusing it freezes the renderer. */}
-        <canvas key={path.id} ref={canvasRef} className="size-full" />
+        {/* key by EVERY usePixiApp dep (path, theme, progress) so each re-init
+            gets a FRESH canvas. Pixi's destroy() loses the WebGL context, and a
+            reused canvas returns that same lost context to the next init —
+            pixi 8.18's shader probe then spins forever on it (the restore event
+            can never fire on the blocked thread), freezing the tab. */}
+        <canvas
+          key={`${path.id}|${dark ? "dark" : "light"}|${progressKey}`}
+          ref={canvasRef}
+          className="size-full"
+        />
       </div>
     );
   },
