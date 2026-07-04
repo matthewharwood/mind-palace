@@ -3,6 +3,22 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { FlashcardView } from "./index";
 
+const copyContext = {
+  goalTitle: "Graphics & Shaders",
+  goalDescription: "Learn vector motion, GPU drawing, and FF6-style visual effects.",
+  pathTitle: "FF6 VFX Path",
+  curriculumId: "c-gfx-vectors",
+  curriculumTitle: "Vector Motion",
+  curriculumSource: "github-repo: https://example.test/magic-vectors @ main",
+  lessonId: "au",
+  lessonIndex: 1,
+  lessonCount: 8,
+  prerequisites: [{ id: "grid", title: "Coordinate Grid" }],
+  previousLesson: { id: "origin", title: "Origin Point" },
+  nextLesson: { id: "velocity", title: "Velocity" },
+  canonicalPath: "/curriculum/c-gfx-vectors/node/au",
+};
+
 const readCard: Flashcard = {
   id: "au",
   title: "Gold (Au)",
@@ -38,7 +54,7 @@ const meta = {
   title: "App/FlashcardView",
   component: FlashcardView,
   parameters: { layout: "centered" },
-  args: { onRate: () => undefined, phase: "new" },
+  args: { onRate: () => undefined, phase: "new", copyContext },
 } satisfies Meta<typeof FlashcardView>;
 
 export default meta;

@@ -1,12 +1,21 @@
 import type { Flashcard } from "@mind-palace/curriculum";
 import type { CardState, Rating } from "@mind-palace/srs";
 import { createTimeline, stagger, utils } from "animejs";
-import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
+import { Check, Copy, Mic, MicOff } from "lucide-react";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import * as z from "zod";
 
 import { RatingButtons } from "~/components/rating-buttons";
 import { ReadAloudButton } from "~/components/read-aloud";
 import { defineComponent } from "~/lib/define-component";
+import { buildLessonContextMarkdown, LessonCopyContextSchema } from "~/lib/lesson-context-markdown";
 import { buildSpeechTrack } from "~/lib/speech-track";
 
 import { Body } from "./body";
@@ -30,12 +39,249 @@ export const FlashcardViewPropsSchema = z.object({
   flashcard: z.custom<Flashcard>(),
   phase: z.custom<CardState["phase"]>().optional(),
   onRate: z.custom<(rating: Rating) => void>(),
+  copyContext: LessonCopyContextSchema.optional(),
 });
 export type FlashcardViewProps = z.infer<typeof FlashcardViewPropsSchema>;
 
+const FeedbackSchema = z.enum([
+  "idle",
+  "copied",
+  "copy-failed",
+  "listening",
+  "voice-copied",
+  "voice-failed",
+  "voice-empty",
+]);
+type Feedback = z.infer<typeof FeedbackSchema>;
+
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+  readonly [index: number]: SpeechRecognitionAlternativeLike | undefined;
+}
+
+interface SpeechRecognitionResultListLike {
+  readonly [index: number]: SpeechRecognitionResultLike | undefined;
+  readonly length: number;
+}
+
+interface SpeechRecognitionEventLike extends Event {
+  results: SpeechRecognitionResultListLike;
+}
+
+interface SpeechRecognitionLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onend: (() => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onresult: ((event: Event) => void) | null;
+  abort: () => void;
+  start: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === "undefined") return null;
+  const speechWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+}
+
+function subscribeSpeechRecognitionSupport(_onStoreChange: () => void): () => void {
+  return () => undefined;
+}
+
+function getSpeechRecognitionSupportSnapshot(): boolean {
+  return getSpeechRecognitionConstructor() !== null;
+}
+
+function getSpeechRecognitionSupportServerSnapshot(): boolean {
+  return false;
+}
+
+function transcriptFromEvent(event: Event): string {
+  const resultEvent = event as SpeechRecognitionEventLike;
+  const transcripts: string[] = [];
+  for (let i = 0; i < resultEvent.results.length; i++) {
+    const result = resultEvent.results[i];
+    const text = result?.[0]?.transcript;
+    if (text) transcripts.push(text);
+  }
+  return transcripts.join(" ").trim();
+}
+
+function legacyCopy(text: string): boolean {
+  if (typeof document === "undefined") return false;
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.append(textarea);
+  textarea.select();
+  try {
+    return document.execCommand("copy");
+  } finally {
+    textarea.remove();
+  }
+}
+
+async function writeClipboardText(text: string): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  if (!legacyCopy(text)) throw new Error("Clipboard unavailable");
+}
+
+function feedbackMessage(feedback: Feedback): string | null {
+  switch (feedback) {
+    case "copied":
+      return "Copied lesson context as Markdown.";
+    case "copy-failed":
+      return "Copy failed. Clipboard access is blocked.";
+    case "listening":
+      return "Listening for your question...";
+    case "voice-copied":
+      return "Copied your spoken question with this lesson.";
+    case "voice-failed":
+      return "Voice capture failed. Try copy instead.";
+    case "voice-empty":
+      return "No speech was captured.";
+    default:
+      return null;
+  }
+}
+
+const LessonContextActionsPropsSchema = z.object({
+  flashcard: z.custom<Flashcard>(),
+  copyContext: LessonCopyContextSchema,
+});
+type LessonContextActionsProps = z.infer<typeof LessonContextActionsPropsSchema>;
+
+const LessonContextActions = defineComponent(
+  LessonContextActionsPropsSchema,
+  ({ flashcard, copyContext }: LessonContextActionsProps): ReactNode => {
+    const [feedback, setFeedback] = useState<Feedback>("idle");
+    const speechSupported = useSyncExternalStore(
+      subscribeSpeechRecognitionSupport,
+      getSpeechRecognitionSupportSnapshot,
+      getSpeechRecognitionSupportServerSnapshot,
+    );
+    const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+    const message = feedbackMessage(feedback);
+
+    useEffect(() => {
+      if (feedback === "idle" || feedback === "listening") return;
+      const timer = window.setTimeout(() => setFeedback("idle"), 3000);
+      return () => window.clearTimeout(timer);
+    }, [feedback]);
+
+    useEffect(() => {
+      return () => recognitionRef.current?.abort();
+    }, []);
+
+    async function copyLesson(question = ""): Promise<void> {
+      try {
+        await writeClipboardText(buildLessonContextMarkdown(flashcard, copyContext, question));
+        setFeedback(question.trim() ? "voice-copied" : "copied");
+      } catch {
+        setFeedback("copy-failed");
+      }
+    }
+
+    function startVoiceCapture(): void {
+      const Recognition = getSpeechRecognitionConstructor();
+      if (!Recognition) {
+        setFeedback("voice-failed");
+        return;
+      }
+      const recognition = new Recognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+      recognition.onresult = (event) => {
+        const transcript = transcriptFromEvent(event);
+        if (transcript.length === 0) {
+          setFeedback("voice-empty");
+          return;
+        }
+        void copyLesson(transcript);
+      };
+      recognition.onerror = () => {
+        setFeedback("voice-failed");
+      };
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        setFeedback((current) => (current === "listening" ? "voice-empty" : current));
+      };
+      recognitionRef.current = recognition;
+      setFeedback("listening");
+      try {
+        recognition.start();
+      } catch {
+        recognitionRef.current = null;
+        setFeedback("voice-failed");
+      }
+    }
+
+    const copied = feedback === "copied" || feedback === "voice-copied";
+    return (
+      <div className="relative flex shrink-0 flex-col items-center gap-1">
+        <button
+          type="button"
+          onClick={() => void copyLesson()}
+          aria-label="Copy lesson context as Markdown"
+          title="Copy lesson context"
+          className="grid size-9 place-items-center rounded-full text-muted-ash transition-colors hover:bg-whisper-gray hover:text-midnight-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-intelligence-blue"
+        >
+          {copied ? (
+            <Check className="size-[18px]" aria-hidden="true" />
+          ) : (
+            <Copy className="size-[18px]" aria-hidden="true" />
+          )}
+        </button>
+        <button
+          type="button"
+          disabled={!speechSupported || feedback === "listening"}
+          onClick={startVoiceCapture}
+          aria-label={
+            speechSupported
+              ? "Record a question and copy it with lesson context"
+              : "Voice question copy is not supported in this browser"
+          }
+          title={speechSupported ? "Record question and copy" : "Voice capture unavailable"}
+          className="grid size-9 place-items-center rounded-full text-muted-ash transition-colors hover:bg-whisper-gray hover:text-midnight-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-intelligence-blue disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {speechSupported ? (
+            <Mic className="size-[18px]" aria-hidden="true" />
+          ) : (
+            <MicOff className="size-[18px]" aria-hidden="true" />
+          )}
+        </button>
+        {message ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="fixed right-4 bottom-4 z-50 max-w-[min(22rem,calc(100vw-2rem))] rounded-[8px] border border-black/10 bg-midnight-ink px-4 py-3 text-canvas-white text-sm shadow-card"
+          >
+            {message}
+          </div>
+        ) : null}
+      </div>
+    );
+  },
+);
+
 export const FlashcardView = defineComponent(
   FlashcardViewPropsSchema,
-  ({ flashcard, phase = "new", onRate }: FlashcardViewProps): ReactNode => {
+  ({ flashcard, phase = "new", onRate, copyContext }: FlashcardViewProps): ReactNode => {
     const sectionRef = useRef<HTMLElement>(null);
     const headerRef = useRef<HTMLElement>(null);
     const bodyRef = useRef<HTMLDivElement>(null);
@@ -81,6 +327,9 @@ export const FlashcardView = defineComponent(
             {phase}
           </span>
           <div className="flex items-start gap-3">
+            {copyContext ? (
+              <LessonContextActions flashcard={flashcard} copyContext={copyContext} />
+            ) : null}
             <h1 className="flex-1 text-pretty text-[clamp(1.6rem,1.1rem+2vw,2.25rem)] text-midnight-ink leading-[1.12]">
               {flashcard.title}
             </h1>
