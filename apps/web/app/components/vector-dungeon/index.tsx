@@ -1,4 +1,8 @@
-import { type VectorDungeonSession, VectorDungeonSessionSchema } from "@mind-palace/schemas";
+import {
+  type VectorDungeonLogEntry,
+  type VectorDungeonSession,
+  VectorDungeonSessionSchema,
+} from "@mind-palace/schemas";
 import {
   coordinateKey,
   coordinateLabel,
@@ -26,6 +30,7 @@ const MoveInputSchema = z.object({
 type MoveInput = z.infer<typeof MoveInputSchema>;
 const HEART_KEYS = ["heart-1", "heart-2", "heart-3", "heart-4", "heart-5"] as const;
 const KNIGHT_IMAGE_URL = `${import.meta.env.BASE_URL}vector-dungeon/dean-knight.png`;
+const HEART_WORD = /\bheart\b/i;
 
 export const VectorDungeonCommandResultSchema = z.object({
   ok: z.boolean(),
@@ -191,6 +196,43 @@ function latestLog(session: VectorDungeonSession): string {
   return session.log.at(-1)?.message ?? "Dean begins at Camp Origin, the coordinate (0, 0).";
 }
 
+function latestRoomActionLog(session: VectorDungeonSession): VectorDungeonLogEntry | undefined {
+  for (let index = session.log.length - 1; index >= 0; index -= 1) {
+    const entry = session.log[index];
+    if (entry?.kind === "success" || entry?.kind === "setback") return entry;
+  }
+  return undefined;
+}
+
+function stripRoomActionPrefix(message: string, roomTitle: string): string {
+  const successPrefix = `Success: ${roomTitle}: `;
+  const setbackPrefix = `Setback: ${roomTitle}: `;
+  if (message.startsWith(successPrefix)) return message.slice(successPrefix.length);
+  if (message.startsWith(setbackPrefix)) return message.slice(setbackPrefix.length);
+  return message;
+}
+
+function roomActionReadAloud(
+  session: VectorDungeonSession,
+  currentRoom: VectorDungeonDmProps["currentRoom"],
+): string {
+  const entry = latestRoomActionLog(session);
+  if (!entry) {
+    return `The ${currentRoom.feature} grows quiet. Dean's action is resolved, and the next doorway waits.`;
+  }
+
+  const narration = stripRoomActionPrefix(entry.message, currentRoom.title);
+  if (entry.kind === "success") {
+    return `${narration} The room's magic settles with a bright chime, and Dean gets one clear moment to celebrate.`;
+  }
+
+  const setbackHasHeart = HEART_WORD.test(narration);
+  const consequence = setbackHasHeart
+    ? "Dean steadies himself, keeps the map in hand, and stays ready to move."
+    : "The room answers with a sharp little jolt. Dean loses one heart, but he stays on his feet.";
+  return `${narration} ${consequence}`;
+}
+
 export const VectorDungeonDm = defineComponent(
   VectorDungeonDmPropsSchema,
   ({
@@ -211,6 +253,7 @@ export const VectorDungeonDm = defineComponent(
       ? getActionById(currentRoom, session.pendingActionId)
       : undefined;
     const roomActionSpent = session.actedRoomId === currentRoom.id;
+    const roomActionNarration = roomActionReadAloud(session, currentRoom);
     let actionPanel: ReactNode;
 
     function submitMove(event: FormEvent<HTMLFormElement>): void {
@@ -291,9 +334,12 @@ export const VectorDungeonDm = defineComponent(
       actionPanel = (
         <div className="flex flex-col gap-3">
           <h2 className="font-semibold text-base text-midnight-ink">Move to continue</h2>
+          <div className="rounded-[8px] bg-whisper-gray p-3 text-midnight-ink text-sm leading-6">
+            {roomActionNarration}
+          </div>
           <p className="text-[15px] text-midnight-ink/80 leading-7">
-            Dean already took one room action here. Choose a movement vector and check the next
-            coordinate before taking another room action.
+            You already took one room action in this room. Choose a movement vector, map it out on
+            your sheet, tell me, and let's continue!
           </p>
         </div>
       );

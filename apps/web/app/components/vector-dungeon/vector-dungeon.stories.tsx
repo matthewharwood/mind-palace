@@ -59,6 +59,7 @@ export const LowHp: Story = {
     session: VectorDungeonSessionSchema.parse({
       ...VECTOR_DUNGEON_SESSION_DEFAULT,
       hp: 1,
+      actedRoomId: startRoom.id,
       discoveredRewards: ["camp ember", "bridge token", "spark badge"],
       log: [
         {
