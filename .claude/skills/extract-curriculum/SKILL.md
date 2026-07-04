@@ -33,7 +33,15 @@ Do **not** emit scheduling state. Spaced-repetition `CardState` is runtime progr
 - Curricula render through the existing routes (`goal.$goalId` → `curriculum.$curriculumId` → `…/node/$nodeId`) and the PixiJS `LearningPathTree` / `CurriculumGraph` — no UI work needed; new data flows straight in.
 - Reuse `@mind-palace/curriculum` helpers (`buildCurriculumGraph`, `rootIds`, `prerequisites`, `dueFlashcardIds`) rather than re-deriving graph logic.
 
+## Speech contract (read-aloud)
+
+Every card is also SPOKEN via `app/lib/speech-track.ts` (browsers don't parse SSML — the structured markdown is the speech markup): `##` headings pace the delivery, `==highlights==` become spoken emphasis, list items and sentences become individual utterances, fenced code is skipped aloud, inline `code` is verbalized. Two authoring duties follow:
+
+1. Author read bodies with real structure (headings, lists, highlights) — a wall of prose reads AND sounds worse.
+2. **New jargon a TTS voice would mangle (initialisms, crate names, coined terms) gets an entry in `app/lib/speech-lexicon.ts`** — case-sensitive, word-boundary matched, plurals separate. Never embed SSML or pronunciation hacks in card text; display text stays clean.
+
 ## Pitfalls
 - One source per curriculum — keep them coherent and small; compose breadth via multiple curricula in a `LearningPath`.
 - No new runtime dependencies (CLAUDE.md) — this pipeline needs none.
 - Don't hand-roll drag-and-drop for `card-mini-game`; compose `@mind-palace/cards`.
+- Don't put SSML/speech markup in content — see the speech contract above.

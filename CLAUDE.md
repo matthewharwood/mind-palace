@@ -159,6 +159,16 @@ PixiJS is a **side channel** the same way anime.js is. The Pixi scene graph muta
 - Use the **single `pixi.js` package** (v8) — never the deprecated `@pixi/*` sub-packages. Import names: `Application`, `Container`, `Sprite`, `Graphics`, `Text`, `Ticker`, `Assets`, etc. The 24 `pixijs-*` skills under `.claude/skills/` cover every surface area (scene graph, application options, assets, events, color, math, ticker, accessibility, performance, environments, filters, blend modes, custom rendering, migration from v7).
 - Headless test reliability: `preference: "webgl"` is the default in `usePixiApp` because Playwright's headless Chromium runs WebGL via SwiftShader more reliably than WebGPU. Pixi falls back to canvas if WebGL is unavailable.
 
+### Read-aloud / speech contract — exact rules
+
+Lesson content is spoken by the browser's Web Speech API, and **browsers do not parse SSML** — every major engine reads SSML tags aloud as literal text (open bugs since 2013; the spec's mandated tag-stripping was never implemented), and screen readers consume the DOM, not utterances. So:
+
+- **Never put SSML (or any speech markup) in curriculum content or the DOM.** The structured card markdown IS the speech markup: `##` headings → slower rate + pause, `==highlight==` → a comma-isolated spoken beat (the `<emphasis>` stand-in), list items and sentences → one utterance each with `<break>`-style gaps, fenced code → skipped with a spoken notice, inline `code` → verbalized (`::`/`_` become spaces).
+- **`app/lib/speech-track.ts` owns the compilation** (flashcard → `SpeechSegment[]` with per-segment rate/pitch/pause — the only prosody knobs browsers expose). It is pure and unit-tested; content authors never touch playback.
+- **`app/lib/speech-lexicon.ts` owns pronunciation** (SSML `<sub>`/`<say-as>` stand-in): written form → spoken form ("WGSL" → "W G S L", "Bevy" → "BEV ee"). **When a curriculum introduces jargon a TTS voice would mangle, add a lexicon entry** — case-sensitive, word-boundary matched, plurals need their own entry.
+- **`ReadAloudButton` owns playback**: one utterance per segment, self-chained with timed gaps (sentence-sized utterances also avoid Chrome's long-utterance cutoff), utterance refs held until `end` (GC kills events otherwise), speech starts only from a user gesture, never auto-plays.
+- Speech is compiled from card **data**, not scraped from the DOM.
+
 ### Linting split
 
 - **Biome** owns `.ts` / `.tsx` / `.js` / `.json` — format and lint.
