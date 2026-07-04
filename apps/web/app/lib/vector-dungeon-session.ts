@@ -7,6 +7,7 @@ import {
 import {
   coordinateLabel,
   coordinateToRoomId,
+  getActionById,
   MAX_HP,
   START_COORDINATE,
   type VectorDungeonActionResolution,
@@ -38,12 +39,18 @@ function withoutPendingAction(session: VectorDungeonSession): VectorDungeonSessi
   return VectorDungeonSessionSchema.parse(next);
 }
 
+function withoutRoomActionLock(session: VectorDungeonSession): VectorDungeonSession {
+  const next = { ...session };
+  delete next.actedRoomId;
+  return VectorDungeonSessionSchema.parse(next);
+}
+
 export function moveVectorDungeonSession(
   session: VectorDungeonSession,
   validation: Extract<VectorDungeonMoveValidation, { valid: true }>,
 ): VectorDungeonSession {
   const parsed = VectorDungeonSessionSchema.parse(session);
-  const base = withoutPendingAction(parsed);
+  const base = withoutRoomActionLock(withoutPendingAction(parsed));
   return appendLog(
     VectorDungeonSessionSchema.parse({
       ...base,
@@ -57,9 +64,13 @@ export function moveVectorDungeonSession(
 
 export function selectVectorDungeonAction(
   session: VectorDungeonSession,
+  room: VectorDungeonRoom,
   actionId: string,
 ): VectorDungeonSession {
-  return VectorDungeonSessionSchema.parse({ ...session, pendingActionId: actionId });
+  const parsed = VectorDungeonSessionSchema.parse(session);
+  if (parsed.actedRoomId === room.id) return parsed;
+  if (!getActionById(room, actionId)) return parsed;
+  return VectorDungeonSessionSchema.parse({ ...parsed, pendingActionId: actionId });
 }
 
 export function resolveVectorDungeonAction(
@@ -76,6 +87,7 @@ export function resolveVectorDungeonAction(
     VectorDungeonSessionSchema.parse({
       ...base,
       hp,
+      actedRoomId: room.id,
       discoveredRewards: appendUnique(parsed.discoveredRewards, resolution.reward),
     }),
     resolution.outcome,
@@ -85,7 +97,7 @@ export function resolveVectorDungeonAction(
 
 export function recoverVectorDungeonAtCamp(session: VectorDungeonSession): VectorDungeonSession {
   const parsed = VectorDungeonSessionSchema.parse(session);
-  const base = withoutPendingAction(parsed);
+  const base = withoutRoomActionLock(withoutPendingAction(parsed));
   return appendLog(
     VectorDungeonSessionSchema.parse({
       ...base,

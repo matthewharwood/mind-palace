@@ -67,6 +67,7 @@ export const VectorDungeonSessionSchema = z.object({
   visitedRoomIds: z.array(z.string().min(1)).default([coordinateToRoomId(START_COORDINATE)]),
   discoveredRewards: z.array(z.string().min(1)).default([]),
   pendingActionId: z.string().min(1).optional(),
+  actedRoomId: z.string().min(1).optional(),
   turn: z.int().min(0).default(0),
   log: z.array(VectorDungeonLogEntrySchema).default([]),
 });

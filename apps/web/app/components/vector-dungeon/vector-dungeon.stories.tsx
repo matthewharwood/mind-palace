@@ -24,7 +24,7 @@ const baseArgs = {
   session: VECTOR_DUNGEON_SESSION_DEFAULT,
   currentRoom: startRoom,
   pdfUrl,
-  onMoveTarget: () => ({ ok: true, message: "Correct. Dean moves one square." }),
+  onMove: () => ({ ok: true, message: "Correct. Dean moves one square." }),
   onSelectAction: () => undefined,
   onResolveRoll: () => ({ ok: true, message: "Success." }),
   onRecover: () => undefined,

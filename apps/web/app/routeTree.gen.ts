@@ -20,7 +20,7 @@ import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
-import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon.print'
+import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon_.print'
 import { Route as CurriculumCurriculumIdNodeNodeIdRouteImport } from './routes/curriculum.$curriculumId.node.$nodeId'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -81,9 +81,9 @@ const CurriculumCurriculumIdStudyRoute =
     getParentRoute: () => CurriculumCurriculumIdRoute,
   } as any)
 const AppsVectorDungeonPrintRoute = AppsVectorDungeonPrintRouteImport.update({
-  id: '/print',
-  path: '/print',
-  getParentRoute: () => AppsVectorDungeonRoute,
+  id: '/vector-dungeon_/print',
+  path: '/vector-dungeon/print',
+  getParentRoute: () => AppsRoute,
 } as any)
 const CurriculumCurriculumIdNodeNodeIdRoute =
   CurriculumCurriculumIdNodeNodeIdRouteImport.update({
@@ -98,7 +98,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
-  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps/': typeof AppsIndexRoute
@@ -112,7 +112,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
-  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps': typeof AppsIndexRoute
   '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
@@ -127,11 +127,11 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
-  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps/': typeof AppsIndexRoute
-  '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
+  '/apps/vector-dungeon_/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
@@ -176,7 +176,7 @@ export interface FileRouteTypes {
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
     | '/apps/'
-    | '/apps/vector-dungeon/print'
+    | '/apps/vector-dungeon_/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId/'
     | '/curriculum/$curriculumId/node/$nodeId'
@@ -271,12 +271,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CurriculumCurriculumIdStudyRouteImport
       parentRoute: typeof CurriculumCurriculumIdRoute
     }
-    '/apps/vector-dungeon/print': {
-      id: '/apps/vector-dungeon/print'
-      path: '/print'
+    '/apps/vector-dungeon_/print': {
+      id: '/apps/vector-dungeon_/print'
+      path: '/vector-dungeon/print'
       fullPath: '/apps/vector-dungeon/print'
       preLoaderRoute: typeof AppsVectorDungeonPrintRouteImport
-      parentRoute: typeof AppsVectorDungeonRoute
+      parentRoute: typeof AppsRoute
     }
     '/curriculum/$curriculumId/node/$nodeId': {
       id: '/curriculum/$curriculumId/node/$nodeId'
@@ -288,25 +288,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppsVectorDungeonRouteChildren {
+interface AppsRouteChildren {
+  AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
+  AppsIndexRoute: typeof AppsIndexRoute
   AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
 }
 
-const AppsVectorDungeonRouteChildren: AppsVectorDungeonRouteChildren = {
-  AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,
-}
-
-const AppsVectorDungeonRouteWithChildren =
-  AppsVectorDungeonRoute._addFileChildren(AppsVectorDungeonRouteChildren)
-
-interface AppsRouteChildren {
-  AppsVectorDungeonRoute: typeof AppsVectorDungeonRouteWithChildren
-  AppsIndexRoute: typeof AppsIndexRoute
-}
-
 const AppsRouteChildren: AppsRouteChildren = {
-  AppsVectorDungeonRoute: AppsVectorDungeonRouteWithChildren,
+  AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,
+  AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,
 }
 
 const AppsRouteWithChildren = AppsRoute._addFileChildren(AppsRouteChildren)

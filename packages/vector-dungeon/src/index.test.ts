@@ -49,18 +49,28 @@ describe("movement", () => {
     expect(applyMove({ x: 2, y: 2 }, { dx: 1, dy: 0 })).toBeNull();
   });
 
-  test("validates target-coordinate answers", () => {
-    expect(validateMove({ x: 0, y: 0 }, { x: -1, y: 0 })).toMatchObject({
+  test("validates relative movement vectors", () => {
+    expect(validateMove({ x: 0, y: 0 }, { dx: -1, dy: 0 })).toMatchObject({
       valid: true,
+      target: { x: -1, y: 0 },
       move: { dx: -1, dy: 0 },
     });
-    expect(validateMove({ x: 0, y: 0 }, { x: 1, y: 1 })).toEqual({
+    expect(validateMove({ x: -1, y: 0 }, { dx: -1, dy: 0 })).toMatchObject({
+      valid: true,
+      target: { x: -2, y: 0 },
+      move: { dx: -1, dy: 0 },
+    });
+    expect(validateMove({ x: 0, y: 0 }, { dx: 1, dy: 1 })).toEqual({
       valid: false,
       reason: "diagonal",
     });
-    expect(validateMove({ x: 0, y: 0 }, { x: 2, y: 0 })).toEqual({
+    expect(validateMove({ x: 0, y: 0 }, { dx: 2, dy: 0 })).toEqual({
       valid: false,
       reason: "too-far",
+    });
+    expect(validateMove({ x: -2, y: 0 }, { dx: -1, dy: 0 })).toEqual({
+      valid: false,
+      reason: "out-of-bounds",
     });
   });
 });
