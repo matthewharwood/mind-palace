@@ -40,9 +40,29 @@ type Job = {
 const BEHAVIORAL = /\b(print|prints|printed|output|outputs|display|displays)\b/i;
 const HAS_MAIN = /fn\s+main\s*\(/;
 const TEST_ATTR = /#\[\s*(test\b|cfg\(test\))/;
-// Rust snippets that use an external graphics crate can't compile under bare
-// rustc — they go through the cargo sandbox instead.
-const EXTERNAL_CRATE = /\b(?:use\s+(?:bevy|wgpu|glam)\b|(?:bevy|wgpu|glam)::)/;
+// Rust snippets that use an external crate can't compile under bare rustc —
+// they go through the cargo sandbox instead. Keep this list in sync with the
+// SANDBOX_MANIFEST dependencies below.
+const SANDBOX_CRATES = [
+  "bevy",
+  "wgpu",
+  "glam",
+  "tokio",
+  "tower",
+  "axum",
+  "serde",
+  "serde_json",
+  "syn",
+  "quote",
+  "proc_macro2",
+  "futures",
+  "thiserror",
+  "anyhow",
+  "bytes",
+];
+const SANDBOX_CRATE_PATTERNS = SANDBOX_CRATES.map(
+  (crate) => new RegExp(`\\b(?:use\\s+${crate}\\b|${crate}::)`),
+);
 
 // The sandbox crate: created on demand, deps pinned here so snippet checks are
 // reproducible. Delete the directories to force a fresh build. CARD_SANDBOX_DIR
@@ -63,11 +83,24 @@ publish = false
 bevy = "0.19"
 glam = "0.33"
 wgpu = "29"
+tokio = { version = "1", features = ["full"] }
+tower = { version = "0.5", features = ["full"] }
+axum = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+syn = { version = "2", features = ["full", "extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
+futures = "0.3"
+thiserror = "2"
+anyhow = "1"
+bytes = "1"
 `;
 
 function resolveLang(language: unknown, code: string): Lang {
   const lang = typeof language === "string" ? language : "rust";
-  if (lang === "rust") return EXTERNAL_CRATE.test(code) ? "rust-sandbox" : "rust";
+  if (lang === "rust")
+    return SANDBOX_CRATE_PATTERNS.some((re) => re.test(code)) ? "rust-sandbox" : "rust";
   if (lang === "wgsl") return "wgsl";
   return "skip";
 }

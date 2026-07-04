@@ -1,5 +1,6 @@
 import type { Curriculum, Goal, LearningPath } from "@mind-palace/curriculum";
 
+import { exprCurricula, exprPath } from "./curricula/expr";
 import { gfxCurricula, gfxPath } from "./curricula/gfx";
 import { rustCurricula, rustPath } from "./curricula/rust-book";
 import { stdCurricula, stdPath } from "./curricula/std-lib";
@@ -8,9 +9,14 @@ import { stdCurricula, stdPath } from "./curricula/std-lib";
 // Pillar-2 guarantee; authored data needs no runtime parse). The extraction
 // tooling emits this exact shape — see the extract-curriculum skill.
 
-const CURRICULA: Curriculum[] = [...rustCurricula, ...stdCurricula, ...gfxCurricula];
+const CURRICULA: Curriculum[] = [
+  ...rustCurricula,
+  ...stdCurricula,
+  ...gfxCurricula,
+  ...exprCurricula,
+];
 
-const PATHS: LearningPath[] = [rustPath, stdPath, gfxPath];
+const PATHS: LearningPath[] = [rustPath, stdPath, gfxPath, exprPath];
 
 const GOALS: Goal[] = [
   {
@@ -33,6 +39,13 @@ const GOALS: Goal[] = [
     description:
       "From zero math to designing your own Final Fantasy-style attack effects: vectors and easing, how the GPU draws, WGSL shaders, Bevy 0.19, and shipping to the browser as WASM — capped by the Effect Forge, where you rebuild FF6's spells, Blitzes, and esper summons one by one.",
     pathId: "p-gfx",
+  } satisfies Goal,
+  {
+    id: "g-expr",
+    title: "Expressive Rust — Write It the Way You See It",
+    description:
+      "Mastery of Rust's expressiveness, mined from tokio, io-uring, tower, axum, leptos, bevy_ecs, iggy, serde, and syn: for every call-site shape you can visualize — chainable, declarative, typestate-locked, macro-grown — the machinery that produces it and the trade-off it costs. Ends at the Registers capstone: one feature, four registers, and a DSL of your own.",
+    pathId: "p-expr",
   } satisfies Goal,
 ];
 
