@@ -2,6 +2,7 @@ import { CardStateSchema } from "@mind-palace/srs";
 import {
   coordinateToRoomId,
   MAX_HP,
+  MAX_MAGIC,
   START_COORDINATE,
   VectorDungeonCoordinateSchema,
 } from "@mind-palace/vector-dungeon";
@@ -64,9 +65,15 @@ export const VectorDungeonSessionSchema = z.object({
   id: z.literal("vector-dungeon").default("vector-dungeon"),
   position: VectorDungeonCoordinateSchema.default(START_COORDINATE),
   hp: z.int().min(0).max(MAX_HP).default(MAX_HP),
+  // Magic re-roll tokens; default via schema so stored sessions from before this
+  // field hydrate with a full pouch (no IDB migration needed).
+  magicRemaining: z.int().min(0).max(MAX_MAGIC).default(MAX_MAGIC),
   visitedRoomIds: z.array(z.string().min(1)).default([coordinateToRoomId(START_COORDINATE)]),
   discoveredRewards: z.array(z.string().min(1)).default([]),
   pendingActionId: z.string().min(1).optional(),
+  // A missed roll awaiting the player's choice: spend magic to re-roll, or take
+  // the setback. Holds the roll + target so the UI can explain the miss.
+  pendingMiss: z.object({ roll: z.int().min(1).max(20), dc: z.int().min(2).max(20) }).optional(),
   actedRoomId: z.string().min(1).optional(),
   turn: z.int().min(0).default(0),
   log: z.array(VectorDungeonLogEntrySchema).default([]),

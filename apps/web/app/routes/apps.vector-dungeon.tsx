@@ -11,11 +11,13 @@ import { useAtom } from "jotai";
 import { roomForSession, VectorDungeonDm } from "~/components/vector-dungeon";
 import { buildSeoLinks, buildSeoMeta } from "~/lib/seo";
 import {
+  acceptVectorDungeonSetback,
   moveVectorDungeonSession,
   recoverVectorDungeonAtCamp,
   resetVectorDungeonSession,
   resolveVectorDungeonAction,
   selectVectorDungeonAction,
+  spendVectorDungeonMagic,
 } from "~/lib/vector-dungeon-session";
 import { vectorDungeonSessionAtom } from "~/state/atoms";
 
@@ -75,9 +77,11 @@ function VectorDungeonRoute() {
           message:
             resolution.outcome === "success"
               ? `Success. ${resolution.narration}`
-              : `Setback. ${resolution.narration}`,
+              : `Miss — you rolled ${roll}, needed ${resolution.dc}. Use a magic re-roll or take the setback.`,
         };
       }}
+      onUseMagic={() => setSession((prev) => spendVectorDungeonMagic(prev))}
+      onAcceptSetback={() => setSession((prev) => acceptVectorDungeonSetback(prev, currentRoom))}
       onRecover={() => setSession((prev) => recoverVectorDungeonAtCamp(prev))}
       onReset={() => setSession(resetVectorDungeonSession())}
     />

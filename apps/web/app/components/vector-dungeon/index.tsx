@@ -9,13 +9,23 @@ import {
   coordinateToRoomId,
   getActionById,
   getRoomAt,
+  isRoomRewardClaimed,
   MAX_HP,
+  MAX_MAGIC,
   START_COORDINATE,
   VECTOR_DUNGEON_ROOMS,
   VectorDungeonRoomSchema,
   validMovesFrom,
 } from "@mind-palace/vector-dungeon";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Download, RotateCcw } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Download,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { type FormEvent, type ReactNode, useState } from "react";
 import * as z from "zod";
 
@@ -29,6 +39,7 @@ const MoveInputSchema = z.object({
 });
 type MoveInput = z.infer<typeof MoveInputSchema>;
 const HEART_KEYS = ["heart-1", "heart-2", "heart-3", "heart-4", "heart-5"] as const;
+const MAGIC_KEYS = ["magic-1", "magic-2", "magic-3", "magic-4", "magic-5"] as const;
 const KNIGHT_IMAGE_URL = `${import.meta.env.BASE_URL}vector-dungeon/dean-knight.png`;
 const HEART_WORD = /\bheart\b/i;
 
@@ -45,6 +56,8 @@ export const VectorDungeonDmPropsSchema = z.object({
   onMove: z.custom<(move: MoveInput) => VectorDungeonCommandResult>(),
   onSelectAction: z.custom<(actionId: string) => void>(),
   onResolveRoll: z.custom<(roll: number) => VectorDungeonCommandResult>(),
+  onUseMagic: z.custom<() => void>(),
+  onAcceptSetback: z.custom<() => void>(),
   onRecover: z.custom<() => void>(),
   onReset: z.custom<() => void>(),
 });
@@ -57,8 +70,18 @@ function movementIcon(dx: number, dy: number): ReactNode {
   return <ArrowDown className="size-3.5" aria-hidden="true" />;
 }
 
-function roomCellClass(current: boolean, visited: boolean): string {
+// data-claimed marker: absent for unvisited cells, "yes"/"no" once visited.
+function claimedMarker(visited: boolean, claimed: boolean): "yes" | "no" | undefined {
+  if (!visited) return undefined;
+  return claimed ? "yes" : "no";
+}
+
+function roomCellClass(current: boolean, visited: boolean, claimed: boolean): string {
   if (current) return "border-intelligence-blue bg-intelligence-blue text-white";
+  // Visited but reward not yet claimed: green fill, RED border — the space is
+  // covered, but the treasure is still owed.
+  if (visited && !claimed) return "border-rose-500 bg-emerald-50 text-emerald-900";
+  // Totally green: visited AND claimed.
   if (visited) return "border-emerald-400 bg-emerald-50 text-emerald-900";
   return "border-black/10 bg-canvas-white text-muted-ash dark:border-white/10";
 }
@@ -90,14 +113,17 @@ const DungeonGrid = defineComponent(
                 const roomId = coordinateToRoomId(coordinate);
                 const current = key === coordinateKey(session.position);
                 const visited = session.visitedRoomIds.includes(roomId);
+                const room = getRoomAt(coordinate);
+                const claimed = room ? isRoomRewardClaimed(room, session.discoveredRewards) : false;
                 return (
                   <td
                     key={key}
-                    aria-label={`${coordinateLabel(coordinate)}${current ? ", current position" : ""}`}
+                    aria-label={`${coordinateLabel(coordinate)}${current ? ", current position" : ""}${visited && !claimed ? ", reward not claimed" : ""}`}
                     data-test={`vector-cell-${x}-${y}`}
+                    data-claimed={claimedMarker(visited, claimed)}
                     className={[
                       "rounded-[6px] border p-0 text-center align-middle font-mono text-[11px] tabular-nums transition-colors sm:text-xs",
-                      roomCellClass(current, visited),
+                      roomCellClass(current, visited, claimed),
                     ].join(" ")}
                   >
                     <span className="grid aspect-square place-items-center gap-0.5 overflow-hidden p-0.5">
@@ -161,6 +187,46 @@ const HpMeter = defineComponent(HpMeterPropsSchema, ({ hp }: HpMeterProps): Reac
     </div>
   );
 });
+
+const MagicMeterPropsSchema = z.object({
+  magic: z.number().int().min(0).max(MAX_MAGIC),
+});
+type MagicMeterProps = z.infer<typeof MagicMeterPropsSchema>;
+
+const MagicMeter = defineComponent(
+  MagicMeterPropsSchema,
+  ({ magic }: MagicMeterProps): ReactNode => {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-midnight-ink text-sm">Magic</span>
+        <meter
+          className="sr-only"
+          aria-label={`Magic ${magic} of ${MAX_MAGIC}`}
+          min={0}
+          max={MAX_MAGIC}
+          value={magic}
+        >
+          {magic}/{MAX_MAGIC}
+        </meter>
+        <span className="flex gap-1">
+          {MAGIC_KEYS.map((key, index) => (
+            <Sparkles
+              key={key}
+              aria-hidden="true"
+              className={[
+                "size-4",
+                index < magic ? "text-intelligence-blue" : "text-black/15 dark:text-white/15",
+              ].join(" ")}
+            />
+          ))}
+        </span>
+        <span className="font-mono text-muted-ash text-xs tabular-nums">
+          {magic}/{MAX_MAGIC}
+        </span>
+      </div>
+    );
+  },
+);
 
 const ValidMoveListPropsSchema = z.object({
   session: VectorDungeonSessionSchema,
@@ -245,6 +311,8 @@ export const VectorDungeonDm = defineComponent(
     onMove,
     onSelectAction,
     onResolveRoll,
+    onUseMagic,
+    onAcceptSetback,
     onRecover,
     onReset,
   }: VectorDungeonDmProps): ReactNode => {
@@ -255,7 +323,9 @@ export const VectorDungeonDm = defineComponent(
     const pendingAction = session.pendingActionId
       ? getActionById(currentRoom, session.pendingActionId)
       : undefined;
+    const pendingMiss = session.pendingMiss;
     const roomActionSpent = session.actedRoomId === currentRoom.id;
+    const roomClaimed = isRoomRewardClaimed(currentRoom, session.discoveredRewards);
     const roomActionNarration = roomActionReadAloud(session, currentRoom);
     let actionPanel: ReactNode;
 
@@ -303,6 +373,41 @@ export const VectorDungeonDm = defineComponent(
           </button>
         </div>
       );
+    } else if (pendingMiss) {
+      actionPanel = (
+        <div className="flex flex-col gap-3">
+          <h2 className="font-semibold text-base text-midnight-ink">Missed the roll</h2>
+          <div className="rounded-[8px] bg-rose-50 p-3 text-rose-950 text-sm leading-6">
+            Dean rolled <span className="font-mono">{pendingMiss.roll}</span> but needed{" "}
+            <span className="font-mono">{pendingMiss.dc}</span> or higher. Spend a magic re-roll, or
+            take the setback.
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {session.magicRemaining > 0 ? (
+              <button
+                type="button"
+                onClick={onUseMagic}
+                className="inline-flex items-center gap-2 rounded-[8px] bg-intelligence-blue px-4 py-2.5 font-medium text-sm text-white"
+              >
+                <Sparkles className="size-4" aria-hidden="true" />
+                Use magic re-roll ({session.magicRemaining} left)
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onAcceptSetback}
+              className="inline-flex items-center gap-2 rounded-[8px] border border-black/10 px-4 py-2.5 font-medium text-midnight-ink text-sm dark:border-white/10"
+            >
+              Take the setback (−1 heart)
+            </button>
+          </div>
+          {session.magicRemaining === 0 ? (
+            <p className="text-muted-ash text-sm">
+              No magic left — take the setback and keep adventuring.
+            </p>
+          ) : null}
+        </div>
+      );
     } else if (pendingAction) {
       actionPanel = (
         <form onSubmit={submitRoll} className="flex flex-col gap-3">
@@ -332,6 +437,16 @@ export const VectorDungeonDm = defineComponent(
             Resolve roll
           </button>
         </form>
+      );
+    } else if (roomClaimed) {
+      actionPanel = (
+        <div className="flex flex-col gap-3">
+          <h2 className="font-semibold text-base text-midnight-ink">Room cleared</h2>
+          <p className="text-[15px] text-midnight-ink/80 leading-7">
+            Dean already claimed this reward — the space is all green. Choose a movement vector to a
+            new space and keep exploring.
+          </p>
+        </div>
       );
     } else if (roomActionSpent) {
       actionPanel = (
@@ -408,8 +523,9 @@ export const VectorDungeonDm = defineComponent(
             <div className="mt-4">
               <DungeonGrid session={session} />
             </div>
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col gap-2">
               <HpMeter hp={session.hp} />
+              <MagicMeter magic={session.magicRemaining} />
             </div>
           </div>
 
