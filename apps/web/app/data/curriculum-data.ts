@@ -1,5 +1,6 @@
 import type { Curriculum, Goal, LearningPath } from "@mind-palace/curriculum";
 
+import { gfxCurricula, gfxPath } from "./curricula/gfx";
 import { rustCurricula, rustPath } from "./curricula/rust-book";
 import { stdCurricula, stdPath } from "./curricula/std-lib";
 
@@ -7,9 +8,9 @@ import { stdCurricula, stdPath } from "./curricula/std-lib";
 // Pillar-2 guarantee; authored data needs no runtime parse). The extraction
 // tooling emits this exact shape — see the extract-curriculum skill.
 
-const CURRICULA: Curriculum[] = [...rustCurricula, ...stdCurricula];
+const CURRICULA: Curriculum[] = [...rustCurricula, ...stdCurricula, ...gfxCurricula];
 
-const PATHS: LearningPath[] = [rustPath, stdPath];
+const PATHS: LearningPath[] = [rustPath, stdPath, gfxPath];
 
 const GOALS: Goal[] = [
   {
@@ -25,6 +26,13 @@ const GOALS: Goal[] = [
     description:
       "The batteries-included toolkit you reach for daily: Option/Result, collections, iterators, the common std traits (From, Display, Iterator…), smart pointers, and concurrency. Come here after Learn Rust to get fluent with what ships in std.",
     pathId: "p-std",
+  } satisfies Goal,
+  {
+    id: "g-gfx",
+    title: "Graphics & Shaders — FF6 VFX in Bevy",
+    description:
+      "From zero math to designing your own Final Fantasy-style attack effects: vectors and easing, how the GPU draws, WGSL shaders, Bevy 0.19, and shipping to the browser as WASM — capped by the Effect Forge, where you rebuild FF6's spells, Blitzes, and esper summons one by one.",
+    pathId: "p-gfx",
   } satisfies Goal,
 ];
 
