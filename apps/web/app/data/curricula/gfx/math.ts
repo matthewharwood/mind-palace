@@ -76,6 +76,15 @@ export const gfxMath: Curriculum = {
       },
     },
     {
+      id: "integrate-vs-tween",
+      title: "Two Ways to Move: Integrate vs Tween",
+      content: {
+        type: "read",
+        markdown:
+          "There are exactly two mental models for making something move, and every animation system you will ever meet is one of them.\n\n## Model 1: Integrate — you control velocity\n`position += velocity * dt` — the particle line. You decide the *velocity*, and position simply **emerges** from accumulating it frame by frame. Physics-flavored and open-ended: perfect for sparks, debris, and anything that flies free with no promised destination.\n\n## Model 2: Tween — you control the destination\n`position = start + (end - start) * easing(elapsed / duration)` — the animation line. Three moves, always the same:\n\n- `elapsed += dt` — real time accumulates\n- `progress = elapsed / duration` — time normalized into the ==0–1 habitat==\n- `easing(progress)` — the curve reshapes the ride, then a plain lerp places the point\n\nYou decide *where it ends and what curve it rides*; arrival on time is **guaranteed by construction**.\n\n## The punchline: velocity becomes a side effect\nTween a point from `(0, 0)` to `(4, 4)` over 4 seconds with ease-in `progress * progress`, then watch the per-second movement: it covers `0.25` units in the first second, then `0.75`, then `1.25`, then `1.75`. Nobody set a velocity anywhere — ==the easing curve IS the velocity profile==. Linear easing is constant velocity, ease-in is accelerating, ease-out is braking.\n\n## Choosing between them\n- **Tween** when the END is the promise: UI motion, spell wind-ups, a projectile that must arrive on the beat\n- **Integrate** when the JOURNEY is the point: particles, drifting smoke, knockback — anything steered per-frame by forces or homing\n\nBig effects mix both: the fireball *tweens* to its target on a curve while its trailing embers *integrate* outward.",
+      },
+    },
+    {
       id: "matrices-basis",
       title: "Matrices: Where Basis Lands",
       content: {
@@ -197,6 +206,26 @@ fn main() {
           "It cuts instantly from 0 to 1 with no in-between",
         ],
         answerIndex: 0,
+      },
+    },
+    {
+      id: "tween-position-output",
+      title: "Where is the tween at t = 2?",
+      content: {
+        type: "multiple-choice",
+        question: "What does this program print?",
+        language: "rust",
+        code: `fn main() {
+    let (start, end) = ((0.0_f32, 0.0_f32), (4.0_f32, 4.0_f32));
+    let (elapsed, duration) = (2.0_f32, 4.0_f32);
+    let progress = elapsed / duration;
+    let eased = progress * progress;
+    let x = start.0 + (end.0 - start.0) * eased;
+    let y = start.1 + (end.1 - start.1) * eased;
+    println!("({x}, {y})");
+}`,
+        options: ["(2, 2)", "(1, 1)", "(0.25, 0.25)"],
+        answerIndex: 1,
       },
     },
     {
@@ -418,6 +447,9 @@ pub fn world_matrix(scale: Vec3, rotation: Quat, translation: Vec3) -> Mat4 {
     { from: "write-lerp", to: "write-remap" },
     { from: "smoothstep-easing", to: "smoothstep-edges" },
     { from: "smoothstep-easing", to: "write-smoothstep" },
+    { from: "vectors-arrows-points", to: "integrate-vs-tween" },
+    { from: "smoothstep-easing", to: "integrate-vs-tween" },
+    { from: "integrate-vs-tween", to: "tween-position-output" },
     { from: "write-remap", to: "write-smoothstep" },
     { from: "matrices-basis", to: "trs-order" },
     { from: "matrices-basis", to: "write-rotate-point" },
