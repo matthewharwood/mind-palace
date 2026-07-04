@@ -34,27 +34,33 @@ const VECTOR_TRAIL_KEYS = [
   "trail-8",
 ] as const;
 
-function renderMiniGrid(): ReactNode {
-  const rows = [2, 1, 0, -1, -2];
-  const columns = [-2, -1, 0, 1, 2];
-  return (
-    <div className="grid aspect-square w-full grid-cols-5 gap-[3px]">
-      {rows.flatMap((y) =>
-        columns.map((x) => (
-          <div
-            key={`${x},${y}`}
-            className={[
-              "grid place-items-center border border-midnight-ink/30 font-mono text-[8px]",
-              x === 0 && y === 0 ? "bg-intelligence-blue text-white" : "bg-white",
-            ].join(" ")}
-          >
-            {x},{y}
-          </div>
-        )),
-      )}
-    </div>
-  );
-}
+const MiniCoordinateGridPropsSchema = z.object({});
+type MiniCoordinateGridProps = z.infer<typeof MiniCoordinateGridPropsSchema>;
+
+const MiniCoordinateGrid = defineComponent(
+  MiniCoordinateGridPropsSchema,
+  (_props: MiniCoordinateGridProps): ReactNode => {
+    const rows = [2, 1, 0, -1, -2];
+    const columns = [-2, -1, 0, 1, 2];
+    return (
+      <div className="grid aspect-square w-full grid-cols-5 gap-[3px]">
+        {rows.flatMap((y) =>
+          columns.map((x) => (
+            <div
+              key={`${x},${y}`}
+              className={[
+                "grid place-items-center border border-midnight-ink/30 font-mono text-[8px]",
+                x === 0 && y === 0 ? "bg-intelligence-blue text-white" : "bg-white",
+              ].join(" ")}
+            >
+              {x},{y}
+            </div>
+          )),
+        )}
+      </div>
+    );
+  },
+);
 
 export const VectorDungeonGuide = defineComponent(
   VectorDungeonGuidePropsSchema,
@@ -77,7 +83,7 @@ export const VectorDungeonGuide = defineComponent(
                 to the starting position, and write the target room.
               </p>
             </div>
-            {renderMiniGrid()}
+            <MiniCoordinateGrid />
           </header>
 
           <section className="grid gap-3 sm:grid-cols-2">

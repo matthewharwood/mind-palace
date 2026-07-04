@@ -54,45 +54,58 @@ function roomCellClass(current: boolean, visited: boolean): string {
   return "border-black/10 bg-canvas-white text-muted-ash dark:border-white/10";
 }
 
-function renderGrid(session: VectorDungeonSession): ReactNode {
-  const rows = [2, 1, 0, -1, -2];
-  const columns = [-2, -1, 0, 1, 2];
-  return (
-    <table
-      aria-label="Vector dungeon coordinate grid"
-      className="aspect-square w-full table-fixed border-separate border-spacing-1"
-    >
-      <tbody>
-        {rows.map((y) => (
-          <tr key={`row-${y}`}>
-            {columns.map((x) => {
-              const coordinate = { x, y };
-              const key = coordinateKey(coordinate);
-              const roomId = coordinateToRoomId(coordinate);
-              const current = key === coordinateKey(session.position);
-              const visited = session.visitedRoomIds.includes(roomId);
-              return (
-                <td
-                  key={key}
-                  aria-label={`${coordinateLabel(coordinate)}${current ? ", current position" : ""}`}
-                  data-test={`vector-cell-${x}-${y}`}
-                  className={[
-                    "min-w-0 rounded-[6px] border text-center align-middle font-mono text-[11px] tabular-nums transition-colors sm:text-xs",
-                    roomCellClass(current, visited),
-                  ].join(" ")}
-                >
-                  {x},{y}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
+const DungeonGridPropsSchema = z.object({
+  session: VectorDungeonSessionSchema,
+});
+type DungeonGridProps = z.infer<typeof DungeonGridPropsSchema>;
 
-function renderHp(hp: number): ReactNode {
+const DungeonGrid = defineComponent(
+  DungeonGridPropsSchema,
+  ({ session }: DungeonGridProps): ReactNode => {
+    const rows = [2, 1, 0, -1, -2];
+    const columns = [-2, -1, 0, 1, 2];
+    return (
+      <table
+        aria-label="Vector dungeon coordinate grid"
+        className="aspect-square w-full table-fixed border-separate border-spacing-1"
+      >
+        <tbody>
+          {rows.map((y) => (
+            <tr key={`row-${y}`}>
+              {columns.map((x) => {
+                const coordinate = { x, y };
+                const key = coordinateKey(coordinate);
+                const roomId = coordinateToRoomId(coordinate);
+                const current = key === coordinateKey(session.position);
+                const visited = session.visitedRoomIds.includes(roomId);
+                return (
+                  <td
+                    key={key}
+                    aria-label={`${coordinateLabel(coordinate)}${current ? ", current position" : ""}`}
+                    data-test={`vector-cell-${x}-${y}`}
+                    className={[
+                      "min-w-0 rounded-[6px] border text-center align-middle font-mono text-[11px] tabular-nums transition-colors sm:text-xs",
+                      roomCellClass(current, visited),
+                    ].join(" ")}
+                  >
+                    {x},{y}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+);
+
+const HpMeterPropsSchema = z.object({
+  hp: z.number().int().min(0).max(MAX_HP),
+});
+type HpMeterProps = z.infer<typeof HpMeterPropsSchema>;
+
+const HpMeter = defineComponent(HpMeterPropsSchema, ({ hp }: HpMeterProps): ReactNode => {
   return (
     <div className="flex items-center gap-2">
       <span className="font-medium text-midnight-ink text-sm">HP</span>
@@ -123,32 +136,40 @@ function renderHp(hp: number): ReactNode {
       </span>
     </div>
   );
-}
+});
 
-function renderMoveList(session: VectorDungeonSession): ReactNode {
-  const moves = validMovesFrom(session.position);
-  return (
-    <ul className="flex flex-wrap gap-2" aria-label="Valid movement vectors">
-      {moves.map((move) => {
-        const target = {
-          x: session.position.x + move.dx,
-          y: session.position.y + move.dy,
-        };
-        return (
-          <li
-            key={`${move.dx},${move.dy}`}
-            className="inline-flex items-center gap-1.5 rounded-[7px] border border-black/10 px-2.5 py-1.5 font-mono text-[12px] text-midnight-ink dark:border-white/10"
-          >
-            {movementIcon(move.dx, move.dy)}
-            <span>
-              ({move.dx}, {move.dy}) -&gt; {coordinateLabel(target)}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
+const ValidMoveListPropsSchema = z.object({
+  session: VectorDungeonSessionSchema,
+});
+type ValidMoveListProps = z.infer<typeof ValidMoveListPropsSchema>;
+
+const ValidMoveList = defineComponent(
+  ValidMoveListPropsSchema,
+  ({ session }: ValidMoveListProps): ReactNode => {
+    const moves = validMovesFrom(session.position);
+    return (
+      <ul className="flex flex-wrap gap-2" aria-label="Valid movement vectors">
+        {moves.map((move) => {
+          const target = {
+            x: session.position.x + move.dx,
+            y: session.position.y + move.dy,
+          };
+          return (
+            <li
+              key={`${move.dx},${move.dy}`}
+              className="inline-flex items-center gap-1.5 rounded-[7px] border border-black/10 px-2.5 py-1.5 font-mono text-[12px] text-midnight-ink dark:border-white/10"
+            >
+              {movementIcon(move.dx, move.dy)}
+              <span>
+                ({move.dx}, {move.dy}) -&gt; {coordinateLabel(target)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  },
+);
 
 function latestLog(session: VectorDungeonSession): string {
   return session.log.at(-1)?.message ?? "Dean begins at Camp Origin, the coordinate (0, 0).";
@@ -303,8 +324,12 @@ export const VectorDungeonDm = defineComponent(
               </a>
             </div>
 
-            <div className="mt-4">{renderGrid(session)}</div>
-            <div className="mt-4">{renderHp(session.hp)}</div>
+            <div className="mt-4">
+              <DungeonGrid session={session} />
+            </div>
+            <div className="mt-4">
+              <HpMeter hp={session.hp} />
+            </div>
           </div>
 
           <div className="rounded-card border border-black/10 bg-canvas-white p-4 dark:border-white/10">
@@ -312,7 +337,9 @@ export const VectorDungeonDm = defineComponent(
             <p className="mt-1 text-muted-ash text-sm">
               Dean chooses one, adds it, then says the target.
             </p>
-            <div className="mt-3">{renderMoveList(session)}</div>
+            <div className="mt-3">
+              <ValidMoveList session={session} />
+            </div>
           </div>
         </div>
 
