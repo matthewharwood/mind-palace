@@ -93,6 +93,7 @@ export const AlchemyBoard = defineComponent(
         >
           {tray.map((id) => (
             <Draggable
+              {...feedback}
               key={id}
               cardId={id}
               testId={`card-${id}`}
@@ -100,7 +101,6 @@ export const AlchemyBoard = defineComponent(
               label={id}
               source={{ kind: "tray", id: "tray" }}
               onDrop={handleDrop}
-              {...feedback}
             >
               <Card size="sm" front={<ElementCardFront symbol={id} />} />
             </Draggable>
@@ -121,6 +121,7 @@ export const AlchemyBoard = defineComponent(
               >
                 {cardId ? (
                   <Draggable
+                    {...feedback}
                     key={cardId}
                     cardId={cardId}
                     testId={`card-${cardId}`}
@@ -128,7 +129,6 @@ export const AlchemyBoard = defineComponent(
                     label={cardId}
                     source={{ kind: "slot", id: slotId }}
                     onDrop={handleDrop}
-                    {...feedback}
                   >
                     <Card size="sm" front={<ElementCardFront symbol={cardId} />} />
                   </Draggable>
