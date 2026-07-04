@@ -38,7 +38,7 @@ function moveError(reason: string): string {
   if (reason === "same-space") return "Dean stayed on the same square. Pick a one-step move.";
   if (reason === "diagonal")
     return "That is diagonal. This dungeon only allows one axis at a time.";
-  if (reason === "too-far") return "That jumps too far. Move exactly one square.";
+  if (reason === "too-far") return "Use -1, 0, or 1, and move exactly one square.";
   if (reason === "out-of-bounds") return "That coordinate is outside the 5 by 5 dungeon.";
   return "That room is not in the dungeon yet.";
 }
@@ -53,16 +53,18 @@ function VectorDungeonRoute() {
       session={session}
       currentRoom={currentRoom}
       pdfUrl={PDF_URL}
-      onMoveTarget={(target) => {
-        const validation = validateMove(session.position, target);
+      onMove={(move) => {
+        const validation = validateMove(session.position, move);
         if (!validation.valid) return { ok: false, message: moveError(validation.reason) };
         setSession((prev) => moveVectorDungeonSession(prev, validation));
         return {
           ok: true,
-          message: `Correct: ${coordinateLabel(session.position)} + (${validation.move.dx}, ${validation.move.dy}) = ${coordinateLabel(target)}. Read the new room.`,
+          message: `Correct: ${coordinateLabel(session.position)} + (${validation.move.dx}, ${validation.move.dy}) = ${coordinateLabel(validation.target)}. Read the new room.`,
         };
       }}
-      onSelectAction={(actionId) => setSession((prev) => selectVectorDungeonAction(prev, actionId))}
+      onSelectAction={(actionId) =>
+        setSession((prev) => selectVectorDungeonAction(prev, currentRoom, actionId))
+      }
       onResolveRoll={(roll) => {
         const pendingActionId = session.pendingActionId;
         if (!pendingActionId) return { ok: false, message: "Pick an action before rolling." };

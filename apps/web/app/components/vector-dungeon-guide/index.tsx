@@ -33,6 +33,7 @@ const VECTOR_TRAIL_KEYS = [
   "trail-7",
   "trail-8",
 ] as const;
+const KNIGHT_IMAGE_URL = `${import.meta.env.BASE_URL}vector-dungeon/dean-knight.png`;
 
 const MiniCoordinateGridPropsSchema = z.object({});
 type MiniCoordinateGridProps = z.infer<typeof MiniCoordinateGridPropsSchema>;
@@ -66,12 +67,12 @@ export const VectorDungeonGuide = defineComponent(
   VectorDungeonGuidePropsSchema,
   ({ title }: VectorDungeonGuideProps): ReactNode => {
     const featuredRooms = VECTOR_DUNGEON_ROOMS.filter((room) =>
-      ["room:0:0", "room:1:0", "room:0:1", "room:-1:0", "room:0:-1", "room:2:2"].includes(room.id),
+      ["room:0:0", "room:1:0", "room:0:1", "room:-1:0"].includes(room.id),
     );
     return (
       <main className="mx-auto min-h-dvh bg-white p-4 text-midnight-ink print:p-0">
         <article className="mx-auto flex min-h-[11in] w-full max-w-[8.5in] flex-col gap-4 bg-white p-6 shadow-card print:min-h-[11in] print:w-[8.5in] print:max-w-none print:shadow-none">
-          <header className="grid gap-3 border-midnight-ink border-b pb-3 sm:grid-cols-[1fr_220px]">
+          <header className="grid gap-3 border-midnight-ink border-b pb-3 sm:grid-cols-[1fr_260px]">
             <div>
               <p className="flex items-center gap-2 font-medium text-intelligence-blue text-sm">
                 <BookOpen className="size-4" aria-hidden="true" />
@@ -83,7 +84,16 @@ export const VectorDungeonGuide = defineComponent(
                 to the starting position, and write the target room.
               </p>
             </div>
-            <MiniCoordinateGrid />
+            <div className="grid grid-cols-[76px_1fr] items-start gap-3">
+              <span className="grid size-[76px] place-items-center border border-midnight-ink/30 bg-white">
+                <img
+                  src={KNIGHT_IMAGE_URL}
+                  alt="Dean the knight"
+                  className="size-[68px] object-contain [image-rendering:pixelated]"
+                />
+              </span>
+              <MiniCoordinateGrid />
+            </div>
           </header>
 
           <section className="grid gap-3 sm:grid-cols-2">

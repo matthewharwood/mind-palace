@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --host",
+    "build:vector-dungeon-pdf": "bun run scripts/build-vector-dungeon-pdf.ts",
     "build": "vite build && cp dist/client/index.html dist/client/404.html && touch dist/client/.nojekyll && bun run scripts/build-sitemap.ts",
     "preview": "vite preview --port 3010",
     "storybook": "storybook dev -p 6010 --no-open",

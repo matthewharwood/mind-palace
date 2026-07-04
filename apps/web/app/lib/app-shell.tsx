@@ -446,10 +446,11 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   // now lives on the Settings page, not in the chrome.
   useTheme();
 
-  // The splash (/) is its own full-screen surface. Render it WITHOUT the shell
-  // chrome so the rail/content never paints behind the overlay for a frame on
-  // first load. (Hooks above still run, so the theme + state stay consistent.)
-  if (pathname === "/") return <>{children}</>;
+  // The splash (/) and printable worksheet are their own full-screen surfaces.
+  // Render them WITHOUT shell chrome so the rail/content never paints into the
+  // capture surface used for PDF generation. (Hooks above still run, so the
+  // theme + state stay consistent.)
+  if (pathname === "/" || pathname === "/apps/vector-dungeon/print") return <>{children}</>;
 
   return (
     <div className="flex h-dvh overflow-hidden bg-whisper-gray font-sans text-midnight-ink sm:gap-3 sm:p-3">

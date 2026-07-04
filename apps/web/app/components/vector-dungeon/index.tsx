@@ -8,8 +8,6 @@ import {
   MAX_HP,
   START_COORDINATE,
   VECTOR_DUNGEON_ROOMS,
-  type VectorDungeonCoordinate,
-  VectorDungeonCoordinateSchema,
   VectorDungeonRoomSchema,
   validMovesFrom,
 } from "@mind-palace/vector-dungeon";
@@ -19,9 +17,15 @@ import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
 
-const NumberInputSchema = z.coerce.number().pipe(z.int());
+const StepInputSchema = z.coerce.number().pipe(z.int().min(-1).max(1));
 const RollInputSchema = z.coerce.number().pipe(z.int().min(1).max(20));
+const MoveInputSchema = z.object({
+  dx: z.int().min(-1).max(1),
+  dy: z.int().min(-1).max(1),
+});
+type MoveInput = z.infer<typeof MoveInputSchema>;
 const HEART_KEYS = ["heart-1", "heart-2", "heart-3", "heart-4", "heart-5"] as const;
+const KNIGHT_IMAGE_URL = `${import.meta.env.BASE_URL}vector-dungeon/dean-knight.png`;
 
 export const VectorDungeonCommandResultSchema = z.object({
   ok: z.boolean(),
@@ -33,7 +37,7 @@ export const VectorDungeonDmPropsSchema = z.object({
   session: VectorDungeonSessionSchema,
   currentRoom: VectorDungeonRoomSchema,
   pdfUrl: z.string().min(1),
-  onMoveTarget: z.custom<(target: VectorDungeonCoordinate) => VectorDungeonCommandResult>(),
+  onMove: z.custom<(move: MoveInput) => VectorDungeonCommandResult>(),
   onSelectAction: z.custom<(actionId: string) => void>(),
   onResolveRoll: z.custom<(roll: number) => VectorDungeonCommandResult>(),
   onRecover: z.custom<() => void>(),
@@ -88,7 +92,19 @@ const DungeonGrid = defineComponent(
                       roomCellClass(current, visited),
                     ].join(" ")}
                   >
-                    {x},{y}
+                    <span className="grid place-items-center gap-0.5">
+                      {current ? (
+                        <img
+                          src={KNIGHT_IMAGE_URL}
+                          alt=""
+                          aria-hidden="true"
+                          className="size-8 object-contain [image-rendering:pixelated] sm:size-10"
+                        />
+                      ) : null}
+                      <span>
+                        {x},{y}
+                      </span>
+                    </span>
                   </td>
                 );
               })}
@@ -181,36 +197,33 @@ export const VectorDungeonDm = defineComponent(
     session,
     currentRoom,
     pdfUrl,
-    onMoveTarget,
+    onMove,
     onSelectAction,
     onResolveRoll,
     onRecover,
     onReset,
   }: VectorDungeonDmProps): ReactNode => {
     const [moveMessage, setMoveMessage] = useState(
-      "Choose a one-step vector and enter Dean's target coordinate.",
+      "Enter a one-step move: one field is -1 or 1, and the other is 0.",
     );
     const [rollMessage, setRollMessage] = useState("Pick an action to reveal the d20 target.");
     const pendingAction = session.pendingActionId
       ? getActionById(currentRoom, session.pendingActionId)
       : undefined;
+    const roomActionSpent = session.actedRoomId === currentRoom.id;
     let actionPanel: ReactNode;
 
     function submitMove(event: FormEvent<HTMLFormElement>): void {
       event.preventDefault();
       const formData = new FormData(event.currentTarget);
-      const x = NumberInputSchema.safeParse(formData.get("x"));
-      const y = NumberInputSchema.safeParse(formData.get("y"));
-      if (!x.success || !y.success) {
-        setMoveMessage("Enter whole numbers for x and y.");
+      const dx = StepInputSchema.safeParse(formData.get("dx"));
+      const dy = StepInputSchema.safeParse(formData.get("dy"));
+      if (!dx.success || !dy.success) {
+        setMoveMessage("Each move field must be -1, 0, or 1.");
         return;
       }
-      const target = VectorDungeonCoordinateSchema.safeParse({ x: x.data, y: y.data });
-      if (!target.success) {
-        setMoveMessage("That coordinate is outside the dungeon grid.");
-        return;
-      }
-      const result = VectorDungeonCommandResultSchema.parse(onMoveTarget(target.data));
+      const move = MoveInputSchema.parse({ dx: dx.data, dy: dy.data });
+      const result = VectorDungeonCommandResultSchema.parse(onMove(move));
       setMoveMessage(result.message);
       if (result.ok) setRollMessage("Pick an action to reveal the d20 target.");
     }
@@ -274,6 +287,16 @@ export const VectorDungeonDm = defineComponent(
           </button>
         </form>
       );
+    } else if (roomActionSpent) {
+      actionPanel = (
+        <div className="flex flex-col gap-3">
+          <h2 className="font-semibold text-base text-midnight-ink">Move to continue</h2>
+          <p className="text-[15px] text-midnight-ink/80 leading-7">
+            Dean already took one room action here. Choose a movement vector and check the next
+            coordinate before taking another room action.
+          </p>
+        </div>
+      );
     } else {
       actionPanel = (
         <div className="flex flex-col gap-3">
@@ -305,14 +328,23 @@ export const VectorDungeonDm = defineComponent(
         <div className="flex flex-col gap-4">
           <div className="rounded-card border border-black/10 bg-canvas-white p-4 shadow-card dark:border-white/10">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl text-midnight-ink">Vector Dungeon</h1>
-                <p className="mt-1 text-muted-ash text-sm">
-                  Current position:{" "}
-                  <span className="font-mono text-midnight-ink">
-                    {coordinateLabel(session.position)}
-                  </span>
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid size-16 shrink-0 place-items-center rounded-[8px] border border-black/10 bg-whisper-gray">
+                  <img
+                    src={KNIGHT_IMAGE_URL}
+                    alt="Dean the knight"
+                    className="size-14 object-contain [image-rendering:pixelated]"
+                  />
+                </span>
+                <div className="min-w-0">
+                  <h1 className="text-2xl text-midnight-ink">Vector Dungeon</h1>
+                  <p className="mt-1 text-muted-ash text-sm">
+                    Current position:{" "}
+                    <span className="font-mono text-midnight-ink">
+                      {coordinateLabel(session.position)}
+                    </span>
+                  </p>
+                </div>
               </div>
               <a
                 href={pdfUrl}
@@ -358,7 +390,6 @@ export const VectorDungeonDm = defineComponent(
           </div>
 
           <form
-            key={coordinateKey(session.position)}
             onSubmit={submitMove}
             className="rounded-card border border-black/10 bg-canvas-white p-4 dark:border-white/10"
           >
@@ -366,22 +397,26 @@ export const VectorDungeonDm = defineComponent(
             <p className="mt-1 text-muted-ash text-sm">{moveMessage}</p>
             <div className="mt-4 grid grid-cols-[1fr_1fr_auto] items-end gap-2">
               <label className="flex min-w-0 flex-col gap-1 text-midnight-ink text-sm">
-                Target X
+                Target X step
                 <input
-                  name="x"
+                  name="dx"
                   type="number"
                   inputMode="numeric"
-                  defaultValue={session.position.x}
+                  min={-1}
+                  max={1}
+                  defaultValue={0}
                   className="min-w-0 rounded-[8px] border border-black/10 bg-canvas-white px-3 py-2 font-mono text-base dark:border-white/10"
                 />
               </label>
               <label className="flex min-w-0 flex-col gap-1 text-midnight-ink text-sm">
-                Target Y
+                Target Y step
                 <input
-                  name="y"
+                  name="dy"
                   type="number"
                   inputMode="numeric"
-                  defaultValue={session.position.y}
+                  min={-1}
+                  max={1}
+                  defaultValue={0}
                   className="min-w-0 rounded-[8px] border border-black/10 bg-canvas-white px-3 py-2 font-mono text-base dark:border-white/10"
                 />
               </label>

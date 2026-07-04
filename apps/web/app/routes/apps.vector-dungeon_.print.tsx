@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { VectorDungeonGuide } from "~/components/vector-dungeon-guide";
 import { buildSeoLinks, buildSeoMeta } from "~/lib/seo";
 
-export const Route = createFileRoute("/apps/vector-dungeon/print")({
+export const Route = createFileRoute("/apps/vector-dungeon_/print")({
   head: () => ({
     meta: buildSeoMeta({
       path: "/apps/vector-dungeon/print",

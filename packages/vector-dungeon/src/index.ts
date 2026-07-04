@@ -366,26 +366,26 @@ export function validMovesFrom(from: VectorDungeonCoordinate): VectorDungeonMove
 
 export function validateMove(
   from: VectorDungeonCoordinate,
-  target: VectorDungeonCoordinate,
+  move: { dx: number; dy: number },
 ): VectorDungeonMoveValidation {
   const parsedFrom = VectorDungeonCoordinateSchema.parse(from);
-  const parsedTarget = VectorDungeonCoordinateSchema.safeParse(target);
-  if (!parsedTarget.success) return { valid: false, reason: "out-of-bounds" };
-
-  const rawMove = movementVector(parsedFrom, parsedTarget.data);
+  const rawMove = { dx: move.dx, dy: move.dy };
   if (rawMove.dx === 0 && rawMove.dy === 0) return { valid: false, reason: "same-space" };
   if (Math.abs(rawMove.dx) === 1 && Math.abs(rawMove.dy) === 1) {
     return { valid: false, reason: "diagonal" };
   }
   if (!isUnitStep(rawMove)) return { valid: false, reason: "too-far" };
 
-  const room = getRoomAt(parsedTarget.data);
+  const target = applyMove(parsedFrom, rawMove);
+  if (!target) return { valid: false, reason: "out-of-bounds" };
+
+  const room = getRoomAt(target);
   if (!room) return { valid: false, reason: "missing-room" };
 
   return {
     valid: true,
     from: parsedFrom,
-    target: parsedTarget.data,
+    target,
     move: rawMove,
     room,
   };
