@@ -36,6 +36,11 @@ jobs:
       VITE_TWITTER_HANDLE: ${{ vars.VITE_TWITTER_HANDLE }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so react-doctor can resolve `main` for its diff scan; on
+          # a shallow checkout it falls back to a full-codebase scan and gates the
+          # deploy on pre-existing findings (ci.yml already fetches main).
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
