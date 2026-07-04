@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as GoalsRouteImport } from './routes/goals'
+import { Route as AppsRouteImport } from './routes/apps'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppsIndexRouteImport } from './routes/apps.index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
+import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
+import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon.print'
 import { Route as CurriculumCurriculumIdNodeNodeIdRouteImport } from './routes/curriculum.$curriculumId.node.$nodeId'
 
 const SettingsRoute = SettingsRouteImport.update({
@@ -34,10 +38,20 @@ const GoalsRoute = GoalsRouteImport.update({
   path: '/goals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppsRoute = AppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppsIndexRoute = AppsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppsRoute,
 } as any)
 const GoalGoalIdRoute = GoalGoalIdRouteImport.update({
   id: '/goal/$goalId',
@@ -48,6 +62,11 @@ const CurriculumCurriculumIdRoute = CurriculumCurriculumIdRouteImport.update({
   id: '/curriculum/$curriculumId',
   path: '/curriculum/$curriculumId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppsVectorDungeonRoute = AppsVectorDungeonRouteImport.update({
+  id: '/vector-dungeon',
+  path: '/vector-dungeon',
+  getParentRoute: () => AppsRoute,
 } as any)
 const CurriculumCurriculumIdIndexRoute =
   CurriculumCurriculumIdIndexRouteImport.update({
@@ -61,6 +80,11 @@ const CurriculumCurriculumIdStudyRoute =
     path: '/study',
     getParentRoute: () => CurriculumCurriculumIdRoute,
   } as any)
+const AppsVectorDungeonPrintRoute = AppsVectorDungeonPrintRouteImport.update({
+  id: '/print',
+  path: '/print',
+  getParentRoute: () => AppsVectorDungeonRoute,
+} as any)
 const CurriculumCurriculumIdNodeNodeIdRoute =
   CurriculumCurriculumIdNodeNodeIdRouteImport.update({
     id: '/node/$nodeId',
@@ -70,11 +94,15 @@ const CurriculumCurriculumIdNodeNodeIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/apps': typeof AppsRouteWithChildren
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
+  '/apps/': typeof AppsIndexRoute
+  '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
@@ -84,7 +112,10 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
+  '/apps': typeof AppsIndexRoute
+  '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdIndexRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
@@ -92,11 +123,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/apps': typeof AppsRouteWithChildren
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/vector-dungeon': typeof AppsVectorDungeonRouteWithChildren
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
+  '/apps/': typeof AppsIndexRoute
+  '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
@@ -105,11 +140,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/apps'
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
+    | '/apps/'
+    | '/apps/vector-dungeon/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId/'
     | '/curriculum/$curriculumId/node/$nodeId'
@@ -119,18 +158,25 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/vector-dungeon'
     | '/goal/$goalId'
+    | '/apps'
+    | '/apps/vector-dungeon/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId'
     | '/curriculum/$curriculumId/node/$nodeId'
   id:
     | '__root__'
     | '/'
+    | '/apps'
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
+    | '/apps/'
+    | '/apps/vector-dungeon/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId/'
     | '/curriculum/$curriculumId/node/$nodeId'
@@ -138,6 +184,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppsRoute: typeof AppsRouteWithChildren
   GoalsRoute: typeof GoalsRoute
   ProgressRoute: typeof ProgressRoute
   SettingsRoute: typeof SettingsRoute
@@ -168,12 +215,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GoalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apps': {
+      id: '/apps'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof AppsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/apps/': {
+      id: '/apps/'
+      path: '/'
+      fullPath: '/apps/'
+      preLoaderRoute: typeof AppsIndexRouteImport
+      parentRoute: typeof AppsRoute
     }
     '/goal/$goalId': {
       id: '/goal/$goalId'
@@ -189,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CurriculumCurriculumIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apps/vector-dungeon': {
+      id: '/apps/vector-dungeon'
+      path: '/vector-dungeon'
+      fullPath: '/apps/vector-dungeon'
+      preLoaderRoute: typeof AppsVectorDungeonRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/curriculum/$curriculumId/': {
       id: '/curriculum/$curriculumId/'
       path: '/'
@@ -203,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CurriculumCurriculumIdStudyRouteImport
       parentRoute: typeof CurriculumCurriculumIdRoute
     }
+    '/apps/vector-dungeon/print': {
+      id: '/apps/vector-dungeon/print'
+      path: '/print'
+      fullPath: '/apps/vector-dungeon/print'
+      preLoaderRoute: typeof AppsVectorDungeonPrintRouteImport
+      parentRoute: typeof AppsVectorDungeonRoute
+    }
     '/curriculum/$curriculumId/node/$nodeId': {
       id: '/curriculum/$curriculumId/node/$nodeId'
       path: '/node/$nodeId'
@@ -212,6 +287,29 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppsVectorDungeonRouteChildren {
+  AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
+}
+
+const AppsVectorDungeonRouteChildren: AppsVectorDungeonRouteChildren = {
+  AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,
+}
+
+const AppsVectorDungeonRouteWithChildren =
+  AppsVectorDungeonRoute._addFileChildren(AppsVectorDungeonRouteChildren)
+
+interface AppsRouteChildren {
+  AppsVectorDungeonRoute: typeof AppsVectorDungeonRouteWithChildren
+  AppsIndexRoute: typeof AppsIndexRoute
+}
+
+const AppsRouteChildren: AppsRouteChildren = {
+  AppsVectorDungeonRoute: AppsVectorDungeonRouteWithChildren,
+  AppsIndexRoute: AppsIndexRoute,
+}
+
+const AppsRouteWithChildren = AppsRoute._addFileChildren(AppsRouteChildren)
 
 interface CurriculumCurriculumIdRouteChildren {
   CurriculumCurriculumIdStudyRoute: typeof CurriculumCurriculumIdStudyRoute
@@ -234,6 +332,7 @@ const CurriculumCurriculumIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppsRoute: AppsRouteWithChildren,
   GoalsRoute: GoalsRoute,
   ProgressRoute: ProgressRoute,
   SettingsRoute: SettingsRoute,

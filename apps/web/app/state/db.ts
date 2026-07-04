@@ -1,4 +1,10 @@
-import type { AlchemyBoard, CurriculumProgress, Progress, Settings } from "@mind-palace/schemas";
+import type {
+  AlchemyBoard,
+  CurriculumProgress,
+  Progress,
+  Settings,
+  VectorDungeonSession,
+} from "@mind-palace/schemas";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 
 export interface AppDB extends DBSchema {
@@ -6,13 +12,14 @@ export interface AppDB extends DBSchema {
   settings: { key: string; value: Settings };
   alchemyBoard: { key: string; value: AlchemyBoard };
   curriculumProgress: { key: string; value: CurriculumProgress };
+  vectorDungeonSessions: { key: string; value: VectorDungeonSession };
 }
 
 // Namespaced by repo scope + app name (the package.json `name`). IndexedDB is
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
 export const DB_NAME = "@mind-palace/web";
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
@@ -44,6 +51,9 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 4) {
         db.createObjectStore("curriculumProgress", { keyPath: "id" });
+      }
+      if (oldVersion < 5) {
+        db.createObjectStore("vectorDungeonSessions", { keyPath: "id" });
       }
     },
     blocked() {

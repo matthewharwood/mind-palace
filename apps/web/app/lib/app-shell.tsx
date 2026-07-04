@@ -99,6 +99,26 @@ function ProgressIcon(): ReactNode {
   );
 }
 
+function AppsIcon(): ReactNode {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 4.5h6v6h-6v-6ZM13.5 4.5h6v6h-6v-6ZM4.5 13.5h6v6h-6v-6ZM13.5 13.5h6v6h-6v-6Z"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon(): ReactNode {
   return (
     <svg
@@ -162,6 +182,8 @@ function navItemClass(active: boolean, collapsed: boolean): string {
 
 type Crumb =
   | { kind: "home"; label: string; current: boolean }
+  | { kind: "apps"; label: string; current: boolean }
+  | { kind: "app"; label: string; current: boolean }
   | { kind: "progress"; label: string; current: boolean }
   | { kind: "settings"; label: string; current: boolean }
   | { kind: "goal"; goalId: string; label: string; current: boolean }
@@ -176,6 +198,20 @@ function CrumbLink(crumb: Crumb): ReactNode {
   if (crumb.kind === "home") {
     return (
       <Link to="/goals" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "apps") {
+    return (
+      <Link to="/apps" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "app") {
+    return (
+      <Link to="/apps/vector-dungeon" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -214,7 +250,12 @@ function CrumbLink(crumb: Crumb): ReactNode {
 
 function buildCrumbs(segments: string[]): Crumb[] {
   const crumbs: Crumb[] = [{ kind: "home", label: "Goals", current: segments[0] === "goals" }];
-  if (segments[0] === "progress") {
+  if (segments[0] === "apps") {
+    crumbs.push({ kind: "apps", label: "Apps", current: segments.length === 1 });
+    if (segments[1] === "vector-dungeon") {
+      crumbs.push({ kind: "app", label: "Vector Dungeon", current: true });
+    }
+  } else if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });
   } else if (segments[0] === "settings") {
     crumbs.push({ kind: "settings", label: "Settings", current: true });
@@ -267,6 +308,7 @@ function RailNav({
   goals,
   activeGoalId,
   onGoals,
+  onApps,
   onProgress,
   onSettings,
   onNavigate,
@@ -275,6 +317,7 @@ function RailNav({
   goals: readonly Goal[];
   activeGoalId: string | undefined;
   onGoals: boolean;
+  onApps: boolean;
   onProgress: boolean;
   onSettings: boolean;
   onNavigate?: () => void;
@@ -341,6 +384,18 @@ function RailNav({
         })}
         <span className="my-1 h-px shrink-0 bg-black/[0.06]" aria-hidden="true" />
         <Link
+          to="/apps"
+          onClick={onNavigate}
+          aria-current={onApps ? "page" : undefined}
+          title={collapsed ? "Apps" : undefined}
+          className={navItemClass(onApps, collapsed)}
+        >
+          <span className={onApps ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
+            <AppsIcon />
+          </span>
+          {!collapsed && <span className="truncate">Apps</span>}
+        </Link>
+        <Link
           to="/progress"
           onClick={onNavigate}
           aria-current={onProgress ? "page" : undefined}
@@ -381,6 +436,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     activeGoalId = getGoalForCurriculum(segments[1])?.id;
   }
   const onGoals = segments[0] === "goals";
+  const onApps = segments[0] === "apps";
   const onProgress = segments[0] === "progress";
   const onSettings = segments[0] === "settings";
   const [askOpen, setAskOpen] = useState(false);
@@ -409,6 +465,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             goals={goals}
             activeGoalId={activeGoalId}
             onGoals={onGoals}
+            onApps={onApps}
             onProgress={onProgress}
             onSettings={onSettings}
           />
@@ -488,6 +545,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               goals={goals}
               activeGoalId={activeGoalId}
               onGoals={onGoals}
+              onApps={onApps}
               onProgress={onProgress}
               onSettings={onSettings}
               onNavigate={() => setMobileNavOpen(false)}

@@ -15,6 +15,8 @@ export const test = base.extend<Fixtures>({
   freshIDB: [
     async ({ page }, runFixture) => {
       await page.addInitScript(async () => {
+        if (sessionStorage.getItem("mind-palace:fresh-idb-cleared") === "true") return;
+        sessionStorage.setItem("mind-palace:fresh-idb-cleared", "true");
         const dbs = (await indexedDB.databases?.()) ?? [];
         await Promise.all(dbs.map((d) => d.name && indexedDB.deleteDatabase(d.name)));
       });

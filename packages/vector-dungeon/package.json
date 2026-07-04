@@ -1,5 +1,5 @@
 {
-  "name": "@mind-palace/schemas",
+  "name": "@mind-palace/vector-dungeon",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,6 @@
     "test:unit": "bun test"
   },
   "dependencies": {
-    "@mind-palace/vector-dungeon": "workspace:*",
-    "@mind-palace/srs": "workspace:*",
     "zod": "^4.0.0"
   },
   "devDependencies": {

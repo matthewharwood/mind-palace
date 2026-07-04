@@ -11,13 +11,30 @@ import { defineComponent } from "~/lib/define-component";
 export const SplashPropsSchema = z.object({
   title: z.string().min(1),
   modelUrl: z.string().min(1),
-  onEnter: z.custom<() => void>(),
+  onEnter: z.custom<() => void>().optional(),
+  entries: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        description: z.string().min(1).optional(),
+        href: z.string().min(1).optional(),
+        onSelect: z.custom<() => void>().optional(),
+      }),
+    )
+    .min(1)
+    .optional(),
 });
 export type SplashProps = z.infer<typeof SplashPropsSchema>;
 
 export const Splash = defineComponent(
   SplashPropsSchema,
-  ({ title, modelUrl, onEnter }: SplashProps): ReactNode => {
+  ({ title, modelUrl, onEnter, entries }: SplashProps): ReactNode => {
+    const actions = entries ?? [
+      {
+        label: "Enter the palace",
+        onSelect: onEnter ?? (() => undefined),
+      },
+    ];
     return (
       <div
         data-test="splash"
@@ -39,14 +56,46 @@ export const Splash = defineComponent(
         </div>
 
         <footer className="shrink-0 px-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
-          <button
-            type="button"
-            data-test="splash-enter"
-            onClick={onEnter}
-            className="mx-auto block w-full max-w-xs rounded-full bg-midnight-ink px-8 py-3.5 text-center font-medium text-[15px] text-canvas-white transition-transform active:scale-[0.98]"
-          >
-            Enter the palace
-          </button>
+          <div className="mx-auto flex w-full max-w-sm flex-col gap-2">
+            {actions.map((entry, index) =>
+              entry.href ? (
+                <a
+                  key={entry.label}
+                  href={entry.href}
+                  data-test={index === 0 ? "splash-enter" : undefined}
+                  className={[
+                    "w-full rounded-full px-8 py-3.5 text-center font-medium text-[15px] transition-transform active:scale-[0.98]",
+                    index === 0
+                      ? "bg-midnight-ink text-canvas-white"
+                      : "border border-midnight-ink/15 bg-canvas-white/80 text-midnight-ink backdrop-blur-sm",
+                  ].join(" ")}
+                >
+                  <span className="block">{entry.label}</span>
+                  {entry.description ? (
+                    <span className="mt-0.5 block text-[12px] opacity-75">{entry.description}</span>
+                  ) : null}
+                </a>
+              ) : (
+                <button
+                  key={entry.label}
+                  type="button"
+                  data-test={index === 0 ? "splash-enter" : undefined}
+                  onClick={entry.onSelect}
+                  className={[
+                    "w-full rounded-full px-8 py-3.5 text-center font-medium text-[15px] transition-transform active:scale-[0.98]",
+                    index === 0
+                      ? "bg-midnight-ink text-canvas-white"
+                      : "border border-midnight-ink/15 bg-canvas-white/80 text-midnight-ink backdrop-blur-sm",
+                  ].join(" ")}
+                >
+                  <span className="block">{entry.label}</span>
+                  {entry.description ? (
+                    <span className="mt-0.5 block text-[12px] opacity-75">{entry.description}</span>
+                  ) : null}
+                </button>
+              ),
+            )}
+          </div>
         </footer>
       </div>
     );
