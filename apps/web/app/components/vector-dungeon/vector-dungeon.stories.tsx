@@ -27,12 +27,26 @@ const baseArgs = {
   onMove: () => ({ ok: true, message: "Correct. Dean moves one square." }),
   onSelectAction: () => undefined,
   onResolveRoll: () => ({ ok: true, message: "Success." }),
+  onUseMagic: () => undefined,
+  onAcceptSetback: () => undefined,
   onRecover: () => undefined,
   onReset: () => undefined,
 };
 
 export const FreshSession: Story = {
   args: baseArgs,
+};
+
+export const MissedRollNeedsMagic: Story = {
+  args: {
+    ...baseArgs,
+    session: VectorDungeonSessionSchema.parse({
+      ...VECTOR_DUNGEON_SESSION_DEFAULT,
+      pendingActionId: startRoom.actions[0]?.id,
+      pendingMiss: { roll: 3, dc: 8 },
+      log: [{ id: "1:move", turn: 1, kind: "move", message: "Moved (0, 0) + (0, 1) = (0, 1)." }],
+    }),
+  },
 };
 
 export const PendingAction: Story = {

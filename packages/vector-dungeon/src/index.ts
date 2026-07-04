@@ -4,6 +4,8 @@ export const GRID_MIN = -2;
 export const GRID_MAX = 2;
 export const START_COORDINATE = { x: 0, y: 0 } as const;
 export const MAX_HP = 5;
+/** Magic re-roll tokens per game — spend one to re-roll a missed room action. */
+export const MAX_MAGIC = 5;
 
 export const VectorDungeonCoordinateSchema = z.object({
   x: z.int().min(GRID_MIN).max(GRID_MAX),
@@ -396,6 +398,21 @@ export function getActionById(
   actionId: string,
 ): VectorDungeonAction | undefined {
   return room.actions.find((action) => action.id === actionId);
+}
+
+/** The reward a room grants (its study/help actions all share it). */
+export function roomReward(room: VectorDungeonRoom): string | undefined {
+  return room.actions[0]?.reward;
+}
+
+/** A room is CLAIMED once its reward is in the discovered set — the "totally
+ *  green" state. A visited-but-unclaimed room is green-fill / red-border. */
+export function isRoomRewardClaimed(
+  room: VectorDungeonRoom,
+  discoveredRewards: readonly string[],
+): boolean {
+  const reward = roomReward(room);
+  return reward !== undefined && discoveredRewards.includes(reward);
 }
 
 export function resolveDungeonAction(

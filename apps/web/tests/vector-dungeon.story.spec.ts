@@ -33,6 +33,14 @@ test.describe("Vector Dungeon stories", () => {
     await expect(page.getByText(/Dean needs 8 or higher/)).toBeVisible();
   });
 
+  test("missed-roll story offers magic re-roll and a setback", async ({ page }) => {
+    await page.goto(story("app-vectordungeon--missed-roll-needs-magic"));
+    await expect(page.getByRole("heading", { name: "Missed the roll" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Use magic re-roll \(5 left\)/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Take the setback/ })).toBeVisible();
+    await expect(page.getByLabel("Magic 5 of 5")).toBeVisible();
+  });
+
   test("camp recovery story renders recovery action", async ({ page }) => {
     await page.goto(story("app-vectordungeon--camp-recovery"));
     await expect(page.getByRole("heading", { name: "Back to camp" })).toBeVisible();
