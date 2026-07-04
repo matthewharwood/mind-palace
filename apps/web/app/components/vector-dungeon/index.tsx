@@ -74,9 +74,12 @@ const DungeonGrid = defineComponent(
     const rows = [2, 1, 0, -1, -2];
     const columns = [-2, -1, 0, 1, 2];
     return (
+      // table-fixed keeps every COLUMN equal; the per-cell aspect-square box
+      // then keeps every ROW equal too, so the current cell's knight sprite can
+      // never stretch its row taller than the others.
       <table
         aria-label="Vector dungeon coordinate grid"
-        className="aspect-square w-full table-fixed border-separate border-spacing-1"
+        className="w-full table-fixed border-separate border-spacing-1"
       >
         <tbody>
           {rows.map((y) => (
@@ -93,17 +96,17 @@ const DungeonGrid = defineComponent(
                     aria-label={`${coordinateLabel(coordinate)}${current ? ", current position" : ""}`}
                     data-test={`vector-cell-${x}-${y}`}
                     className={[
-                      "min-w-0 rounded-[6px] border text-center align-middle font-mono text-[11px] tabular-nums transition-colors sm:text-xs",
+                      "rounded-[6px] border p-0 text-center align-middle font-mono text-[11px] tabular-nums transition-colors sm:text-xs",
                       roomCellClass(current, visited),
                     ].join(" ")}
                   >
-                    <span className="grid place-items-center gap-0.5">
+                    <span className="grid aspect-square place-items-center gap-0.5 overflow-hidden p-0.5">
                       {current ? (
                         <img
                           src={KNIGHT_IMAGE_URL}
                           alt=""
                           aria-hidden="true"
-                          className="size-8 object-contain [image-rendering:pixelated] sm:size-10"
+                          className="max-h-[55%] w-auto object-contain [image-rendering:pixelated]"
                         />
                       ) : null}
                       <span>
