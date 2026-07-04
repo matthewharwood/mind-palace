@@ -76,6 +76,24 @@ export const gfxMath: Curriculum = {
       },
     },
     {
+      id: "integrate-vs-tween",
+      title: "Two Ways to Move: Integrate vs Tween",
+      content: {
+        type: "read",
+        markdown:
+          "There are exactly two mental models for making something move, and every animation system you will ever meet is one of them.\n\n## Model 1: Integrate — you control velocity\n`position += velocity * dt` — the particle line. You decide the *velocity*, and position simply **emerges** from accumulating it frame by frame. Physics-flavored and open-ended: perfect for sparks, debris, and anything that flies free with no promised destination.\n\n## Model 2: Tween — you control the destination\n`position = start + (end - start) * easing(elapsed / duration)` — the animation line. Three moves, always the same:\n\n- `elapsed += dt` — real time accumulates\n- `progress = elapsed / duration` — time normalized into the ==0–1 habitat==\n- `easing(progress)` — the curve reshapes the ride, then a plain lerp places the point\n\nYou decide *where it ends and what curve it rides*; arrival on time is **guaranteed by construction**.\n\n## The punchline: velocity becomes a side effect\nTween a point from `(0, 0)` to `(4, 4)` over 4 seconds with ease-in `progress * progress`, then watch the per-second movement: it covers `0.25` units in the first second, then `0.75`, then `1.25`, then `1.75`. Nobody set a velocity anywhere — ==the easing curve IS the velocity profile==. Linear easing is constant velocity, ease-in is accelerating, ease-out is braking.\n\n## Choosing between them\n- **Tween** when the END is the promise: UI motion, spell wind-ups, a projectile that must arrive on the beat\n- **Integrate** when the JOURNEY is the point: particles, drifting smoke, knockback — anything steered per-frame by forces or homing\n\nBig effects mix both: the fireball *tweens* to its target on a curve while its trailing embers *integrate* outward.",
+      },
+    },
+    {
+      id: "parametric-paths",
+      title: "Paths: Curves You Can Walk",
+      content: {
+        type: "read",
+        markdown:
+          "A tween walks a straight line. A ==parametric path== generalizes it: `position = path(u)` — any function that turns a 0–1 progress into a point. Fireball arcs, meteor falls, and orbiting sparks are all just different `path` functions.\n\n## Build a curve from the line you already have\nThe recipe that unlocks everything: take the straight-line answer, then push it sideways.\n\n- **Base**: `start + (target - start) * u` — where the straight tween would be\n- **Offset**: `normal * amplitude * sin(pi * u)` — a perpendicular lift that starts at zero, peaks mid-flight, and lands back at zero\n\n==Straight-line position + curved offset = curved-path position.== The `normal` is the direction perpendicular to the line (for a shot flying right, that is up; in 2D, perpendicular to `(x, y)` is `(-y, x)`). Because `sin(0)` and `sin(pi)` are both zero, the arc is *guaranteed* to start at start and land on target.\n\n## More wiggle, same trick\n`sin(waves * pi * u)` sets the hump count: `1` is a clean arc, `2` rises and dips like a serpent, `3` wiggles harder. One integer knob, whole families of trajectories.\n\n## Two curves, two jobs\nKeep these separate in your head — they compose but never mix:\n\n- The ==path curve== decides *where* the point travels: `position = path(u)`\n- The ==easing curve== decides *how fast* `u` advances: `u = ease(elapsed / duration)`\n\nTogether: ==`position = path(ease(time))`== — the cleanest expression of designed motion. Same path with ease-in: the spark creeps up the arc, then whips down onto the target.\n\n## Steering vs paths\nThe vectors card taught homing: `target - position`, re-aimed every frame. That is ==steering== — reactive, chases a moving target, path emerges. `path(u)` is the opposite contract: the trajectory is *designed up front* and arrival is guaranteed. Cutscenes, spell arcs, and UI flourishes want paths; heat-seeking missiles want steering.\n\n## Bézier: the hand-authored path\nThe artist-friendly version of the same idea: a ==Bézier curve== runs start → target while one or more **control points** pull the path toward themselves like magnets. Under the hood it is lerps stacked on lerps — `lerp(lerp(S, C, u), lerp(C, T, u), u)` IS the quadratic Bézier. The sine arc is procedural; Bézier is authored; both are `path(u)`.",
+      },
+    },
+    {
       id: "matrices-basis",
       title: "Matrices: Where Basis Lands",
       content: {
@@ -197,6 +215,44 @@ fn main() {
           "It cuts instantly from 0 to 1 with no in-between",
         ],
         answerIndex: 0,
+      },
+    },
+    {
+      id: "tween-position-output",
+      title: "Where is the tween at t = 2?",
+      content: {
+        type: "multiple-choice",
+        question: "What does this program print?",
+        language: "rust",
+        code: `fn main() {
+    let (start, end) = ((0.0_f32, 0.0_f32), (4.0_f32, 4.0_f32));
+    let (elapsed, duration) = (2.0_f32, 4.0_f32);
+    let progress = elapsed / duration;
+    let eased = progress * progress;
+    let x = start.0 + (end.0 - start.0) * eased;
+    let y = start.1 + (end.1 - start.1) * eased;
+    println!("({x}, {y})");
+}`,
+        options: ["(2, 2)", "(1, 1)", "(0.25, 0.25)"],
+        answerIndex: 1,
+      },
+    },
+    {
+      id: "arc-position-output",
+      title: "The arc at its peak",
+      content: {
+        type: "multiple-choice",
+        question: "What does this program print?",
+        language: "rust",
+        code: `fn main() {
+    let (s, t) = ((0.0_f32, 0.0_f32), (4.0_f32, 0.0_f32));
+    let (amplitude, u) = (2.0_f32, 0.5_f32);
+    let base = (s.0 + (t.0 - s.0) * u, s.1 + (t.1 - s.1) * u);
+    let lift = amplitude * (std::f32::consts::PI * u).sin();
+    println!("({}, {})", base.0, base.1 + lift);
+}`,
+        options: ["(2, 0)", "(4, 2)", "(2, 2)"],
+        answerIndex: 2,
       },
     },
     {
@@ -418,6 +474,12 @@ pub fn world_matrix(scale: Vec3, rotation: Quat, translation: Vec3) -> Mat4 {
     { from: "write-lerp", to: "write-remap" },
     { from: "smoothstep-easing", to: "smoothstep-edges" },
     { from: "smoothstep-easing", to: "write-smoothstep" },
+    { from: "vectors-arrows-points", to: "integrate-vs-tween" },
+    { from: "smoothstep-easing", to: "integrate-vs-tween" },
+    { from: "integrate-vs-tween", to: "tween-position-output" },
+    { from: "integrate-vs-tween", to: "parametric-paths" },
+    { from: "trig-polar", to: "parametric-paths" },
+    { from: "parametric-paths", to: "arc-position-output" },
     { from: "write-remap", to: "write-smoothstep" },
     { from: "matrices-basis", to: "trs-order" },
     { from: "matrices-basis", to: "write-rotate-point" },
