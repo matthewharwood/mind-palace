@@ -7,6 +7,7 @@ import * as z from "zod";
 import { RatingButtons } from "~/components/rating-buttons";
 import { ReadAloudButton } from "~/components/read-aloud";
 import { defineComponent } from "~/lib/define-component";
+import { buildSpeechTrack } from "~/lib/speech-track";
 
 import { Body } from "./body";
 
@@ -66,17 +67,6 @@ export const FlashcardView = defineComponent(
       };
     }, []);
 
-    // Read the card aloud: its title + body, minus the chrome (phase eyebrow +
-    // rating footer carry `data-read-aloud-skip`). Cloned so the live DOM is safe.
-    function getCardText(): string {
-      const el = sectionRef.current;
-      if (!el) return "";
-      const clone = el.cloneNode(true);
-      if (!(clone instanceof Element)) return el.textContent ?? "";
-      for (const skip of clone.querySelectorAll("[data-read-aloud-skip]")) skip.remove();
-      return clone.textContent ?? "";
-    }
-
     return (
       <section
         ref={sectionRef}
@@ -87,17 +77,16 @@ export const FlashcardView = defineComponent(
           ref={headerRef}
           className="flex flex-col gap-2 border-black/[0.07] border-b pb-5 dark:border-white/[0.08]"
         >
-          <span
-            className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.2em]"
-            data-read-aloud-skip
-          >
+          <span className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.2em]">
             {phase}
           </span>
           <div className="flex items-start gap-3">
             <h1 className="flex-1 text-pretty text-[clamp(1.6rem,1.1rem+2vw,2.25rem)] text-midnight-ink leading-[1.12]">
               {flashcard.title}
             </h1>
-            <ReadAloudButton getText={getCardText} />
+            {/* Speech is compiled from the card DATA (not scraped from the DOM):
+                structured markdown is the prosody source — see lib/speech-track. */}
+            <ReadAloudButton getSegments={() => buildSpeechTrack(flashcard)} />
           </div>
         </header>
         <div ref={bodyRef}>
@@ -106,7 +95,6 @@ export const FlashcardView = defineComponent(
         <footer
           ref={footerRef}
           className="flex flex-col gap-2.5 border-black/[0.07] border-t pt-5 dark:border-white/[0.08]"
-          data-read-aloud-skip
         >
           <p className="font-mono text-[11px] text-muted-ash uppercase tracking-[0.15em]">
             How well did you know this?
