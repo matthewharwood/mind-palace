@@ -1,4 +1,10 @@
-import type { AlchemyBoard, CurriculumProgress, Progress, Settings } from "@mind-palace/schemas";
+import type {
+  AlchemyBoard,
+  CurriculumProgress,
+  Progress,
+  Settings,
+  VectorDungeonSession,
+} from "@mind-palace/schemas";
 
 import { getDB } from "./db";
 import type { StoreName } from "./hydration";
@@ -51,6 +57,14 @@ export function persistCurriculumProgress(value: CurriculumProgress): void {
     const db = await getDB();
     await db.put("curriculumProgress", value);
     channel?.postMessage({ store: "curriculumProgress", key: value.id });
+  });
+}
+
+export function persistVectorDungeonSession(value: VectorDungeonSession): void {
+  schedule(`vectorDungeonSession:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("vectorDungeonSessions", value);
+    channel?.postMessage({ store: "vectorDungeonSession", key: value.id });
   });
 }
 

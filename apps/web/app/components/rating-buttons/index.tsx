@@ -4,6 +4,7 @@ import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
 import { isTypingTarget } from "~/lib/keyboard";
+import { useHydrated } from "~/lib/use-hydrated";
 
 // RatingButtons — the SRS self-grade row shared by the lesson view and the study
 // deck. Numbered 1–4 (Again → Easy) and colour-ramped by difficulty (rose →
@@ -35,6 +36,7 @@ export const RatingButtons = defineComponent(
   RatingButtonsPropsSchema,
   ({ onRate }: RatingButtonsProps): ReactNode => {
     const onRateRef = useRef(onRate);
+    const hydrated = useHydrated();
     onRateRef.current = onRate;
     // Keyboard grading: 1–4 submit Again→Easy (Anki-style), unless the learner is
     // typing in the code editor / an input.
@@ -57,8 +59,9 @@ export const RatingButtons = defineComponent(
             key={rating}
             type="button"
             data-test={`rate-${rating}`}
+            disabled={!hydrated}
             onClick={() => onRate(rating)}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition-colors ${TONE[tone]}`}
+            className={`flex flex-col items-center gap-1.5 rounded-xl border py-2.5 transition-colors disabled:cursor-wait disabled:opacity-60 ${TONE[tone]}`}
           >
             <span className="flex size-5 items-center justify-center rounded-md border border-current font-mono text-[11px] leading-none opacity-80">
               {num}

@@ -7,6 +7,8 @@ import {
   ProgressSchema,
   SETTINGS_DEFAULT,
   SettingsSchema,
+  VECTOR_DUNGEON_SESSION_DEFAULT,
+  VectorDungeonSessionSchema,
 } from "@mind-palace/schemas";
 import type { WritableAtom } from "jotai";
 
@@ -17,6 +19,7 @@ import {
   persistCurriculumProgress,
   persistProgress,
   persistSettings,
+  persistVectorDungeonSession,
 } from "./persist";
 
 export const settingsAtom = atomWithIDB(
@@ -84,3 +87,10 @@ export function getCurriculumProgressAtom(curriculumId: string): CurriculumProgr
   }
   return cached;
 }
+
+export const vectorDungeonSessionAtom = atomWithIDB(
+  VectorDungeonSessionSchema,
+  (snapshot) => snapshot.vectorDungeonSession,
+  persistVectorDungeonSession,
+  VECTOR_DUNGEON_SESSION_DEFAULT,
+);

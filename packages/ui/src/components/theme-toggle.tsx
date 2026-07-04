@@ -7,13 +7,15 @@ import { Button } from "./button";
 export type ThemeToggleProps = {
   theme: "light" | "dark";
   onToggle: () => void;
+  disabled?: boolean;
 };
 
-export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle({ theme, onToggle, disabled = false }: ThemeToggleProps) {
   return (
     <Button
       variant="ghost"
       size="icon"
+      disabled={disabled}
       onClick={onToggle}
       aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
     >

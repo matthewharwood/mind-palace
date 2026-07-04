@@ -1,4 +1,10 @@
 import { CardStateSchema } from "@mind-palace/srs";
+import {
+  coordinateToRoomId,
+  MAX_HP,
+  START_COORDINATE,
+  VectorDungeonCoordinateSchema,
+} from "@mind-palace/vector-dungeon";
 import * as z from "zod";
 
 // Pillar 3 contract — every IDB-backed schema declares its zero via `.default()`
@@ -45,3 +51,25 @@ export const CurriculumProgressSchema = z.object({
   states: z.record(z.string(), CardStateSchema).default({}),
 });
 export type CurriculumProgress = z.infer<typeof CurriculumProgressSchema>;
+
+export const VectorDungeonLogEntrySchema = z.object({
+  id: z.string().min(1),
+  turn: z.int().min(0),
+  kind: z.enum(["move", "success", "setback", "camp"]),
+  message: z.string().min(1),
+});
+export type VectorDungeonLogEntry = z.infer<typeof VectorDungeonLogEntrySchema>;
+
+export const VectorDungeonSessionSchema = z.object({
+  id: z.literal("vector-dungeon").default("vector-dungeon"),
+  position: VectorDungeonCoordinateSchema.default(START_COORDINATE),
+  hp: z.int().min(0).max(MAX_HP).default(MAX_HP),
+  visitedRoomIds: z.array(z.string().min(1)).default([coordinateToRoomId(START_COORDINATE)]),
+  discoveredRewards: z.array(z.string().min(1)).default([]),
+  pendingActionId: z.string().min(1).optional(),
+  turn: z.int().min(0).default(0),
+  log: z.array(VectorDungeonLogEntrySchema).default([]),
+});
+export type VectorDungeonSession = z.infer<typeof VectorDungeonSessionSchema>;
+export const VECTOR_DUNGEON_SESSION_DEFAULT: VectorDungeonSession =
+  VectorDungeonSessionSchema.parse({});

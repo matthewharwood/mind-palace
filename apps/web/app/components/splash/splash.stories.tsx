@@ -20,3 +20,24 @@ export const Default: Story = {
     />
   ),
 };
+
+export const TwoEntrances: Story = {
+  render: () => (
+    <Splash
+      title="Mind Palace"
+      modelUrl={`${import.meta.env.BASE_URL}splash/hero.glb`}
+      entries={[
+        {
+          label: "Study Guide",
+          description: "Learning paths and lessons",
+          onSelect: () => undefined,
+        },
+        {
+          label: "Dungeon Master Apps",
+          description: "Parent-run printable adventures",
+          onSelect: () => undefined,
+        },
+      ]}
+    />
+  ),
+};

@@ -3,6 +3,7 @@ import { type ReactNode, useState } from "react";
 import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
+import { useHydrated } from "~/lib/use-hydrated";
 
 // SettingsPanel — presentational settings surface (rendered by the /settings
 // route into the main stage). Appearance (theme) + the destructive reset action
@@ -25,6 +26,7 @@ export const SettingsPanel = defineComponent(
   ({ onClear, theme, onToggleTheme, version }: SettingsPanelProps): ReactNode => {
     const [confirming, setConfirming] = useState(false);
     const [busy, setBusy] = useState(false);
+    const hydrated = useHydrated();
 
     async function clear(): Promise<void> {
       setBusy(true);
@@ -51,7 +53,7 @@ export const SettingsPanel = defineComponent(
               {theme === "dark" ? "Dark theme" : "Light theme"}
             </p>
           </div>
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} disabled={!hydrated} />
         </div>
 
         <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-canvas-white p-5 dark:border-white/10">

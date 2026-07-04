@@ -9,6 +9,9 @@ import {
   SETTINGS_DEFAULT,
   type Settings,
   SettingsSchema,
+  VECTOR_DUNGEON_SESSION_DEFAULT,
+  type VectorDungeonSession,
+  VectorDungeonSessionSchema,
 } from "@mind-palace/schemas";
 
 import { getDB } from "./db";
@@ -18,6 +21,7 @@ export type HydratedState = {
   settings: Settings;
   alchemyBoard: AlchemyBoard;
   curriculumProgress: ReadonlyMap<string, CurriculumProgress>;
+  vectorDungeonSession: VectorDungeonSession;
 };
 
 export type StoreName = keyof HydratedState;
@@ -38,17 +42,20 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
       settings: SETTINGS_DEFAULT,
       alchemyBoard: ALCHEMY_BOARD_DEFAULT,
       curriculumProgress: new Map(),
+      vectorDungeonSession: VECTOR_DUNGEON_SESSION_DEFAULT,
     };
     resolvedSnapshot = empty;
     return empty;
   }
   const db = await getDB();
-  const [rawProgress, rawSettings, rawBoard, rawCurriculum] = await Promise.all([
-    db.getAll("progress"),
-    db.get("settings", "settings"),
-    db.get("alchemyBoard", "board"),
-    db.getAll("curriculumProgress"),
-  ]);
+  const [rawProgress, rawSettings, rawBoard, rawCurriculum, rawVectorDungeonSession] =
+    await Promise.all([
+      db.getAll("progress"),
+      db.get("settings", "settings"),
+      db.get("alchemyBoard", "board"),
+      db.getAll("curriculumProgress"),
+      db.get("vectorDungeonSessions", "vector-dungeon"),
+    ]);
   const progress = new Map<string, Progress>();
   for (const raw of rawProgress) {
     const parsed = ProgressSchema.safeParse(raw);
@@ -61,7 +68,16 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     const parsed = CurriculumProgressSchema.safeParse(raw);
     if (parsed.success) curriculumProgress.set(parsed.data.id, parsed.data);
   }
-  const snapshot: HydratedState = { progress, settings, alchemyBoard, curriculumProgress };
+  const vectorDungeonSession = VectorDungeonSessionSchema.parse(
+    rawVectorDungeonSession ?? VECTOR_DUNGEON_SESSION_DEFAULT,
+  );
+  const snapshot: HydratedState = {
+    progress,
+    settings,
+    alchemyBoard,
+    curriculumProgress,
+    vectorDungeonSession,
+  };
   resolvedSnapshot = snapshot;
   return snapshot;
 })();
