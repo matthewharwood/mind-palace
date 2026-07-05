@@ -217,6 +217,109 @@ export const gfxBevyCore: Curriculum = {
       },
     },
     {
+      id: "degrees-radians-tau",
+      title: "Degrees, Radians & TAU",
+      content: {
+        type: "read",
+        markdown:
+          "Rotation needs an angle unit, and graphics picks the one that looks weird at first but is actually the *natural* one.\n\n## Degrees are the arbitrary one\n`360` degrees to a full turn is a historical accident (Babylonian, close to the days in a year). Nothing about a circle *is* 360.\n\n## Radians are the honest one\nWalk the rim of a circle of radius 1, and the distance you cover *is* the angle in ==radians==. A full lap is the circumference, `2π ≈ 6.28`, so:\n\n- ==full turn== = `TAU` = `2π` ≈ `6.28`\n- ==half turn== = `PI` = `π` ≈ `3.14`\n- ==quarter turn== = `π/2` ≈ `1.57`\n\nEvery rotation call, every `sin` and `cos`, and all of glam and WGSL expect ==radians==.\n\n## Think in turns, not radians\nThe trick that makes radians painless: read `TAU` as 'one turn' and scale it. `0.1 * TAU` is ==a tenth of a turn== — far clearer than '0.628 radians'. Reach for `TAU` on spins and `PI` on half-flips; convert human degrees only at the very edge with `.to_radians()`. (You met radians on the circle back in the math track — here they *drive* the spin.)",
+      },
+    },
+    {
+      id: "hz-frames-delta",
+      title: "Hz, Frames & Delta Time",
+      content: {
+        type: "read",
+        markdown:
+          "Continuous motion lives at the mercy of the frame rate, so you have to defuse it. Three words to keep straight:\n\n## Frame, Hz, delta\n- A ==frame== is one rendered image.\n- ==FPS / Hz== is frames (or cycles) per second — your display runs 60 or 120 **Hz**.\n- ==Delta time== is the seconds that passed since the *previous* frame, `time.delta_secs()` — a tiny number, and it is exactly `1 / fps` (about `0.0166` at 60 fps, `0.0083` at 120).\n\n## Why multiply by delta\nMove a *fixed amount per frame* and a 120 Hz Mac runs everything ==twice as fast== as a 60 Hz one. Scale every continuous motion by `delta_secs()` and the real-world speed is ==identical on every machine==. Burn in the habit: *delta for rates*.\n\n## Reading 0.1 * TAU * delta_secs()\nThe turntable line decomposes cleanly:\n\n- `0.1` — turns **per second**: a ==frequency==, i.e. `0.1` Hz\n- `TAU` — turns → radians\n- `delta_secs()` — this frame's slice of a second\n\nMultiply them and you get *the radians to turn on THIS frame*. The angular speed hiding inside is `ω = TAU · f` — turns-per-second times a full turn.",
+      },
+    },
+    {
+      id: "rebuild-rotate-y",
+      title: "Under the Hood: Rebuilding rotate_y",
+      content: {
+        type: "read",
+        markdown:
+          "`transform.rotate_y(θ)` spins the object about the vertical (world **Y**) axis. Here is what it is really doing, so it stops being magic.\n\n## The insight: Y sits still, X and Z dance\nRotating *about* Y ==leaves the Y value untouched== and spins the `(x, z)` pair around in the horizontal plane. That is the ==exact 2D rotation from the math track==, just applied to X and Z instead of X and Y. The matrix `Ry(θ)`:\n\n- `x' = x·cos θ + z·sin θ`\n- `y' = y`  — the axis you spin around never moves\n- `z' = -x·sin θ + z·cos θ`\n\nSanity check with a quarter turn (`cos = 0`, `sin = 1`): `+X` lands on `-Z`, and `+Z` lands on `+X`.\n\n## What glam and Bevy hand you\nglam packages that matrix as `Mat3::from_rotation_y(θ)`, and the same rotation as a quaternion `Quat::from_rotation_y(θ)` — whose four numbers are `(0, sin(θ/2), 0, cos(θ/2))` (a quarter turn is `(0, 0.707, 0, 0.707)`). You almost never build the quaternion by hand.\n\n## What rotate_y adds\n`rotate_y` just ==composes that rotation onto the one you already have==: `self.rotation = Quat::from_rotation_y(θ) * self.rotation`, spinning about the *world* Y. Its sibling `rotate_local_y` multiplies on the other side to spin about the object's *own* Y — the difference only shows once the object is tilted.",
+      },
+    },
+    {
+      id: "write-rotate-about-y",
+      title: "Write: rebuild rotate_y by hand",
+      content: {
+        type: "code",
+        prompt:
+          "Rebuild the heart of rotate_y in plain arithmetic. Write `pub fn rotate_about_y(p: (f32, f32, f32), angle: f32) -> (f32, f32, f32)` that rotates the point `p` about the Y axis: x' = x·cos + z·sin, y unchanged, z' = -x·sin + z·cos. Use `angle.sin_cos()` to get both at once.",
+        language: "rust",
+        solution:
+          "pub fn rotate_about_y(p: (f32, f32, f32), angle: f32) -> (f32, f32, f32) {\n    let (s, c) = angle.sin_cos();\n    (p.0 * c + p.2 * s, p.1, -p.0 * s + p.2 * c)\n}\n",
+      },
+    },
+    {
+      id: "glam-spin-y",
+      title: "Write: spin about Y with glam",
+      content: {
+        type: "code",
+        prompt:
+          "The real way — let the quaternion do it. Write `pub fn spin_about_y(p: Vec3, angle: f32) -> Vec3` that rotates `p` about the Y axis using `Quat::from_rotation_y`. Import both types from `glam`.",
+        language: "rust",
+        solution:
+          "use glam::{Quat, Vec3};\n\npub fn spin_about_y(p: Vec3, angle: f32) -> Vec3 {\n    Quat::from_rotation_y(angle) * p\n}\n",
+      },
+    },
+    {
+      id: "turns-mcq",
+      title: "Reading 0.1 * TAU",
+      content: {
+        type: "multiple-choice",
+        question:
+          "In `transform.rotate_y(0.1 * TAU * time.delta_secs())`, what does the `0.1 * TAU` part mean?",
+        options: ["A tenth of a full turn, expressed in radians", "0.1 radians", "0.1 degrees"],
+        answerIndex: 0,
+      },
+    },
+    {
+      id: "delta-fps-mcq",
+      title: "Dropping delta time",
+      content: {
+        type: "multiple-choice",
+        question:
+          "You delete the `* time.delta_secs()` from the turntable and run it on a 120 Hz Mac. What happens?",
+        options: [
+          "Nothing changes — delta time only matters at 60 fps",
+          "It spins about 120× too fast — a tenth of a turn every FRAME instead of every second",
+          "It stops rotating entirely",
+        ],
+        answerIndex: 1,
+      },
+    },
+    {
+      id: "quarter-turn-mcq",
+      title: "A quarter turn about Y",
+      content: {
+        type: "multiple-choice",
+        question:
+          "Rotate the point `+X` a quarter turn (`+π/2`) about the Y axis. Which axis does it land on?",
+        options: ["-Z", "+Z", "+Y"],
+        answerIndex: 0,
+      },
+    },
+    {
+      id: "turntable-axis-mcq",
+      title: "Which axis for a turntable",
+      content: {
+        type: "multiple-choice",
+        question:
+          "You want a turntable spin — the top stays up and the object never tumbles. Which call?",
+        options: [
+          "rotate_x — the horizontal axis",
+          "rotate_z — the depth axis",
+          "rotate_y — the vertical axis",
+        ],
+        answerIndex: 2,
+      },
+    },
+    {
       id: "sprite-vs-mesh2d",
       title: "The VFX Fork: Sprite or Mesh2d",
       content: {
@@ -544,6 +647,17 @@ fn expire(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mu
     { from: "front-face-gotcha", to: "backward-model-mcq" },
     { from: "place-3d-camera", to: "write-3d-camera" },
     { from: "front-face-gotcha", to: "write-face-fix" },
+    { from: "transforms-and-hierarchy", to: "degrees-radians-tau" },
+    { from: "resources-and-time", to: "hz-frames-delta" },
+    { from: "degrees-radians-tau", to: "hz-frames-delta" },
+    { from: "degrees-radians-tau", to: "rebuild-rotate-y" },
+    { from: "bevy-3d-axes", to: "rebuild-rotate-y" },
+    { from: "rebuild-rotate-y", to: "write-rotate-about-y" },
+    { from: "rebuild-rotate-y", to: "glam-spin-y" },
+    { from: "degrees-radians-tau", to: "turns-mcq" },
+    { from: "hz-frames-delta", to: "delta-fps-mcq" },
+    { from: "rebuild-rotate-y", to: "quarter-turn-mcq" },
+    { from: "rebuild-rotate-y", to: "turntable-axis-mcq" },
     { from: "queries-and-filters", to: "sin-bob" },
     { from: "resources-and-time", to: "sin-bob" },
     { from: "transforms-and-hierarchy", to: "sin-bob" },
