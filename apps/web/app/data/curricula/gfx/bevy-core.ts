@@ -94,6 +94,129 @@ export const gfxBevyCore: Curriculum = {
       },
     },
     {
+      id: "bevy-3d-axes",
+      title: "3D Space: Bevy's Three Axes",
+      content: {
+        type: "read",
+        markdown:
+          "Bevy's world is ==right-handed and Y-up==. Picture yourself standing behind the screen, looking in: `+X` goes ==right==, `+Y` goes ==up==, and `+Z` comes ==toward you==, out of the glass. So `-Z` heads *away*, into the scene. (2D was this exact space — you just left `z` as a layer-order number.)\n\n## The cube at the origin\nDrop a unit cube on the origin and name each face by the axis it points down:\n\n- **Top** is `+Y`, **bottom** is `-Y`\n- **Right** is `+X`, **left** is `-X`\n- The `+Z` face points at *you*; the `-Z` face points *away* into the screen\n\n## Forward is −Z\nThe rule to burn in above all others: ==anything's forward is its local `-Z`==. `Transform::forward()` is literally `-local_z()`. A camera, a character, an arrow — they all 'face' down `-Z`. Hold onto this one fact; it quietly explains every camera placement and every Blender-import quirk below.",
+      },
+    },
+    {
+      id: "place-3d-camera",
+      title: "Placing a 3D Camera",
+      content: {
+        type: "read",
+        markdown:
+          "A 3D camera is two parts: a `Camera3d` marker, and a `Transform` that says *where the eye sits* and *what it aims at*.\n\n## from_xyz + looking_at\n`Transform::from_xyz(x, y, z).looking_at(target, up)` reads in two halves:\n\n- `from_xyz(x, y, z)` — the ==eye position==, a point in world space\n- `.looking_at(target, up)` — spins the camera so its forward (`-Z`) points at the world *point* `target`, with `up` (conventionally `Vec3::Y`) keeping it level. `up` only settles ==roll==; it never moves the eye.\n\n## Reading a placement\n`from_xyz(0.0, 6.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y)` means: sit ==6 up and 12 toward the viewer== (on the `+Z` side), then tilt down to stare at the origin. Push `y` higher for a steeper bird's-eye; push `z` bigger to back further away. Bevy's own `3d_scene` example uses `from_xyz(-2.5, 4.5, 9.0).looking_at(Vec3::ZERO, Vec3::Y)`.\n\n## The default look\nSpawn a `Camera3d` with a plain `Transform` (no rotation) and it stares straight down world `-Z` — because forward *is* `-Z`. `looking_at` is just the friendly way to rotate that forward onto a target point instead of doing quaternion math by hand.",
+      },
+    },
+    {
+      id: "blender-vs-bevy-axes",
+      title: "Blender is Z-up; Bevy is Y-up",
+      content: {
+        type: "read",
+        markdown:
+          "Here is the single fact that trips up everyone moving art from Blender into Bevy: ==the two tools disagree on which axis is UP==.\n\n## Two different ups\n- **Bevy** is `Y`-up — the sky is `+Y`.\n- **Blender** is `Z`-up — the sky is `+Z`.\n\nBoth are right-handed, so only the *labels* move, not the handedness. In Blender, `+X` is right, `+Z` is up, and `+Y` points ==into the screen== — the Numpad-1 *Front view* looks toward `+Y`, so a model's front conventionally faces `-Y`.\n\n## The bridge is glTF\nYou never hand Bevy a `.blend` file — you export a ==GLB== (binary glTF). glTF is `Y`-up, exactly like Bevy, which is why it is the clean handoff format between the two. The next card is how the export quietly lines up the axes for you.",
+      },
+    },
+    {
+      id: "gltf-export-bridge",
+      title: "The Export Bridge: top stays top",
+      content: {
+        type: "read",
+        markdown:
+          "When you export a GLB from Blender, keep the default ==+Y Up== option. Behind the scenes the exporter rotates the model `-90°` about `X` so its axes match glTF, and therefore Bevy.\n\n## What maps to what\n- Blender `+Z` (up) → glTF `+Y` (up) → Bevy `+Y` (up)\n- Blender `+X` (right) → glTF `+X` → Bevy `+X`\n- Blender `-Y` (front) → glTF `+Z`\n\n## The one thing to remember\n==Up is the safe axis — it never rotates.== A cube modeled with its top toward Blender `+Z` *always* arrives top-up in Bevy (`+Y`), in every import mode, with zero fuss. If you remember one sentence from this whole section, make it this one: **top stays top**.",
+      },
+    },
+    {
+      id: "front-face-gotcha",
+      title: "The 'which front?' gotcha",
+      content: {
+        type: "read",
+        markdown:
+          "The famous complaint — *'my imported model faces backward!'* — is not an export bug. It is ==two different meanings of the word 'front'==.\n\n## Two fronts, pointing opposite ways\n- **Camera-front** — the face *toward the camera* — is `+Z` in Bevy. The default camera sits on the `+Z` side and sees it, so on screen the model looks correct.\n- **Object-forward** — `Transform::forward()`, used by `looking_at`, by movement, and by 'which way is it facing' — is `-Z`.\n\nThose two point ==opposite ways==, on purpose.\n\n## Why import lands on +Z\nBevy's default GLB importer copies glTF axes ==1:1== (coordinate conversion is off by default through 0.19), so a model's designated front lands at Bevy `+Z`. It reads correctly facing the camera, yet it is antiparallel to its own `forward()`.\n\n## The fix (don't re-model)\nWhen a model needs its *forward* to match its face, leave Blender alone and spin the entity in Bevy: `Transform::from_rotation(Quat::from_rotation_y(std::f32::consts::PI))` — a 180° yaw — or turn on the importer's `convert_coordinates`. ==Only front/back and left/right can flip; top/bottom never do.==",
+      },
+    },
+    {
+      id: "blender-orient-workflow",
+      title: "Orienting an Object in Blender",
+      content: {
+        type: "read",
+        markdown:
+          "A repeatable checklist so a Blender object lands in Bevy with its top on top and no surprises.\n\n## Model to the conventions\nBuild with the ==top toward `+Z`== (Blender's up) and the ==front toward `-Y`== (the side you see in the Numpad-1 Front view).\n\n## Apply transforms before export\nSelect the object and ==Ctrl+A → Rotation & Scale==. Un-applied rotation and scale ride along as baked-in values and make the model arrive tilted or the wrong size. Applying resets the object's own axes to the world's, so Bevy reads clean numbers.\n\n## Set the origin\nThe object's ==origin== is the point Bevy's `Transform` grabs and pivots around. Use **Object → Set Origin →** *Origin to Geometry* to center it, or drop the origin at the base if the thing should pivot on the ground.\n\n## Export\n**File → Export → glTF 2.0 (.glb)**, leaving `+Y Up` on. In Bevy the top is `+Y`; if the model's *facing* also needs to match its `forward()`, add the 180° yaw from the previous card.",
+      },
+    },
+    {
+      id: "cube-top-mcq",
+      title: "Which axis is the lid?",
+      content: {
+        type: "multiple-choice",
+        question:
+          "You model a treasure chest in Blender with its lid pointing toward Blender's `+Z`, export a GLB with the default +Y Up, and load it in Bevy. Which Bevy axis does the lid (the top) point along?",
+        options: [
+          "+Y — up is the safe axis; it never rotates through the export",
+          "+Z — glTF keeps Blender's Z axis unchanged",
+          "-Z — Bevy flips the vertical axis on import",
+        ],
+        answerIndex: 0,
+      },
+    },
+    {
+      id: "camera-look-mcq",
+      title: "Which way a fresh camera looks",
+      content: {
+        type: "multiple-choice",
+        question:
+          "A `Camera3d` is spawned with a default, identity-rotation `Transform`. Down which of its local axes does it look?",
+        options: [
+          "+Z — toward the viewer",
+          "-Z — forward is always the local -Z axis",
+          "+Y — cameras look up by default",
+        ],
+        answerIndex: 1,
+      },
+    },
+    {
+      id: "backward-model-mcq",
+      title: "The backward-model fix",
+      content: {
+        type: "multiple-choice",
+        question:
+          "An imported GLB character renders upright and correctly sized, but it faces AWAY from the direction its `Transform::forward()` reports. What is the cleanest fix?",
+        options: [
+          "Re-export from Blender with Z-up instead of +Y Up",
+          "Give the Transform a negative Z scale to flip it around",
+          "Its designated front is +Z while forward() is -Z — yaw the entity 180° about Y (or enable convert_coordinates); don't re-model",
+        ],
+        answerIndex: 2,
+      },
+    },
+    {
+      id: "write-3d-camera",
+      title: "Write: place a 3D camera",
+      content: {
+        type: "code",
+        prompt:
+          "Write a Bevy startup system `spawn_camera(mut commands: Commands)` that spawns a `Camera3d` sitting 6 up and 12 toward the viewer, looking at the world origin with `Vec3::Y` as up.",
+        language: "rust",
+        solution:
+          "use bevy::prelude::*;\n\nfn spawn_camera(mut commands: Commands) {\n    commands.spawn((\n        Camera3d::default(),\n        Transform::from_xyz(0.0, 6.0, 12.0).looking_at(Vec3::ZERO, Vec3::Y),\n    ));\n}\n",
+      },
+    },
+    {
+      id: "write-face-fix",
+      title: "Write: fix a backward import",
+      content: {
+        type: "code",
+        prompt:
+          "An imported model faces the wrong way. Write a Bevy system `face_forward` that yaws every entity carrying an `Imported` marker 180° about Y so its front lines up with `Transform::forward()`. Define the marker too.",
+        language: "rust",
+        solution:
+          "use bevy::prelude::*;\nuse std::f32::consts::PI;\n\n#[derive(Component)]\nstruct Imported;\n\nfn face_forward(mut query: Query<&mut Transform, With<Imported>>) {\n    for mut transform in &mut query {\n        transform.rotation = Quat::from_rotation_y(PI);\n    }\n}\n",
+      },
+    },
+    {
       id: "sprite-vs-mesh2d",
       title: "The VFX Fork: Sprite or Mesh2d",
       content: {
@@ -408,6 +531,19 @@ fn expire(time: Res<Time>, mut commands: Commands, mut query: Query<(Entity, &mu
     { from: "assets-and-handles", to: "handle-mcq" },
     { from: "queries-and-filters", to: "transforms-and-hierarchy" },
     { from: "transforms-and-hierarchy", to: "global-transform-mcq" },
+    { from: "transforms-and-hierarchy", to: "bevy-3d-axes" },
+    { from: "bevy-3d-axes", to: "place-3d-camera" },
+    { from: "bevy-3d-axes", to: "blender-vs-bevy-axes" },
+    { from: "blender-vs-bevy-axes", to: "gltf-export-bridge" },
+    { from: "gltf-export-bridge", to: "front-face-gotcha" },
+    { from: "bevy-3d-axes", to: "front-face-gotcha" },
+    { from: "gltf-export-bridge", to: "blender-orient-workflow" },
+    { from: "gltf-export-bridge", to: "cube-top-mcq" },
+    { from: "bevy-3d-axes", to: "camera-look-mcq" },
+    { from: "place-3d-camera", to: "camera-look-mcq" },
+    { from: "front-face-gotcha", to: "backward-model-mcq" },
+    { from: "place-3d-camera", to: "write-3d-camera" },
+    { from: "front-face-gotcha", to: "write-face-fix" },
     { from: "queries-and-filters", to: "sin-bob" },
     { from: "resources-and-time", to: "sin-bob" },
     { from: "transforms-and-hierarchy", to: "sin-bob" },
