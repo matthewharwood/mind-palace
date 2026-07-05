@@ -2,6 +2,7 @@ import type { Curriculum, Goal, LearningPath } from "@mind-palace/curriculum";
 
 import { exprCurricula, exprPath } from "./curricula/expr";
 import { gfxCurricula, gfxPath } from "./curricula/gfx";
+import { linearAlgebraCurricula, linearAlgebraPath } from "./curricula/linear-algebra";
 import { rustCurricula, rustPath } from "./curricula/rust-book";
 import { stdCurricula, stdPath } from "./curricula/std-lib";
 
@@ -14,9 +15,10 @@ const CURRICULA: Curriculum[] = [
   ...stdCurricula,
   ...gfxCurricula,
   ...exprCurricula,
+  ...linearAlgebraCurricula,
 ];
 
-const PATHS: LearningPath[] = [rustPath, stdPath, gfxPath, exprPath];
+const PATHS: LearningPath[] = [rustPath, stdPath, gfxPath, exprPath, linearAlgebraPath];
 
 const GOALS: Goal[] = [
   {
@@ -46,6 +48,13 @@ const GOALS: Goal[] = [
     description:
       "Mastery of Rust's expressiveness, mined from tokio, io-uring, tower, axum, leptos, bevy_ecs, iggy, serde, and syn: for every call-site shape you can visualize — chainable, declarative, typestate-locked, macro-grown — the machinery that produces it and the trade-off it costs. Ends at the Registers capstone: one feature, four registers, and a DSL of your own.",
     pathId: "p-expr",
+  } satisfies Goal,
+  {
+    id: "g-linear-algebra",
+    title: "Linear Algebra to Quaternions",
+    description:
+      "A from-zero path for understanding vectors, bases, matrices, rotations, and quaternions deeply enough to reason about 3D space in Bevy and Blender without treating quaternions as magic.",
+    pathId: "p-linear-algebra",
   } satisfies Goal,
 ];
 
