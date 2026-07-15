@@ -184,6 +184,7 @@ type Crumb =
   | { kind: "home"; label: string; current: boolean }
   | { kind: "apps"; label: string; current: boolean }
   | { kind: "app"; label: string; current: boolean }
+  | { kind: "ava-app"; label: string; current: boolean }
   | { kind: "progress"; label: string; current: boolean }
   | { kind: "settings"; label: string; current: boolean }
   | { kind: "goal"; goalId: string; label: string; current: boolean }
@@ -212,6 +213,13 @@ function CrumbLink(crumb: Crumb): ReactNode {
   if (crumb.kind === "app") {
     return (
       <Link to="/apps/vector-dungeon" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "ava-app") {
+    return (
+      <Link to="/apps/ava-shapes" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -254,6 +262,8 @@ function buildCrumbs(segments: string[]): Crumb[] {
     crumbs.push({ kind: "apps", label: "Apps", current: segments.length === 1 });
     if (segments[1] === "vector-dungeon") {
       crumbs.push({ kind: "app", label: "Vector Dungeon", current: true });
+    } else if (segments[1] === "ava-shapes") {
+      crumbs.push({ kind: "ava-app", label: "Ava's Shape Sounds", current: true });
     }
   } else if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });

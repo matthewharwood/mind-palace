@@ -6,7 +6,24 @@ import {
   START_COORDINATE,
 } from "@mind-palace/vector-dungeon";
 
-import { VECTOR_DUNGEON_SESSION_DEFAULT, VectorDungeonSessionSchema } from "./index";
+import {
+  AVA_SHAPES_SESSION_DEFAULT,
+  AvaShapeCardSchema,
+  AvaShapesSessionSchema,
+  VECTOR_DUNGEON_SESSION_DEFAULT,
+  VectorDungeonSessionSchema,
+} from "./index";
+
+test("AvaShapesSessionSchema fills the singleton defaults", () => {
+  expect(AVA_SHAPES_SESSION_DEFAULT).toEqual({ id: "ava-shapes", states: {} });
+});
+
+test("AvaShapeCardSchema rejects unknown shape and color names", () => {
+  expect(
+    AvaShapeCardSchema.safeParse({ id: "hexagon-teal", shape: "hexagon", color: "teal" }).success,
+  ).toBe(false);
+  expect(AvaShapesSessionSchema.safeParse({ id: "another-child", states: {} }).success).toBe(false);
+});
 
 test("VectorDungeonSessionSchema fills the singleton defaults", () => {
   expect(VECTOR_DUNGEON_SESSION_DEFAULT).toEqual({

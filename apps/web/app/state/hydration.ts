@@ -2,6 +2,9 @@ import {
   ALCHEMY_BOARD_DEFAULT,
   type AlchemyBoard,
   AlchemyBoardSchema,
+  AVA_SHAPES_SESSION_DEFAULT,
+  type AvaShapesSession,
+  AvaShapesSessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
   type Progress,
@@ -22,6 +25,7 @@ export type HydratedState = {
   alchemyBoard: AlchemyBoard;
   curriculumProgress: ReadonlyMap<string, CurriculumProgress>;
   vectorDungeonSession: VectorDungeonSession;
+  avaShapesSession: AvaShapesSession;
 };
 
 export type StoreName = keyof HydratedState;
@@ -43,19 +47,27 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
       alchemyBoard: ALCHEMY_BOARD_DEFAULT,
       curriculumProgress: new Map(),
       vectorDungeonSession: VECTOR_DUNGEON_SESSION_DEFAULT,
+      avaShapesSession: AVA_SHAPES_SESSION_DEFAULT,
     };
     resolvedSnapshot = empty;
     return empty;
   }
   const db = await getDB();
-  const [rawProgress, rawSettings, rawBoard, rawCurriculum, rawVectorDungeonSession] =
-    await Promise.all([
-      db.getAll("progress"),
-      db.get("settings", "settings"),
-      db.get("alchemyBoard", "board"),
-      db.getAll("curriculumProgress"),
-      db.get("vectorDungeonSessions", "vector-dungeon"),
-    ]);
+  const [
+    rawProgress,
+    rawSettings,
+    rawBoard,
+    rawCurriculum,
+    rawVectorDungeonSession,
+    rawAvaShapesSession,
+  ] = await Promise.all([
+    db.getAll("progress"),
+    db.get("settings", "settings"),
+    db.get("alchemyBoard", "board"),
+    db.getAll("curriculumProgress"),
+    db.get("vectorDungeonSessions", "vector-dungeon"),
+    db.get("avaShapeSessions", "ava-shapes"),
+  ]);
   const progress = new Map<string, Progress>();
   for (const raw of rawProgress) {
     const parsed = ProgressSchema.safeParse(raw);
@@ -71,12 +83,16 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
   const vectorDungeonSession = VectorDungeonSessionSchema.parse(
     rawVectorDungeonSession ?? VECTOR_DUNGEON_SESSION_DEFAULT,
   );
+  const avaShapesSession = AvaShapesSessionSchema.parse(
+    rawAvaShapesSession ?? AVA_SHAPES_SESSION_DEFAULT,
+  );
   const snapshot: HydratedState = {
     progress,
     settings,
     alchemyBoard,
     curriculumProgress,
     vectorDungeonSession,
+    avaShapesSession,
   };
   resolvedSnapshot = snapshot;
   return snapshot;

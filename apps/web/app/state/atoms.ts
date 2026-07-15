@@ -1,6 +1,8 @@
 import {
   ALCHEMY_BOARD_DEFAULT,
   AlchemyBoardSchema,
+  AVA_SHAPES_SESSION_DEFAULT,
+  AvaShapesSessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
   type Progress,
@@ -16,6 +18,7 @@ import { atomWithIDB } from "~/lib/atom-with-idb";
 
 import {
   persistAlchemyBoard,
+  persistAvaShapesSession,
   persistCurriculumProgress,
   persistProgress,
   persistSettings,
@@ -93,4 +96,11 @@ export const vectorDungeonSessionAtom = atomWithIDB(
   (snapshot) => snapshot.vectorDungeonSession,
   persistVectorDungeonSession,
   VECTOR_DUNGEON_SESSION_DEFAULT,
+);
+
+export const avaShapesSessionAtom = atomWithIDB(
+  AvaShapesSessionSchema,
+  (snapshot) => snapshot.avaShapesSession,
+  persistAvaShapesSession,
+  AVA_SHAPES_SESSION_DEFAULT,
 );

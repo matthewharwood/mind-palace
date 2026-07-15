@@ -18,6 +18,7 @@ test.describe("Vector Dungeon stories", () => {
     await page.goto(story("app-apphub--default"));
     await expect(page.getByRole("heading", { name: "Choose your path" })).toBeVisible();
     await expect(page.getByRole("link", { name: /Vector Dungeon/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Ava's Shape Sounds/ })).toBeVisible();
   });
 
   test("fresh DM session renders coordinate controls", async ({ page }) => {

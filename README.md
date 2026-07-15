@@ -9,6 +9,7 @@ A rapid-prototyping platform for browser games, optimized for live iPad-over-LAN
 ## Table of contents
 
 - [The Four Pillars](#the-four-pillars-non-negotiable)
+- [Included apps](#included-apps)
 - [Stack at a glance](#stack-at-a-glance)
 - [Prerequisites](#prerequisites)
 - [First-time setup](#first-time-setup)
@@ -34,6 +35,17 @@ Every change in this repo is judged against these four rules. Anything that viol
 2. **Zod-first types** — every prop, atom value, IDB record, env var, and route param starts as `z.object({...})`. The TS type is `z.infer<typeof Schema>`. Hand-written types that mirror a schema are forbidden.
 3. **IDB-first state** — IndexedDB is the source of truth; Jotai is its in-memory cache. A single root `<Suspense>` calls `use(idbHydrationPromise)` once at startup; after that, every `atomWithIDB` reads synchronously.
 4. **CLI-gate-first** — `bun run check` runs `biome ci → stylelint --max-warnings 0 → tsgo --noEmit → bun test → playwright test`. **Any** warning is a failure.
+
+---
+
+## Included apps
+
+| App | Route | What it teaches |
+|---|---|---|
+| Ava's Shape Sounds | `/apps/ava-shapes` | Teacher-led spaced-repetition flashcards for square, oval, rhombus, circle, and triangle. The five colorless shapes unlock the colored combinations; PixiJS draws each card and Web Audio composes a shape voice with a color voice. |
+| Vector Dungeon | `/apps/vector-dungeon` | A teacher-led coordinate-grid adventure with persisted session progress. |
+
+Open `/apps` from the local app to choose a prototype.
 
 ---
 
