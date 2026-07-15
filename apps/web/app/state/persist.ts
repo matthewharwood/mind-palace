@@ -1,5 +1,6 @@
 import type {
   AlchemyBoard,
+  AvaShapesSession,
   CurriculumProgress,
   Progress,
   Settings,
@@ -65,6 +66,14 @@ export function persistVectorDungeonSession(value: VectorDungeonSession): void {
     const db = await getDB();
     await db.put("vectorDungeonSessions", value);
     channel?.postMessage({ store: "vectorDungeonSession", key: value.id });
+  });
+}
+
+export function persistAvaShapesSession(value: AvaShapesSession): void {
+  schedule(`avaShapesSession:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("avaShapeSessions", value);
+    channel?.postMessage({ store: "avaShapesSession", key: value.id });
   });
 }
 

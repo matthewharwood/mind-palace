@@ -24,6 +24,13 @@ export const Default: Story = {
         cta: "Open study guide",
       },
       {
+        title: "Ava's Shape Sounds",
+        description: "Practice shapes first, then add colors and musical cues.",
+        href: "/apps/ava-shapes",
+        kind: "study",
+        cta: "Practice shapes",
+      },
+      {
         title: "Vector Dungeon",
         description: "Run a printable grid adventure from a phone.",
         href: "/apps/vector-dungeon",

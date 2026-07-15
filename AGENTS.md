@@ -4,7 +4,7 @@ This file provides guidance to Codex and other agentic coding tools when working
 
 ## Project context
 
-`mind-palace` is a rapid-prototyping platform for building small browser games for the user's son. It optimizes for **iteration speed on a live iPad over LAN**, not for server-side anything. There is no backend. All state is local. Deployment target is GitHub Pages.
+`mind-palace` is a rapid-prototyping platform for building small browser games for the user's children. It optimizes for **iteration speed on a live iPad over LAN**, not for server-side anything. There is no backend. All state is local. Deployment target is GitHub Pages. Current domain apps include Vector Dungeon and Ava's Shape Sounds under `/apps`.
 
 The architecture below is **load-bearing** — it is what makes the iPad live-refresh workflow tolerable, what keeps the app installable offline, and what lets components be built in isolation. Read this file before suggesting any architectural change. If a request appears to violate one of the Four Pillars, push back before implementing.
 

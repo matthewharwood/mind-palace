@@ -18,6 +18,7 @@ import { Route as AppsIndexRouteImport } from './routes/apps.index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
+import { Route as AppsAvaShapesRouteImport } from './routes/apps.ava-shapes'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
 import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon_.print'
@@ -68,6 +69,11 @@ const AppsVectorDungeonRoute = AppsVectorDungeonRouteImport.update({
   path: '/vector-dungeon',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsAvaShapesRoute = AppsAvaShapesRouteImport.update({
+  id: '/ava-shapes',
+  path: '/ava-shapes',
+  getParentRoute: () => AppsRoute,
+} as any)
 const CurriculumCurriculumIdIndexRoute =
   CurriculumCurriculumIdIndexRouteImport.update({
     id: '/',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps': typeof AppsIndexRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/goal/$goalId'
     | '/apps'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -257,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsVectorDungeonRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/ava-shapes': {
+      id: '/apps/ava-shapes'
+      path: '/ava-shapes'
+      fullPath: '/apps/ava-shapes'
+      preLoaderRoute: typeof AppsAvaShapesRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/curriculum/$curriculumId/': {
       id: '/curriculum/$curriculumId/'
       path: '/'
@@ -289,12 +308,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppsRouteChildren {
+  AppsAvaShapesRoute: typeof AppsAvaShapesRoute
   AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
   AppsIndexRoute: typeof AppsIndexRoute
   AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
 }
 
 const AppsRouteChildren: AppsRouteChildren = {
+  AppsAvaShapesRoute: AppsAvaShapesRoute,
   AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,
   AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,

@@ -53,6 +53,37 @@ export const CurriculumProgressSchema = z.object({
 });
 export type CurriculumProgress = z.infer<typeof CurriculumProgressSchema>;
 
+export const AvaShapeKindSchema = z.enum(["square", "oval", "rhombus", "circle", "triangle"]);
+export type AvaShapeKind = z.infer<typeof AvaShapeKindSchema>;
+
+export const AvaShapeColorSchema = z.enum([
+  "colorless",
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+  "pink",
+]);
+export type AvaShapeColor = z.infer<typeof AvaShapeColorSchema>;
+
+export const AvaShapeCardSchema = z.object({
+  id: z.string().min(1),
+  shape: AvaShapeKindSchema,
+  color: AvaShapeColorSchema,
+});
+export type AvaShapeCard = z.infer<typeof AvaShapeCardSchema>;
+
+// Teacher-led spaced-repetition session for Ava's shape cards. Static card
+// content is generated in the app; only the SRS scheduling overlay persists.
+export const AvaShapesSessionSchema = z.object({
+  id: z.literal("ava-shapes").default("ava-shapes"),
+  states: z.record(z.string(), CardStateSchema).default({}),
+});
+export type AvaShapesSession = z.infer<typeof AvaShapesSessionSchema>;
+export const AVA_SHAPES_SESSION_DEFAULT: AvaShapesSession = AvaShapesSessionSchema.parse({});
+
 export const VectorDungeonLogEntrySchema = z.object({
   id: z.string().min(1),
   turn: z.int().min(0),
