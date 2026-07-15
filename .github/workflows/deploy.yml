@@ -37,11 +37,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Full history so react-doctor can resolve `main` for its diff scan; on
-          # a shallow checkout it falls back to a full-codebase scan and gates the
-          # deploy on pre-existing findings (ci.yml already fetches main).
+          # Full history so the landed commit can be compared with its parent.
           fetch-depth: 0
-      - run: git fetch origin main:main
+      - name: Set React Doctor diff base
+        run: |
+          git switch --detach
+          git branch --force main HEAD^
       - uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
