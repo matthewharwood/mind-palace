@@ -5,9 +5,9 @@ import {
   AvaShapesSessionSchema,
 } from "@mind-palace/schemas";
 import type { Rating } from "@mind-palace/srs";
-import { RotateCcw, Sparkles, Volume2 } from "lucide-react";
+import { Info, RotateCcw, Volume2 } from "lucide-react";
 import { Graphics } from "pixi.js";
-import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useRef, useSyncExternalStore } from "react";
 import * as z from "zod";
 
 import { playAvaShapeSound } from "~/audio/ava-shape-sounds";
@@ -18,7 +18,6 @@ import {
   AVA_SHAPE_CARDS,
   areAvaColorsUnlocked,
   avaShapeAnswer,
-  avaShapePrompt,
   countAvaReviewedCards,
   selectAvaShapeCard,
 } from "~/lib/ava-shapes";
@@ -84,7 +83,7 @@ export const AvaShapeCanvas = defineComponent(
     }, [card]);
 
     return (
-      <div className="relative aspect-square w-full min-w-0 max-w-full overflow-hidden sm:max-w-[28rem]">
+      <div className="relative size-full min-h-0 min-w-0 overflow-hidden">
         <canvas
           ref={canvasRef}
           role="img"
@@ -115,14 +114,12 @@ export const AvaShapes = defineComponent(
       getClientHydrationSnapshot,
       getServerHydrationSnapshot,
     );
-    const [revealedCardId, setRevealedCardId] = useState<string | null>(null);
     const card = selectAvaShapeCard(session, now);
     const colorsUnlocked = areAvaColorsUnlocked(session);
     const reviewed = countAvaReviewedCards(session);
     const foundationReviewed = AVA_COLORLESS_SHAPE_CARDS.filter(
       (foundationCard) => (session.states[foundationCard.id]?.reps ?? 0) > 0,
     ).length;
-    const revealed = card?.id === revealedCardId;
 
     function play(cardToPlay: AvaShapeCard): void {
       void playAvaShapeSound(cardToPlay).catch(() => undefined);
@@ -133,97 +130,66 @@ export const AvaShapes = defineComponent(
       onRate(card.id, rating);
     }
 
+    useEffect(() => {
+      if (!card || !interactive) return;
+      void playAvaShapeSound(card).catch(() => undefined);
+    }, [card, interactive]);
+
     return (
       <section
-        className="mx-auto flex min-h-full w-full max-w-5xl flex-col bg-[radial-gradient(circle_at_top,#eff8ff_0%,transparent_45%)] px-4 py-4 sm:px-8 sm:py-7 dark:bg-none"
+        className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top,#eff8ff_0%,transparent_45%)] px-2 py-2 sm:px-5 sm:py-4 dark:bg-none"
         data-phase={colorsUnlocked ? "colors" : "foundation"}
       >
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-2 font-medium text-intelligence-blue text-xs uppercase tracking-[0.16em]">
-              <Sparkles className="size-4" aria-hidden="true" />
-              Ava&apos;s shape sounds
-            </div>
-            <h1 className="font-semibold text-2xl text-midnight-ink sm:text-3xl">
-              {colorsUnlocked ? "Shape + color" : "Shape foundations"}
-            </h1>
-            <p className="mt-1 text-muted-ash text-sm">
-              {colorsUnlocked
-                ? `${reviewed} of ${AVA_SHAPE_CARDS.length} combinations introduced`
-                : `${foundationReviewed} of ${AVA_COLORLESS_SHAPE_CARDS.length} colorless shapes covered`}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={!interactive}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-black/10 bg-canvas-white px-3 py-2 font-medium text-muted-ash text-xs shadow-sm transition-colors hover:text-midnight-ink dark:border-white/10"
-          >
-            <RotateCcw className="size-3.5" aria-hidden="true" />
-            Start over
-          </button>
-        </header>
-
         {card ? (
-          <div className="grid min-h-0 flex-1 gap-4 py-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-center lg:gap-8">
-            <div className="grid min-h-[17rem] min-w-0 place-items-center overflow-hidden rounded-[2rem] border border-black/[0.06] bg-canvas-white/80 p-3 shadow-[0_18px_60px_rgba(44,71,112,0.12)] backdrop-blur dark:border-white/10 dark:bg-midnight-ink/30">
+          <div className="relative grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-2 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-1 lg:items-stretch">
+            <details className="group absolute top-1 right-1 z-10">
+              <summary className="grid size-9 list-none place-items-center rounded-full border border-black/10 bg-canvas-white/90 text-muted-ash shadow-sm backdrop-blur transition-colors hover:text-midnight-ink marker:hidden dark:border-white/10">
+                <Info className="size-4" aria-hidden="true" />
+                <span className="sr-only">Session details</span>
+              </summary>
+              <div className="mt-2 w-64 rounded-2xl border border-black/10 bg-canvas-white p-3 text-xs shadow-card dark:border-white/10">
+                <p className="font-semibold text-midnight-ink">Ava&apos;s Shape Sounds</p>
+                <p className="mt-1 text-muted-ash">
+                  {colorsUnlocked
+                    ? `${reviewed} of ${AVA_SHAPE_CARDS.length} combinations introduced`
+                    : `${foundationReviewed} of ${AVA_COLORLESS_SHAPE_CARDS.length} colorless shapes covered`}
+                </p>
+                <button
+                  type="button"
+                  onClick={onReset}
+                  disabled={!interactive}
+                  className="mt-3 inline-flex items-center gap-2 rounded-full border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-muted-ash transition-colors hover:text-midnight-ink disabled:cursor-wait disabled:opacity-60 dark:border-white/10"
+                >
+                  <RotateCcw className="size-3.5" aria-hidden="true" />
+                  Start over
+                </button>
+              </div>
+            </details>
+
+            <div className="grid min-h-48 min-w-0 place-items-center overflow-hidden rounded-[1.5rem] border border-black/[0.06] bg-canvas-white/80 p-2 shadow-[0_18px_60px_rgba(44,71,112,0.12)] backdrop-blur sm:rounded-[2rem] sm:p-3 dark:border-white/10 dark:bg-midnight-ink/30">
               <AvaShapeCanvas card={card} />
             </div>
 
-            <div className="flex flex-col gap-3 rounded-3xl border border-black/[0.07] bg-canvas-white p-4 shadow-card dark:border-white/10 sm:p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-mono text-[10px] text-muted-ash uppercase tracking-[0.2em]">
-                    Ask Ava
-                  </p>
-                  <p className="mt-1 font-semibold text-lg text-midnight-ink">
-                    {avaShapePrompt(card)}
-                  </p>
-                </div>
+            <div className="flex min-h-0 flex-col justify-end gap-2 rounded-[1.5rem] border border-black/[0.07] bg-canvas-white p-3 shadow-card sm:gap-3 sm:rounded-3xl sm:p-4 dark:border-white/10">
+              <div className="flex items-center justify-center gap-3">
+                <h1 className="min-w-0 text-center font-semibold text-4xl text-midnight-ink leading-none sm:text-6xl lg:text-5xl">
+                  {avaShapeAnswer(card)}
+                </h1>
                 <button
                   type="button"
                   onClick={() => play(card)}
                   disabled={!interactive}
                   aria-label="Play this shape sound"
-                  className="grid size-11 shrink-0 place-items-center rounded-full bg-intelligence-blue text-white shadow-[0_8px_22px_rgba(60,129,246,0.3)] transition-transform active:scale-95"
+                  className="grid size-11 shrink-0 place-items-center rounded-full bg-intelligence-blue text-white shadow-[0_8px_22px_rgba(60,129,246,0.3)] transition-transform active:scale-95 disabled:cursor-wait disabled:opacity-60"
                 >
                   <Volume2 className="size-5" aria-hidden="true" />
                 </button>
               </div>
 
-              <p className="text-muted-ash text-xs leading-5">
-                The first tone names the shape. The second tone adds its color.
-              </p>
-
-              {revealed ? (
-                <div className="flex flex-col gap-3" aria-live="polite">
-                  <div className="rounded-2xl bg-whisper-gray px-4 py-3 text-center dark:bg-white/5">
-                    <p className="text-muted-ash text-xs">Answer</p>
-                    <h2 className="font-semibold text-2xl text-midnight-ink">
-                      {avaShapeAnswer(card)}
-                    </h2>
-                  </div>
-                  <p className="text-center font-medium text-midnight-ink text-sm">
-                    How did Ava do?
-                  </p>
-                  <RatingButtons onRate={rate} />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setRevealedCardId(card.id)}
-                  disabled={!interactive}
-                  className="min-h-12 rounded-2xl bg-midnight-ink px-5 py-3 font-semibold text-canvas-white transition-transform active:scale-[0.99]"
-                >
-                  Reveal answer
-                </button>
-              )}
-
-              {!colorsUnlocked ? (
-                <p className="rounded-xl bg-intelligence-blue/8 px-3 py-2 text-intelligence-blue text-xs leading-5">
-                  Colors stay locked until all five plain shapes have appeared once.
-                </p>
-              ) : null}
+              <div className="flex flex-col gap-2" aria-live="polite">
+                <p className="text-center font-medium text-midnight-ink text-sm">How did Ava do?</p>
+                <RatingButtons onRate={rate} />
+              </div>
             </div>
           </div>
         ) : (
