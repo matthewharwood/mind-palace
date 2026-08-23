@@ -3,6 +3,8 @@ import {
   AlchemyBoardSchema,
   AVA_SHAPES_SESSION_DEFAULT,
   AvaShapesSessionSchema,
+  CHARACTER_PARTY_SESSION_DEFAULT,
+  CharacterPartySessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
   type Progress,
@@ -16,13 +18,16 @@ import type { WritableAtom } from "jotai";
 
 import { atomWithIDB } from "~/lib/atom-with-idb";
 
+import { getDB } from "./db";
 import {
   persistAlchemyBoard,
   persistAvaShapesSession,
+  persistCharacterPartySession,
   persistCurriculumProgress,
   persistProgress,
   persistSettings,
   persistVectorDungeonSession,
+  subscribeRemoteWrites,
 } from "./persist";
 
 export const settingsAtom = atomWithIDB(
@@ -103,4 +108,20 @@ export const avaShapesSessionAtom = atomWithIDB(
   (snapshot) => snapshot.avaShapesSession,
   persistAvaShapesSession,
   AVA_SHAPES_SESSION_DEFAULT,
+);
+
+export const characterPartySessionAtom = atomWithIDB(
+  CharacterPartySessionSchema,
+  (snapshot) => snapshot.characterPartySession,
+  persistCharacterPartySession,
+  CHARACTER_PARTY_SESSION_DEFAULT,
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "characterPartySession" && message.key === "character-party") {
+          onChange();
+        }
+      }),
+    read: async () => (await getDB()).get("characterPartySessions", "character-party"),
+  },
 );

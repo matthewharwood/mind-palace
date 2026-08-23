@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, ScrollText, Shield } from "lucide-react";
+import { ArrowRight, BookOpen, PartyPopper, ScrollText, Shield } from "lucide-react";
 import type { ReactNode } from "react";
 import * as z from "zod";
 
@@ -8,7 +8,7 @@ export const AppHubItemSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   href: z.string().min(1),
-  kind: z.enum(["study", "dm"]),
+  kind: z.enum(["study", "dm", "party"]),
   cta: z.string().min(1),
 });
 export type AppHubItem = z.infer<typeof AppHubItemSchema>;
@@ -22,7 +22,8 @@ export type AppHubProps = z.infer<typeof AppHubPropsSchema>;
 
 function itemIcon(kind: AppHubItem["kind"]): ReactNode {
   if (kind === "study") return <BookOpen className="size-5" aria-hidden="true" />;
-  return <Shield className="size-5" aria-hidden="true" />;
+  if (kind === "dm") return <Shield className="size-5" aria-hidden="true" />;
+  return <PartyPopper className="size-5" aria-hidden="true" />;
 }
 
 export const AppHub = defineComponent(

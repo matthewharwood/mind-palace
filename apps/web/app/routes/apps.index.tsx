@@ -39,6 +39,14 @@ function AppsIndex() {
           kind: "dm",
           cta: "Run the adventure",
         },
+        {
+          title: "Character Party",
+          description:
+            "Draw from memory, reveal the real character, or print 150 headband guessing cards for the whole family.",
+          href: `${BASE_URL}apps/character-party`,
+          kind: "party",
+          cta: "Start the party",
+        },
       ]}
     />
   );
