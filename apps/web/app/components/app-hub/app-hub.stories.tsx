@@ -37,6 +37,13 @@ export const Default: Story = {
         kind: "dm",
         cta: "Open DM app",
       },
+      {
+        title: "Character Party",
+        description: "Draw surprise characters or print a giant headband guessing deck.",
+        href: "/apps/character-party",
+        kind: "party",
+        cta: "Start the party",
+      },
     ],
   },
 };

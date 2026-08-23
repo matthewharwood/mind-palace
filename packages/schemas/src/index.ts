@@ -84,6 +84,117 @@ export const AvaShapesSessionSchema = z.object({
 export type AvaShapesSession = z.infer<typeof AvaShapesSessionSchema>;
 export const AVA_SHAPES_SESSION_DEFAULT: AvaShapesSession = AvaShapesSessionSchema.parse({});
 
+export const CharacterDifficultySchema = z.enum(["easy", "medium", "hard"]);
+export type CharacterDifficulty = z.infer<typeof CharacterDifficultySchema>;
+
+export const CharacterGenerationSchema = z.enum([
+  "classics",
+  "1990s-2000s",
+  "modern-kids",
+  "cross-generational",
+]);
+export type CharacterGeneration = z.infer<typeof CharacterGenerationSchema>;
+
+export const CharacterCategorySchema = z.enum([
+  "cartoon",
+  "movie",
+  "television",
+  "video-game",
+  "superhero",
+  "puppet",
+  "mascot",
+  "creature",
+]);
+export type CharacterCategory = z.infer<typeof CharacterCategorySchema>;
+
+// Static character content. Mutable repetition history intentionally lives in
+// CharacterPartySessionSchema below so updating the JSON library never resets
+// play history or bakes device-specific usage into source-controlled content.
+export const CharacterDefinitionSchema = z.object({
+  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  name: z.string().min(1),
+  franchise: z.string().min(1),
+  difficulty: CharacterDifficultySchema,
+  generation: CharacterGenerationSchema,
+  category: CharacterCategorySchema,
+  drawable: z.boolean(),
+  headbandEligible: z.boolean(),
+  imageSearchTerm: z.string().min(1),
+  wikipediaTitle: z.string().min(1),
+});
+export type CharacterDefinition = z.infer<typeof CharacterDefinitionSchema>;
+
+export const CharacterLibrarySchema = z
+  .array(CharacterDefinitionSchema)
+  .min(150)
+  .max(200)
+  .superRefine((characters, context) => {
+    const ids = new Set<string>();
+    const names = new Set<string>();
+    for (const [index, character] of characters.entries()) {
+      const normalizedName = character.name.toLocaleLowerCase("en-US");
+      if (ids.has(character.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate character id: ${character.id}`,
+          path: [index, "id"],
+        });
+      }
+      if (names.has(normalizedName)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate character name: ${character.name}`,
+          path: [index, "name"],
+        });
+      }
+      ids.add(character.id);
+      names.add(normalizedName);
+    }
+  });
+
+export const CharacterUsageSchema = z.object({
+  usedCount: z.int().min(0).default(0),
+  lastUsed: z.number().min(0).nullable().default(null),
+  lastSkippedAtTurn: z.int().min(0).nullable().default(null),
+});
+export type CharacterUsage = z.infer<typeof CharacterUsageSchema>;
+
+export const CharacterPartySessionDurationSchema = z.union([
+  z.literal(0),
+  z.literal(30),
+  z.literal(45),
+  z.literal(60),
+]);
+export type CharacterPartySessionDuration = z.infer<typeof CharacterPartySessionDurationSchema>;
+
+export const CharacterPartyRoundDurationSchema = z.union([
+  z.literal(0),
+  z.literal(60),
+  z.literal(90),
+]);
+export type CharacterPartyRoundDuration = z.infer<typeof CharacterPartyRoundDurationSchema>;
+
+export const CharacterPartySessionSchema = z.object({
+  id: z.literal("character-party").default("character-party"),
+  phase: z.enum(["setup", "prompt", "revealed"]).default("setup"),
+  selectedDifficulties: z
+    .array(CharacterDifficultySchema)
+    .min(1)
+    .default(["easy", "medium", "hard"]),
+  sessionDurationMinutes: CharacterPartySessionDurationSchema.default(45),
+  roundDurationSeconds: CharacterPartyRoundDurationSchema.default(60),
+  sessionStartedAt: z.number().min(0).nullable().default(null),
+  roundStartedAt: z.number().min(0).nullable().default(null),
+  currentCharacterId: z.string().min(1).nullable().default(null),
+  recentCharacterIds: z.array(z.string().min(1)).max(25).default([]),
+  completedCharacterIds: z.array(z.string().min(1)).default([]),
+  presentedCount: z.int().min(0).default(0),
+  history: z.record(z.string().min(1), CharacterUsageSchema).default({}),
+});
+export type CharacterPartySession = z.infer<typeof CharacterPartySessionSchema>;
+export const CHARACTER_PARTY_SESSION_DEFAULT: CharacterPartySession =
+  CharacterPartySessionSchema.parse({});
+
 export const VectorDungeonLogEntrySchema = z.object({
   id: z.string().min(1),
   turn: z.int().min(0),

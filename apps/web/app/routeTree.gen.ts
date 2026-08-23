@@ -18,11 +18,15 @@ import { Route as AppsIndexRouteImport } from './routes/apps.index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
+import { Route as AppsCharacterPartyRouteImport } from './routes/apps.character-party'
 import { Route as AppsAvaShapesRouteImport } from './routes/apps.ava-shapes'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
 import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon_.print'
+import { Route as AppsCharacterPartyHeadbandRouteImport } from './routes/apps.character-party_.headband'
+import { Route as AppsCharacterPartyDrawRouteImport } from './routes/apps.character-party_.draw'
 import { Route as CurriculumCurriculumIdNodeNodeIdRouteImport } from './routes/curriculum.$curriculumId.node.$nodeId'
+import { Route as AppsCharacterPartyHeadbandPrintRouteImport } from './routes/apps.character-party_.headband_.print'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -69,6 +73,11 @@ const AppsVectorDungeonRoute = AppsVectorDungeonRouteImport.update({
   path: '/vector-dungeon',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsCharacterPartyRoute = AppsCharacterPartyRouteImport.update({
+  id: '/character-party',
+  path: '/character-party',
+  getParentRoute: () => AppsRoute,
+} as any)
 const AppsAvaShapesRoute = AppsAvaShapesRouteImport.update({
   id: '/ava-shapes',
   path: '/ava-shapes',
@@ -91,11 +100,28 @@ const AppsVectorDungeonPrintRoute = AppsVectorDungeonPrintRouteImport.update({
   path: '/vector-dungeon/print',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsCharacterPartyHeadbandRoute =
+  AppsCharacterPartyHeadbandRouteImport.update({
+    id: '/character-party_/headband',
+    path: '/character-party/headband',
+    getParentRoute: () => AppsRoute,
+  } as any)
+const AppsCharacterPartyDrawRoute = AppsCharacterPartyDrawRouteImport.update({
+  id: '/character-party_/draw',
+  path: '/character-party/draw',
+  getParentRoute: () => AppsRoute,
+} as any)
 const CurriculumCurriculumIdNodeNodeIdRoute =
   CurriculumCurriculumIdNodeNodeIdRouteImport.update({
     id: '/node/$nodeId',
     path: '/node/$nodeId',
     getParentRoute: () => CurriculumCurriculumIdRoute,
+  } as any)
+const AppsCharacterPartyHeadbandPrintRoute =
+  AppsCharacterPartyHeadbandPrintRouteImport.update({
+    id: '/character-party_/headband_/print',
+    path: '/character-party/headband/print',
+    getParentRoute: () => AppsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -105,13 +131,17 @@ export interface FileRoutesByFullPath {
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/character-party': typeof AppsCharacterPartyRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps/': typeof AppsIndexRoute
+  '/apps/character-party/draw': typeof AppsCharacterPartyDrawRoute
+  '/apps/character-party/headband': typeof AppsCharacterPartyHeadbandRoute
   '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
+  '/apps/character-party/headband/print': typeof AppsCharacterPartyHeadbandPrintRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRoutesByTo {
@@ -120,12 +150,16 @@ export interface FileRoutesByTo {
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/character-party': typeof AppsCharacterPartyRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps': typeof AppsIndexRoute
+  '/apps/character-party/draw': typeof AppsCharacterPartyDrawRoute
+  '/apps/character-party/headband': typeof AppsCharacterPartyHeadbandRoute
   '/apps/vector-dungeon/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdIndexRoute
+  '/apps/character-party/headband/print': typeof AppsCharacterPartyHeadbandPrintRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRoutesById {
@@ -136,13 +170,17 @@ export interface FileRoutesById {
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/character-party': typeof AppsCharacterPartyRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps/': typeof AppsIndexRoute
+  '/apps/character-party_/draw': typeof AppsCharacterPartyDrawRoute
+  '/apps/character-party_/headband': typeof AppsCharacterPartyHeadbandRoute
   '/apps/vector-dungeon_/print': typeof AppsVectorDungeonPrintRoute
   '/curriculum/$curriculumId/study': typeof CurriculumCurriculumIdStudyRoute
   '/curriculum/$curriculumId/': typeof CurriculumCurriculumIdIndexRoute
+  '/apps/character-party_/headband_/print': typeof AppsCharacterPartyHeadbandPrintRoute
   '/curriculum/$curriculumId/node/$nodeId': typeof CurriculumCurriculumIdNodeNodeIdRoute
 }
 export interface FileRouteTypes {
@@ -154,13 +192,17 @@ export interface FileRouteTypes {
     | '/progress'
     | '/settings'
     | '/apps/ava-shapes'
+    | '/apps/character-party'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
     | '/apps/'
+    | '/apps/character-party/draw'
+    | '/apps/character-party/headband'
     | '/apps/vector-dungeon/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId/'
+    | '/apps/character-party/headband/print'
     | '/curriculum/$curriculumId/node/$nodeId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -169,12 +211,16 @@ export interface FileRouteTypes {
     | '/progress'
     | '/settings'
     | '/apps/ava-shapes'
+    | '/apps/character-party'
     | '/apps/vector-dungeon'
     | '/goal/$goalId'
     | '/apps'
+    | '/apps/character-party/draw'
+    | '/apps/character-party/headband'
     | '/apps/vector-dungeon/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId'
+    | '/apps/character-party/headband/print'
     | '/curriculum/$curriculumId/node/$nodeId'
   id:
     | '__root__'
@@ -184,13 +230,17 @@ export interface FileRouteTypes {
     | '/progress'
     | '/settings'
     | '/apps/ava-shapes'
+    | '/apps/character-party'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
     | '/apps/'
+    | '/apps/character-party_/draw'
+    | '/apps/character-party_/headband'
     | '/apps/vector-dungeon_/print'
     | '/curriculum/$curriculumId/study'
     | '/curriculum/$curriculumId/'
+    | '/apps/character-party_/headband_/print'
     | '/curriculum/$curriculumId/node/$nodeId'
   fileRoutesById: FileRoutesById
 }
@@ -269,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsVectorDungeonRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/character-party': {
+      id: '/apps/character-party'
+      path: '/character-party'
+      fullPath: '/apps/character-party'
+      preLoaderRoute: typeof AppsCharacterPartyRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/apps/ava-shapes': {
       id: '/apps/ava-shapes'
       path: '/ava-shapes'
@@ -297,6 +354,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsVectorDungeonPrintRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/character-party_/headband': {
+      id: '/apps/character-party_/headband'
+      path: '/character-party/headband'
+      fullPath: '/apps/character-party/headband'
+      preLoaderRoute: typeof AppsCharacterPartyHeadbandRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/character-party_/draw': {
+      id: '/apps/character-party_/draw'
+      path: '/character-party/draw'
+      fullPath: '/apps/character-party/draw'
+      preLoaderRoute: typeof AppsCharacterPartyDrawRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/curriculum/$curriculumId/node/$nodeId': {
       id: '/curriculum/$curriculumId/node/$nodeId'
       path: '/node/$nodeId'
@@ -304,21 +375,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CurriculumCurriculumIdNodeNodeIdRouteImport
       parentRoute: typeof CurriculumCurriculumIdRoute
     }
+    '/apps/character-party_/headband_/print': {
+      id: '/apps/character-party_/headband_/print'
+      path: '/character-party/headband/print'
+      fullPath: '/apps/character-party/headband/print'
+      preLoaderRoute: typeof AppsCharacterPartyHeadbandPrintRouteImport
+      parentRoute: typeof AppsRoute
+    }
   }
 }
 
 interface AppsRouteChildren {
   AppsAvaShapesRoute: typeof AppsAvaShapesRoute
+  AppsCharacterPartyRoute: typeof AppsCharacterPartyRoute
   AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
   AppsIndexRoute: typeof AppsIndexRoute
+  AppsCharacterPartyDrawRoute: typeof AppsCharacterPartyDrawRoute
+  AppsCharacterPartyHeadbandRoute: typeof AppsCharacterPartyHeadbandRoute
   AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
+  AppsCharacterPartyHeadbandPrintRoute: typeof AppsCharacterPartyHeadbandPrintRoute
 }
 
 const AppsRouteChildren: AppsRouteChildren = {
   AppsAvaShapesRoute: AppsAvaShapesRoute,
+  AppsCharacterPartyRoute: AppsCharacterPartyRoute,
   AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,
+  AppsCharacterPartyDrawRoute: AppsCharacterPartyDrawRoute,
+  AppsCharacterPartyHeadbandRoute: AppsCharacterPartyHeadbandRoute,
   AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,
+  AppsCharacterPartyHeadbandPrintRoute: AppsCharacterPartyHeadbandPrintRoute,
 }
 
 const AppsRouteWithChildren = AppsRoute._addFileChildren(AppsRouteChildren)

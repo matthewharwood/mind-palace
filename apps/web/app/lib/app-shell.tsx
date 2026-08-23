@@ -185,6 +185,7 @@ type Crumb =
   | { kind: "apps"; label: string; current: boolean }
   | { kind: "app"; label: string; current: boolean }
   | { kind: "ava-app"; label: string; current: boolean }
+  | { kind: "character-party-app"; label: string; current: boolean }
   | { kind: "progress"; label: string; current: boolean }
   | { kind: "settings"; label: string; current: boolean }
   | { kind: "goal"; goalId: string; label: string; current: boolean }
@@ -220,6 +221,13 @@ function CrumbLink(crumb: Crumb): ReactNode {
   if (crumb.kind === "ava-app") {
     return (
       <Link to="/apps/ava-shapes" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "character-party-app") {
+    return (
+      <Link to="/apps/character-party" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -264,6 +272,8 @@ function buildCrumbs(segments: string[]): Crumb[] {
       crumbs.push({ kind: "app", label: "Vector Dungeon", current: true });
     } else if (segments[1] === "ava-shapes") {
       crumbs.push({ kind: "ava-app", label: "Ava's Shape Sounds", current: true });
+    } else if (segments[1] === "character-party") {
+      crumbs.push({ kind: "character-party-app", label: "Character Party", current: true });
     }
   } else if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });
@@ -456,11 +466,19 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
   // now lives on the Settings page, not in the chrome.
   useTheme();
 
-  // The splash (/) and printable worksheet are their own full-screen surfaces.
+  // The splash, table-facing drawing game, and printable worksheets are their own
+  // full-screen surfaces.
   // Render them WITHOUT shell chrome so the rail/content never paints into the
   // capture surface used for PDF generation. (Hooks above still run, so the
   // theme + state stay consistent.)
-  if (pathname === "/" || pathname === "/apps/vector-dungeon/print") return <>{children}</>;
+  if (
+    pathname === "/" ||
+    pathname === "/apps/character-party/draw" ||
+    pathname === "/apps/vector-dungeon/print" ||
+    pathname === "/apps/character-party/headband/print"
+  ) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex h-dvh overflow-hidden bg-whisper-gray font-sans text-midnight-ink sm:gap-3 sm:p-3">
