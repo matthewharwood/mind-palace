@@ -78,9 +78,9 @@ export function selectNextCharacter(
   session: CharacterPartySession,
   random: () => number = Math.random,
 ): CharacterDefinition | null {
+  const selectedDifficulties = new Set(session.selectedDifficulties);
   const eligible = characters.filter(
-    (character) =>
-      character.drawable && session.selectedDifficulties.includes(character.difficulty),
+    (character) => character.drawable && selectedDifficulties.has(character.difficulty),
   );
   const pool = prioritizedPool(eligible, session);
   const ranked = pool
