@@ -5,6 +5,10 @@ import { getHydratedSnapshot, type HydratedState } from "~/state/hydration";
 
 type StoreReader<V> = (snapshot: HydratedState) => V | undefined;
 type StoreWriter<V> = (value: V) => void;
+type RemoteStoreSync<V> = {
+  subscribe: (onChange: () => void) => () => void;
+  read: () => Promise<V | undefined>;
+};
 
 const UNINIT: unique symbol = Symbol("atomWithIDB.uninit");
 
@@ -18,8 +22,41 @@ export function atomWithIDB<S extends z.ZodType>(
   read: StoreReader<z.infer<S>>,
   write: StoreWriter<z.infer<S>>,
   fallback: z.infer<S>,
+  remoteSync?: RemoteStoreSync<z.infer<S>>,
 ): WritableAtom<z.infer<S>, [z.infer<S> | ((prev: z.infer<S>) => z.infer<S>)], void> {
   const storage = atom<z.infer<S> | typeof UNINIT>(UNINIT);
+  let localWriteVersion = 0;
+
+  if (remoteSync) {
+    storage.onMount = (setStorage) => {
+      let active = true;
+      let latestRequest = 0;
+      const refresh = (): void => {
+        const request = ++latestRequest;
+        const writeVersion = localWriteVersion;
+        void remoteSync
+          .read()
+          .then((value) => {
+            if (
+              active &&
+              request === latestRequest &&
+              writeVersion === localWriteVersion &&
+              value !== undefined
+            ) {
+              setStorage(schema.parse(value));
+            }
+          })
+          .catch((error: unknown) => console.error("idb: remote sync failed", error));
+      };
+      const unsubscribe = remoteSync.subscribe(refresh);
+      refresh();
+      return () => {
+        active = false;
+        latestRequest += 1;
+        unsubscribe();
+      };
+    };
+  }
 
   const resolveCurrent = (raw: z.infer<S> | typeof UNINIT): z.infer<S> => {
     if (raw !== UNINIT) return raw;
@@ -34,6 +71,7 @@ export function atomWithIDB<S extends z.ZodType>(
       const next =
         typeof update === "function" ? (update as (p: z.infer<S>) => z.infer<S>)(prev) : update;
       const parsed = schema.parse(next);
+      localWriteVersion += 1;
       set(storage, parsed);
       write(parsed);
     },

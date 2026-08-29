@@ -1,4 +1,6 @@
 import {
+  AVA_SHAPES_SESSION_DEFAULT,
+  type AvaMediaMode,
   type AvaShapeCard,
   AvaShapeCardSchema,
   type AvaShapeColor,
@@ -11,7 +13,9 @@ import { type ReactNode, useEffect, useRef, useSyncExternalStore } from "react";
 import * as z from "zod";
 
 import { playAvaShapeSound } from "~/audio/ava-shape-sounds";
+import { useAvaCard3D } from "~/canvas/use-ava-card-3d";
 import { usePixiApp } from "~/canvas/use-pixi-app";
+import { AvaMedia } from "~/components/ava-media";
 import { RatingButtons } from "~/components/rating-buttons";
 import {
   AVA_COLORLESS_SHAPE_CARDS,
@@ -37,6 +41,21 @@ const PIXI_FILL: Record<AvaShapeColor, number> = {
 const subscribeToHydration = (): (() => void) => () => undefined;
 const getClientHydrationSnapshot = (): boolean => true;
 const getServerHydrationSnapshot = (): boolean => false;
+
+const AvaShapeVideoClipSchema = z.object({
+  youtubeVideoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
+  startSeconds: z.int().min(0),
+});
+
+const AVA_SHAPE_VIDEO_CLIPS = z
+  .record(z.enum(["square", "oval", "rhombus", "circle", "triangle"]), AvaShapeVideoClipSchema)
+  .parse({
+    circle: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 18 },
+    square: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 63 },
+    triangle: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 108 },
+    oval: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 211 },
+    rhombus: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 266 },
+  });
 
 export const AvaShapeCanvasPropsSchema = z.object({
   card: AvaShapeCardSchema,
@@ -98,9 +117,55 @@ export const AvaShapeCanvas = defineComponent(
   },
 );
 
+export const AvaShapeCanvas3DPropsSchema = z.object({
+  card: AvaShapeCardSchema,
+});
+export type AvaShapeCanvas3DProps = z.infer<typeof AvaShapeCanvas3DPropsSchema>;
+
+export const AvaShapeCanvas3D = defineComponent(
+  AvaShapeCanvas3DPropsSchema,
+  ({ card }: AvaShapeCanvas3DProps): ReactNode => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const status = useAvaCard3D(canvasRef, {
+      kind: "shape",
+      shape: card.shape,
+      color: card.color,
+    });
+
+    return (
+      <div className="relative size-full min-h-0 min-w-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5fbff_0%,#c9d9e9_100%)]">
+        {status !== "ready" ? (
+          <div className="absolute inset-0">
+            <AvaShapeCanvas card={card} />
+            {status === "error" ? (
+              <p
+                role="status"
+                className="absolute inset-x-0 bottom-0 border-black/10 border-t bg-canvas-white/95 px-4 py-3 text-center font-medium text-muted-ash text-sm"
+              >
+                3D is unavailable on this device. Showing the local shape.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-hidden={status !== "ready"}
+          aria-label={`${avaShapeAnswer(card)} rendered as a lit 3D shape`}
+          data-test="ava-shape-canvas-3d"
+          data-shape={card.shape}
+          data-color={card.color}
+          className={`absolute inset-0 block !size-full ${status === "ready" ? "opacity-100" : "opacity-0"}`}
+        />
+      </div>
+    );
+  },
+);
+
 export const AvaShapesPropsSchema = z.object({
   session: AvaShapesSessionSchema,
   now: z.number(),
+  onModeChange: z.custom<(mode: AvaMediaMode) => void>(),
   onRate: z.custom<(cardId: string, rating: Rating) => z.infer<typeof AvaShapesSessionSchema>>(),
   onReset: z.custom<() => void>(),
 });
@@ -108,18 +173,20 @@ export type AvaShapesProps = z.infer<typeof AvaShapesPropsSchema>;
 
 export const AvaShapes = defineComponent(
   AvaShapesPropsSchema,
-  ({ session, now, onRate, onReset }: AvaShapesProps): ReactNode => {
+  ({ session, now, onModeChange, onRate, onReset }: AvaShapesProps): ReactNode => {
     const interactive = useSyncExternalStore(
       subscribeToHydration,
       getClientHydrationSnapshot,
       getServerHydrationSnapshot,
     );
-    const card = selectAvaShapeCard(session, now);
-    const colorsUnlocked = areAvaColorsUnlocked(session);
-    const reviewed = countAvaReviewedCards(session);
+    const displaySession = interactive ? session : AVA_SHAPES_SESSION_DEFAULT;
+    const card = selectAvaShapeCard(displaySession, now);
+    const colorsUnlocked = areAvaColorsUnlocked(displaySession);
+    const reviewed = countAvaReviewedCards(displaySession);
     const foundationReviewed = AVA_COLORLESS_SHAPE_CARDS.filter(
-      (foundationCard) => (session.states[foundationCard.id]?.reps ?? 0) > 0,
+      (foundationCard) => (displaySession.states[foundationCard.id]?.reps ?? 0) > 0,
     ).length;
+    const videoClip = card ? AVA_SHAPE_VIDEO_CLIPS[card.shape] : undefined;
 
     function play(cardToPlay: AvaShapeCard): void {
       void playAvaShapeSound(cardToPlay).catch(() => undefined);
@@ -137,12 +204,12 @@ export const AvaShapes = defineComponent(
 
     return (
       <section
-        className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top,#eff8ff_0%,transparent_45%)] px-2 py-2 sm:px-5 sm:py-4 dark:bg-none"
+        className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col overflow-y-auto bg-[radial-gradient(circle_at_top,#eff8ff_0%,transparent_45%)] px-2 py-2 sm:px-5 sm:py-4 dark:bg-none"
         data-phase={colorsUnlocked ? "colors" : "foundation"}
       >
         {card ? (
           <div className="relative grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-2 sm:gap-3 lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-1 lg:items-stretch">
-            <details className="group absolute top-1 right-1 z-10">
+            <details className="group absolute top-14 right-1 z-10 sm:top-16">
               <summary className="grid size-9 list-none place-items-center rounded-full border border-black/10 bg-canvas-white/90 text-muted-ash shadow-sm backdrop-blur transition-colors hover:text-midnight-ink marker:hidden dark:border-white/10">
                 <Info className="size-4" aria-hidden="true" />
                 <span className="sr-only">Session details</span>
@@ -166,9 +233,16 @@ export const AvaShapes = defineComponent(
               </div>
             </details>
 
-            <div className="grid min-h-48 min-w-0 place-items-center overflow-hidden rounded-[1.5rem] border border-black/[0.06] bg-canvas-white/80 p-2 shadow-[0_18px_60px_rgba(44,71,112,0.12)] backdrop-blur sm:rounded-[2rem] sm:p-3 dark:border-white/10 dark:bg-midnight-ink/30">
-              <AvaShapeCanvas card={card} />
-            </div>
+            <AvaMedia
+              label={avaShapeAnswer(card)}
+              mode={displaySession.viewMode}
+              onModeChange={onModeChange}
+              twoDContent={<AvaShapeCanvas card={card} />}
+              threeDContent={<AvaShapeCanvas3D card={card} />}
+              youtubeVideoId={videoClip?.youtubeVideoId}
+              youtubeStartSeconds={videoClip?.startSeconds}
+              videoFallback={<AvaShapeCanvas card={card} />}
+            />
 
             <div className="flex min-h-0 flex-col justify-end gap-2 rounded-[1.5rem] border border-black/[0.07] bg-canvas-white p-3 shadow-card sm:gap-3 sm:rounded-3xl sm:p-4 dark:border-white/10">
               <div className="flex items-center justify-center gap-3">

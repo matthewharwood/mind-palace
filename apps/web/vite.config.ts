@@ -1,12 +1,8 @@
 import { devtools as tanstackDevtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import { defineConfig, loadEnv, type UserConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 
-import { sharedPlugins } from "./vite.shared";
-
-type BuildConfig = Exclude<UserConfig["build"], false | undefined>;
-type RollupOptions = NonNullable<BuildConfig["rollupOptions"]>;
-type RollupOnWarn = NonNullable<RollupOptions["onwarn"]>;
+import { onRollupWarn, sharedPlugins } from "./vite.shared";
 
 // PWA layer (vite-plugin-pwa + Workbox) is intentionally OFF.
 // Reason: vite-plugin-pwa's `closeBundle` hook fires before TanStack Start's
@@ -39,13 +35,6 @@ function manualChunks(id: string): string | undefined {
   if (id.includes("zod")) return "vendor-zod";
   return undefined;
 }
-
-const onRollupWarn: RollupOnWarn = (warning, warn) => {
-  if (warning.code === "MODULE_LEVEL_DIRECTIVE" && warning.message.includes('"use client"')) {
-    return;
-  }
-  warn(warning);
-};
 
 export default defineConfig(async ({ mode }) => {
   // Vite's config bundler runs in a Node subprocess that does NOT inherit

@@ -1,14 +1,15 @@
 import type {
   AlchemyBoard,
+  AvaFirstWordsSession,
   AvaShapesSession,
   CurriculumProgress,
   Progress,
   Settings,
   VectorDungeonSession,
 } from "@mind-palace/schemas";
+import * as z from "zod";
 
 import { getDB } from "./db";
-import type { StoreName } from "./hydration";
 
 const DEBOUNCE_MS = 150;
 // BroadcastChannel is origin-scoped too — namespace it like DB_NAME so apps
@@ -77,11 +78,34 @@ export function persistAvaShapesSession(value: AvaShapesSession): void {
   });
 }
 
-export type RemoteWriteMessage = { store: StoreName; key: string };
+export function persistAvaFirstWordsSession(value: AvaFirstWordsSession): void {
+  schedule(`avaFirstWordsSession:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("avaFirstWordSessions", value);
+    channel?.postMessage({ store: "avaFirstWordsSession", key: value.id });
+  });
+}
+
+export const RemoteWriteMessageSchema = z.object({
+  store: z.enum([
+    "progress",
+    "settings",
+    "alchemyBoard",
+    "curriculumProgress",
+    "vectorDungeonSession",
+    "avaShapesSession",
+    "avaFirstWordsSession",
+  ]),
+  key: z.string().min(1),
+});
+export type RemoteWriteMessage = z.infer<typeof RemoteWriteMessageSchema>;
 
 export function subscribeRemoteWrites(onChange: (msg: RemoteWriteMessage) => void): () => void {
   if (!channel) return () => undefined;
-  const handler = (e: MessageEvent) => onChange(e.data as RemoteWriteMessage);
+  const handler = (event: MessageEvent) => {
+    const message = RemoteWriteMessageSchema.safeParse(event.data);
+    if (message.success) onChange(message.data);
+  };
   channel.addEventListener("message", handler);
   return () => channel.removeEventListener("message", handler);
 }

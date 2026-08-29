@@ -19,6 +19,7 @@ import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
 import { Route as AppsAvaShapesRouteImport } from './routes/apps.ava-shapes'
+import { Route as AppsAvaFirstWordsRouteImport } from './routes/apps.ava-first-words'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
 import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon_.print'
@@ -74,6 +75,11 @@ const AppsAvaShapesRoute = AppsAvaShapesRouteImport.update({
   path: '/ava-shapes',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsAvaFirstWordsRoute = AppsAvaFirstWordsRouteImport.update({
+  id: '/ava-first-words',
+  path: '/ava-first-words',
+  getParentRoute: () => AppsRoute,
+} as any)
 const CurriculumCurriculumIdIndexRoute =
   CurriculumCurriculumIdIndexRouteImport.update({
     id: '/',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-first-words'
     | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-first-words'
     | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/goal/$goalId'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-first-words'
     | '/apps/ava-shapes'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
@@ -276,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsAvaShapesRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/ava-first-words': {
+      id: '/apps/ava-first-words'
+      path: '/ava-first-words'
+      fullPath: '/apps/ava-first-words'
+      preLoaderRoute: typeof AppsAvaFirstWordsRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/curriculum/$curriculumId/': {
       id: '/curriculum/$curriculumId/'
       path: '/'
@@ -308,6 +327,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppsRouteChildren {
+  AppsAvaFirstWordsRoute: typeof AppsAvaFirstWordsRoute
   AppsAvaShapesRoute: typeof AppsAvaShapesRoute
   AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
   AppsIndexRoute: typeof AppsIndexRoute
@@ -315,6 +335,7 @@ interface AppsRouteChildren {
 }
 
 const AppsRouteChildren: AppsRouteChildren = {
+  AppsAvaFirstWordsRoute: AppsAvaFirstWordsRoute,
   AppsAvaShapesRoute: AppsAvaShapesRoute,
   AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,

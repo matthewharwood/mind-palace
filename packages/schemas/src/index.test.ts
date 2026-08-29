@@ -7,15 +7,33 @@ import {
 } from "@mind-palace/vector-dungeon";
 
 import {
+  AVA_FIRST_WORDS_SESSION_DEFAULT,
   AVA_SHAPES_SESSION_DEFAULT,
+  AvaFirstWordsSessionSchema,
   AvaShapeCardSchema,
   AvaShapesSessionSchema,
   VECTOR_DUNGEON_SESSION_DEFAULT,
   VectorDungeonSessionSchema,
 } from "./index";
 
-test("AvaShapesSessionSchema fills the singleton defaults", () => {
-  expect(AVA_SHAPES_SESSION_DEFAULT).toEqual({ id: "ava-shapes", states: {} });
+test("Ava session schemas fill their singleton defaults", () => {
+  expect(AVA_SHAPES_SESSION_DEFAULT).toEqual({
+    id: "ava-shapes",
+    states: {},
+    viewMode: "2d",
+  });
+  expect(AVA_FIRST_WORDS_SESSION_DEFAULT).toEqual({
+    id: "ava-first-words",
+    states: {},
+    viewMode: "2d",
+  });
+  expect(
+    AvaFirstWordsSessionSchema.safeParse({
+      id: "ava-shapes",
+      states: {},
+      viewMode: "video",
+    }).success,
+  ).toBe(false);
 });
 
 test("AvaShapeCardSchema rejects unknown shape and color names", () => {

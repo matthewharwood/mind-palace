@@ -1,7 +1,9 @@
 import {
   ALCHEMY_BOARD_DEFAULT,
   AlchemyBoardSchema,
+  AVA_FIRST_WORDS_SESSION_DEFAULT,
   AVA_SHAPES_SESSION_DEFAULT,
+  AvaFirstWordsSessionSchema,
   AvaShapesSessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
@@ -16,13 +18,16 @@ import type { WritableAtom } from "jotai";
 
 import { atomWithIDB } from "~/lib/atom-with-idb";
 
+import { getDB } from "./db";
 import {
   persistAlchemyBoard,
+  persistAvaFirstWordsSession,
   persistAvaShapesSession,
   persistCurriculumProgress,
   persistProgress,
   persistSettings,
   persistVectorDungeonSession,
+  subscribeRemoteWrites,
 } from "./persist";
 
 export const settingsAtom = atomWithIDB(
@@ -103,4 +108,29 @@ export const avaShapesSessionAtom = atomWithIDB(
   (snapshot) => snapshot.avaShapesSession,
   persistAvaShapesSession,
   AVA_SHAPES_SESSION_DEFAULT,
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "avaShapesSession" && message.key === "ava-shapes") {
+          onChange();
+        }
+      }),
+    read: async () => (await getDB()).get("avaShapeSessions", "ava-shapes"),
+  },
+);
+
+export const avaFirstWordsSessionAtom = atomWithIDB(
+  AvaFirstWordsSessionSchema,
+  (snapshot) => snapshot.avaFirstWordsSession,
+  persistAvaFirstWordsSession,
+  AVA_FIRST_WORDS_SESSION_DEFAULT,
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "avaFirstWordsSession" && message.key === "ava-first-words") {
+          onChange();
+        }
+      }),
+    read: async () => (await getDB()).get("avaFirstWordSessions", "ava-first-words"),
+  },
 );
