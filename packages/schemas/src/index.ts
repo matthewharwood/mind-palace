@@ -75,14 +75,30 @@ export const AvaShapeCardSchema = z.object({
 });
 export type AvaShapeCard = z.infer<typeof AvaShapeCardSchema>;
 
+export const AvaMediaModeSchema = z.enum(["2d", "3d", "video"]);
+export type AvaMediaMode = z.infer<typeof AvaMediaModeSchema>;
+
 // Teacher-led spaced-repetition session for Ava's shape cards. Static card
 // content is generated in the app; only the SRS scheduling overlay persists.
 export const AvaShapesSessionSchema = z.object({
   id: z.literal("ava-shapes").default("ava-shapes"),
   states: z.record(z.string(), CardStateSchema).default({}),
+  viewMode: AvaMediaModeSchema.default("2d"),
 });
 export type AvaShapesSession = z.infer<typeof AvaShapesSessionSchema>;
 export const AVA_SHAPES_SESSION_DEFAULT: AvaShapesSession = AvaShapesSessionSchema.parse({});
+
+// Teacher-led spaced-repetition session for Ava's first-word cards. The static
+// word/media manifest remains app code; IDB stores only scheduling + the view
+// Ava last chose so a live iPad refresh returns to the same experience.
+export const AvaFirstWordsSessionSchema = z.object({
+  id: z.literal("ava-first-words").default("ava-first-words"),
+  states: z.record(z.string(), CardStateSchema).default({}),
+  viewMode: AvaMediaModeSchema.default("2d"),
+});
+export type AvaFirstWordsSession = z.infer<typeof AvaFirstWordsSessionSchema>;
+export const AVA_FIRST_WORDS_SESSION_DEFAULT: AvaFirstWordsSession =
+  AvaFirstWordsSessionSchema.parse({});
 
 export const VectorDungeonLogEntrySchema = z.object({
   id: z.string().min(1),

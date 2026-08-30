@@ -31,6 +31,13 @@ export const Default: Story = {
         cta: "Practice shapes",
       },
       {
+        title: "Ava's First 100 Words",
+        description: "Practice familiar first words with pictures, 3D cards, and short clips.",
+        href: "/apps/ava-first-words",
+        kind: "study",
+        cta: "Practice first words",
+      },
+      {
         title: "Vector Dungeon",
         description: "Run a printable grid adventure from a phone.",
         href: "/apps/vector-dungeon",

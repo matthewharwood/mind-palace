@@ -1,5 +1,6 @@
 import type {
   AlchemyBoard,
+  AvaFirstWordsSession,
   AvaShapesSession,
   CurriculumProgress,
   Progress,
@@ -15,13 +16,14 @@ export interface AppDB extends DBSchema {
   curriculumProgress: { key: string; value: CurriculumProgress };
   vectorDungeonSessions: { key: string; value: VectorDungeonSession };
   avaShapeSessions: { key: string; value: AvaShapesSession };
+  avaFirstWordSessions: { key: string; value: AvaFirstWordsSession };
 }
 
 // Namespaced by repo scope + app name (the package.json `name`). IndexedDB is
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
 export const DB_NAME = "@mind-palace/web";
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
@@ -59,6 +61,9 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 6) {
         db.createObjectStore("avaShapeSessions", { keyPath: "id" });
+      }
+      if (oldVersion < 7) {
+        db.createObjectStore("avaFirstWordSessions", { keyPath: "id" });
       }
     },
     blocked() {

@@ -32,6 +32,14 @@ function AppsIndex() {
           cta: "Practice shapes",
         },
         {
+          title: "Ava's First 100 Words",
+          description:
+            "A picture-first word game with spoken prompts, lit 3D cards, and five-second video reinforcement.",
+          href: `${BASE_URL}apps/ava-first-words`,
+          kind: "study",
+          cta: "Practice first words",
+        },
+        {
           title: "Vector Dungeon",
           description:
             "Teach one-step coordinate vectors with a fantasy grid, a d20, and a printable map.",

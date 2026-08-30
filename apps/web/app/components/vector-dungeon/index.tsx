@@ -30,6 +30,7 @@ import { type FormEvent, type ReactNode, useState } from "react";
 import * as z from "zod";
 
 import { defineComponent } from "~/lib/define-component";
+import { useHydrated } from "~/lib/use-hydrated";
 
 const StepInputSchema = z.coerce.number().pipe(z.int().min(-1).max(1));
 const RollInputSchema = z.coerce.number().pipe(z.int().min(1).max(20));
@@ -316,6 +317,7 @@ export const VectorDungeonDm = defineComponent(
     onRecover,
     onReset,
   }: VectorDungeonDmProps): ReactNode => {
+    const hydrated = useHydrated();
     const [moveMessage, setMoveMessage] = useState(
       "Enter a one-step move: one field is -1 or 1, and the other is 0.",
     );
@@ -570,6 +572,7 @@ export const VectorDungeonDm = defineComponent(
                   min={-1}
                   max={1}
                   defaultValue={0}
+                  disabled={!hydrated || session.hp === 0}
                   className="min-w-0 rounded-[8px] border border-black/10 bg-canvas-white px-3 py-2 font-mono text-base dark:border-white/10"
                 />
               </label>
@@ -582,12 +585,13 @@ export const VectorDungeonDm = defineComponent(
                   min={-1}
                   max={1}
                   defaultValue={0}
+                  disabled={!hydrated || session.hp === 0}
                   className="min-w-0 rounded-[8px] border border-black/10 bg-canvas-white px-3 py-2 font-mono text-base dark:border-white/10"
                 />
               </label>
               <button
                 type="submit"
-                disabled={session.hp === 0}
+                disabled={!hydrated || session.hp === 0}
                 className="rounded-[8px] bg-midnight-ink px-4 py-2.5 font-medium text-canvas-white text-sm transition-transform active:scale-[0.98] disabled:opacity-50"
               >
                 Check
