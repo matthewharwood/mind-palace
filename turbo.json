@@ -49,6 +49,14 @@
     "stylelint:watch": {
       "cache": false,
       "persistent": true
+    },
+    "build:ava-media": {
+      "cache": false,
+      "outputs": []
+    },
+    "build:ava-symbol-media": {
+      "cache": false,
+      "outputs": []
     }
   }
 }

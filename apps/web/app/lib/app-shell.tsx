@@ -10,6 +10,7 @@ import {
   listGoals,
 } from "~/data/curriculum-data";
 import { AskDrawer } from "~/lib/ask-drawer";
+import { AVA_COLLECTIONS } from "~/lib/ava-learning-catalog";
 import { useTheme } from "~/lib/use-theme";
 
 // Windowed-canvas app shell, adapted from the engmanager-invoice design: a
@@ -267,13 +268,20 @@ function CrumbLink(crumb: Crumb): ReactNode {
 function buildCrumbs(segments: string[]): Crumb[] {
   const crumbs: Crumb[] = [{ kind: "home", label: "Goals", current: segments[0] === "goals" }];
   if (segments[0] === "apps") {
-    crumbs.push({ kind: "apps", label: "Apps", current: segments.length === 1 });
+    crumbs.push({ kind: "apps", label: "Kid apps", current: segments.length === 1 });
     if (segments[1] === "vector-dungeon") {
       crumbs.push({ kind: "app", label: "Vector Dungeon", current: true });
     } else if (segments[1] === "ava-shapes") {
       crumbs.push({ kind: "ava-app", label: "Ava's Shape Sounds", current: true });
     } else if (segments[1] === "ava-first-words") {
       crumbs.push({ kind: "ava-words-app", label: "Ava's First 100 Words", current: true });
+    } else if (segments[1] === "ava-numbers") {
+      crumbs.push({ kind: "node", label: "Ava's Numbers" });
+    } else if (segments[1] === "ava-letters") {
+      crumbs.push({ kind: "node", label: "Ava's Letters" });
+    } else if (segments[1]) {
+      const collection = AVA_COLLECTIONS.find((collection) => collection.id === segments[1]);
+      if (collection) crumbs.push({ kind: "node", label: collection.title });
     }
   } else if (segments[0] === "progress") {
     crumbs.push({ kind: "progress", label: "Progress", current: true });
@@ -413,7 +421,7 @@ function RailNav({
           <span className={onApps ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
             <AppsIcon />
           </span>
-          {!collapsed && <span className="truncate">Apps</span>}
+          {!collapsed && <span className="truncate">Kid apps</span>}
         </Link>
         <Link
           to="/progress"

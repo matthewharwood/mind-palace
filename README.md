@@ -43,9 +43,21 @@ Every change in this repo is judged against these four rules. Anything that viol
 | App | Route | What it teaches |
 |---|---|---|
 | Ava's Shape Sounds | `/apps/ava-shapes` | Teacher-led spaced-repetition flashcards for square, oval, rhombus, circle, and triangle. The five colorless shapes unlock the colored combinations; PixiJS draws each card and Web Audio composes a shape voice with a color voice. |
+| Ava's First 100 Words | `/apps/ava-first-words` | Familiar first words with picture cards, 3D views, and short video clips. |
+| Ava's Numbers | `/apps/ava-numbers` | All numbers 0–10 as numerals, ten-frame dot groups, and number words. |
+| Ava's Letters | `/apps/ava-letters` | All 26 letters with uppercase, lowercase, and picture-word representations. |
+| Action Words | `/apps/ava-actions` | Twenty everyday actions with Discover, Recognize, and Connect; a starter collection that can grow toward 100. |
+| My Wants & Needs | `/apps/ava-needs` | Twenty useful words for requesting, choosing, and expressing needs. |
+| Opposites & Descriptions | `/apps/ava-opposites` | Ten contrasting pairs with explicit visual comparisons. |
+| Where Is It? | `/apps/ava-positions` | Twelve spatial words with a ball, box, and table you can explore from different angles. |
+| Two Words Together | `/apps/ava-two-words` | Twenty combinations of familiar people, actions, and descriptions. |
 | Vector Dungeon | `/apps/vector-dungeon` | A teacher-led coordinate-grid adventure with persisted session progress. |
 
-Open `/apps` from the local app to choose a prototype.
+Choose **Kid apps** on the home screen, or open `/apps`. All nine Ava apps share 2D, 3D, and local video modes. The 3D objects are actual Blender geometry: articulated characters, countable beads, extruded letters, modeled objects, and spatial scenes. Videos are two-second demonstrations rendered from those same scenes. Recorded ElevenLabs narration is served locally; no YouTube iframe or runtime synthesis service is used.
+
+Each new collection works in five-card sets, with a shorter final set when needed. Discover introduces a word, Recognize offers two contrasting scenes, and Connect combines familiar words. Action Words can change its subject to Ava, Mommy, Daddy, or a dog when appropriate. Modes, subjects, selected cards, explored words, and recognition attempts persist in IndexedDB. Numbers and Letters retain their independent review scheduling and representation settings.
+
+Media sources, regeneration, provenance, and verification notes are documented in [Ava learning studio](docs/ava-learning-studio.md). Regenerate the authored geometry and clips with `bun run build:ava-media` (Blender, ffmpeg, and Playwright Chromium required). `AVA_BLENDER_BIN` overrides the Blender executable. The ordinary app build uses checked-in media and needs none of these authoring tools.
 
 ---
 

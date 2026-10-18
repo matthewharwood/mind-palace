@@ -20,3 +20,7 @@ Bun 1.3.13 • TypeScript 7 • TanStack Start (SPA + prerender) • React 19 + 
 ## Documentation
 
 See the parent monorepo's CLAUDE.md and README.md for the architectural spec and operator's manual.
+
+## Ava’s little world
+
+`/apps` is the Kid apps hub. Ava’s foundations are Shape Sounds, First 100 Words, Numbers (0–10), and Letters (A–Z). New collections: `/apps/ava-actions` (20 starter verbs), `/apps/ava-needs` (20 wants and needs), `/apps/ava-opposites` (10 pairs), `/apps/ava-positions` (12 location words), and `/apps/ava-two-words` (20 phrases). Each new collection offers Discover, Recognize, and Connect, with five-card sets and persisted progress. Local 2D illustrations, actual 3D geometry, short H.264 videos, and recorded narration reinforce the concepts without external video embeds.

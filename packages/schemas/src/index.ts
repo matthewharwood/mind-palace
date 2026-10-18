@@ -78,6 +78,52 @@ export type AvaShapeCard = z.infer<typeof AvaShapeCardSchema>;
 export const AvaMediaModeSchema = z.enum(["2d", "3d", "video"]);
 export type AvaMediaMode = z.infer<typeof AvaMediaModeSchema>;
 
+export const AvaCollectionIdSchema = z.enum([
+  "ava-actions",
+  "ava-needs",
+  "ava-opposites",
+  "ava-positions",
+  "ava-two-words",
+]);
+export type AvaCollectionId = z.infer<typeof AvaCollectionIdSchema>;
+export const AvaLearningModeSchema = z.enum(["discover", "recognize", "connect"]);
+export const AvaLearningSubjectSchema = z.enum(["ava", "mommy", "daddy", "dog"]);
+export const AvaLearningRecordSchema = z
+  .object({
+    introduced: z.boolean().default(false),
+    attempts: z.int().min(0).default(0),
+    correct: z.int().min(0).default(0),
+  })
+  .refine((record) => record.correct <= record.attempts, {
+    error: "Correct answers cannot exceed attempts",
+  });
+export const AvaLearningSessionSchema = z
+  .object({
+    id: AvaCollectionIdSchema,
+    selectedIndex: z.int().min(0).default(0),
+    setStart: z.int().min(0).default(0),
+    mode: AvaLearningModeSchema.default("discover"),
+    viewMode: AvaMediaModeSchema.default("3d"),
+    subject: AvaLearningSubjectSchema.default("ava"),
+    soundEnabled: z.boolean().default(false),
+    questionNumber: z.int().min(0).default(0),
+    records: z.record(z.string(), AvaLearningRecordSchema).default({}),
+  })
+  .refine(
+    (session) => {
+      const length = session.id === "ava-positions" ? 12 : 20;
+      return (
+        session.selectedIndex < length &&
+        session.setStart < length &&
+        session.setStart % 5 === 0 &&
+        session.selectedIndex >= session.setStart &&
+        session.selectedIndex < session.setStart + 5
+      );
+    },
+    { error: "The card and little set must belong to this collection" },
+  );
+export type AvaLearningSession = z.infer<typeof AvaLearningSessionSchema>;
+
 // Teacher-led spaced-repetition session for Ava's shape cards. Static card
 // content is generated in the app; only the SRS scheduling overlay persists.
 export const AvaShapesSessionSchema = z.object({
@@ -99,6 +145,26 @@ export const AvaFirstWordsSessionSchema = z.object({
 export type AvaFirstWordsSession = z.infer<typeof AvaFirstWordsSessionSchema>;
 export const AVA_FIRST_WORDS_SESSION_DEFAULT: AvaFirstWordsSession =
   AvaFirstWordsSessionSchema.parse({});
+
+export const AvaSymbolAppSchema = z.enum(["ava-numbers", "ava-letters"]);
+export type AvaSymbolApp = z.infer<typeof AvaSymbolAppSchema>;
+export const AvaSymbolRepresentationSchema = z.enum(["symbol", "alternate", "word"]);
+export type AvaSymbolRepresentation = z.infer<typeof AvaSymbolRepresentationSchema>;
+export const AvaSymbolsSessionSchema = z
+  .object({
+    id: AvaSymbolAppSchema,
+    selectedIndex: z.int().min(0).default(0),
+    representation: AvaSymbolRepresentationSchema.default("symbol"),
+    viewMode: AvaMediaModeSchema.default("2d"),
+    states: z.record(z.string(), CardStateSchema).default({}),
+  })
+  .refine((session) => session.selectedIndex < (session.id === "ava-numbers" ? 11 : 26), {
+    error: "selectedIndex must belong to this app's deck",
+    path: ["selectedIndex"],
+  });
+export type AvaSymbolsSession = z.infer<typeof AvaSymbolsSessionSchema>;
+export const AVA_NUMBERS_SESSION_DEFAULT = AvaSymbolsSessionSchema.parse({ id: "ava-numbers" });
+export const AVA_LETTERS_SESSION_DEFAULT = AvaSymbolsSessionSchema.parse({ id: "ava-letters" });
 
 export const VectorDungeonLogEntrySchema = z.object({
   id: z.string().min(1),

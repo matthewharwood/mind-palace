@@ -18,7 +18,9 @@
     "dev": "turbo run dev --filter=$(bun scripts/resolve-app-filter.ts)",
     "biome:watch": "biome check --write --watch .",
     "gen:app": "turbo gen app",
-    "prepare": "bash scripts/install-hooks.sh"
+    "prepare": "bash scripts/install-hooks.sh",
+    "build:ava-media": "turbo run build:ava-media --filter=$(bun scripts/resolve-app-filter.ts)",
+    "build:ava-symbol-media": "turbo run build:ava-symbol-media --filter=$(bun scripts/resolve-app-filter.ts)"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",

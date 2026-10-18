@@ -1,7 +1,9 @@
 import type {
   AlchemyBoard,
   AvaFirstWordsSession,
+  AvaLearningSession,
   AvaShapesSession,
+  AvaSymbolsSession,
   CurriculumProgress,
   Progress,
   Settings,
@@ -86,6 +88,25 @@ export function persistAvaFirstWordsSession(value: AvaFirstWordsSession): void {
   });
 }
 
+export function persistAvaLearningSession(value: AvaLearningSession): void {
+  schedule(`avaLearningSessions:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("avaLearningSessions", value);
+    channel?.postMessage({ store: "avaLearningSessions", key: value.id });
+  });
+}
+
+export function persistAvaSymbolsSession(value: AvaSymbolsSession): void {
+  schedule(`avaSymbolsSession:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("avaSymbolSessions", value);
+    channel?.postMessage({
+      store: value.id === "ava-numbers" ? "avaNumbersSession" : "avaLettersSession",
+      key: value.id,
+    });
+  });
+}
+
 export const RemoteWriteMessageSchema = z.object({
   store: z.enum([
     "progress",
@@ -94,6 +115,9 @@ export const RemoteWriteMessageSchema = z.object({
     "curriculumProgress",
     "vectorDungeonSession",
     "avaShapesSession",
+    "avaLearningSessions",
+    "avaNumbersSession",
+    "avaLettersSession",
     "avaFirstWordsSession",
   ]),
   key: z.string().min(1),

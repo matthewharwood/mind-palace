@@ -18,8 +18,15 @@ import { Route as AppsIndexRouteImport } from './routes/apps.index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
+import { Route as AppsAvaTwoWordsRouteImport } from './routes/apps.ava-two-words'
 import { Route as AppsAvaShapesRouteImport } from './routes/apps.ava-shapes'
+import { Route as AppsAvaPositionsRouteImport } from './routes/apps.ava-positions'
+import { Route as AppsAvaOppositesRouteImport } from './routes/apps.ava-opposites'
+import { Route as AppsAvaNumbersRouteImport } from './routes/apps.ava-numbers'
+import { Route as AppsAvaNeedsRouteImport } from './routes/apps.ava-needs'
+import { Route as AppsAvaLettersRouteImport } from './routes/apps.ava-letters'
 import { Route as AppsAvaFirstWordsRouteImport } from './routes/apps.ava-first-words'
+import { Route as AppsAvaActionsRouteImport } from './routes/apps.ava-actions'
 import { Route as CurriculumCurriculumIdIndexRouteImport } from './routes/curriculum.$curriculumId.index'
 import { Route as CurriculumCurriculumIdStudyRouteImport } from './routes/curriculum.$curriculumId.study'
 import { Route as AppsVectorDungeonPrintRouteImport } from './routes/apps.vector-dungeon_.print'
@@ -70,14 +77,49 @@ const AppsVectorDungeonRoute = AppsVectorDungeonRouteImport.update({
   path: '/vector-dungeon',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsAvaTwoWordsRoute = AppsAvaTwoWordsRouteImport.update({
+  id: '/ava-two-words',
+  path: '/ava-two-words',
+  getParentRoute: () => AppsRoute,
+} as any)
 const AppsAvaShapesRoute = AppsAvaShapesRouteImport.update({
   id: '/ava-shapes',
   path: '/ava-shapes',
   getParentRoute: () => AppsRoute,
 } as any)
+const AppsAvaPositionsRoute = AppsAvaPositionsRouteImport.update({
+  id: '/ava-positions',
+  path: '/ava-positions',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsAvaOppositesRoute = AppsAvaOppositesRouteImport.update({
+  id: '/ava-opposites',
+  path: '/ava-opposites',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsAvaNumbersRoute = AppsAvaNumbersRouteImport.update({
+  id: '/ava-numbers',
+  path: '/ava-numbers',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsAvaNeedsRoute = AppsAvaNeedsRouteImport.update({
+  id: '/ava-needs',
+  path: '/ava-needs',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsAvaLettersRoute = AppsAvaLettersRouteImport.update({
+  id: '/ava-letters',
+  path: '/ava-letters',
+  getParentRoute: () => AppsRoute,
+} as any)
 const AppsAvaFirstWordsRoute = AppsAvaFirstWordsRouteImport.update({
   id: '/ava-first-words',
   path: '/ava-first-words',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsAvaActionsRoute = AppsAvaActionsRouteImport.update({
+  id: '/ava-actions',
+  path: '/ava-actions',
   getParentRoute: () => AppsRoute,
 } as any)
 const CurriculumCurriculumIdIndexRoute =
@@ -110,8 +152,15 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-actions': typeof AppsAvaActionsRoute
   '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
+  '/apps/ava-letters': typeof AppsAvaLettersRoute
+  '/apps/ava-needs': typeof AppsAvaNeedsRoute
+  '/apps/ava-numbers': typeof AppsAvaNumbersRoute
+  '/apps/ava-opposites': typeof AppsAvaOppositesRoute
+  '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -126,8 +175,15 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-actions': typeof AppsAvaActionsRoute
   '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
+  '/apps/ava-letters': typeof AppsAvaLettersRoute
+  '/apps/ava-needs': typeof AppsAvaNeedsRoute
+  '/apps/ava-numbers': typeof AppsAvaNumbersRoute
+  '/apps/ava-opposites': typeof AppsAvaOppositesRoute
+  '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps': typeof AppsIndexRoute
@@ -143,8 +199,15 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/progress': typeof ProgressRoute
   '/settings': typeof SettingsRoute
+  '/apps/ava-actions': typeof AppsAvaActionsRoute
   '/apps/ava-first-words': typeof AppsAvaFirstWordsRoute
+  '/apps/ava-letters': typeof AppsAvaLettersRoute
+  '/apps/ava-needs': typeof AppsAvaNeedsRoute
+  '/apps/ava-numbers': typeof AppsAvaNumbersRoute
+  '/apps/ava-opposites': typeof AppsAvaOppositesRoute
+  '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
+  '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -162,8 +225,15 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-actions'
     | '/apps/ava-first-words'
+    | '/apps/ava-letters'
+    | '/apps/ava-needs'
+    | '/apps/ava-numbers'
+    | '/apps/ava-opposites'
+    | '/apps/ava-positions'
     | '/apps/ava-shapes'
+    | '/apps/ava-two-words'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -178,8 +248,15 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-actions'
     | '/apps/ava-first-words'
+    | '/apps/ava-letters'
+    | '/apps/ava-needs'
+    | '/apps/ava-numbers'
+    | '/apps/ava-opposites'
+    | '/apps/ava-positions'
     | '/apps/ava-shapes'
+    | '/apps/ava-two-words'
     | '/apps/vector-dungeon'
     | '/goal/$goalId'
     | '/apps'
@@ -194,8 +271,15 @@ export interface FileRouteTypes {
     | '/goals'
     | '/progress'
     | '/settings'
+    | '/apps/ava-actions'
     | '/apps/ava-first-words'
+    | '/apps/ava-letters'
+    | '/apps/ava-needs'
+    | '/apps/ava-numbers'
+    | '/apps/ava-opposites'
+    | '/apps/ava-positions'
     | '/apps/ava-shapes'
+    | '/apps/ava-two-words'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -281,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsVectorDungeonRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/ava-two-words': {
+      id: '/apps/ava-two-words'
+      path: '/ava-two-words'
+      fullPath: '/apps/ava-two-words'
+      preLoaderRoute: typeof AppsAvaTwoWordsRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/apps/ava-shapes': {
       id: '/apps/ava-shapes'
       path: '/ava-shapes'
@@ -288,11 +379,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsAvaShapesRouteImport
       parentRoute: typeof AppsRoute
     }
+    '/apps/ava-positions': {
+      id: '/apps/ava-positions'
+      path: '/ava-positions'
+      fullPath: '/apps/ava-positions'
+      preLoaderRoute: typeof AppsAvaPositionsRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/ava-opposites': {
+      id: '/apps/ava-opposites'
+      path: '/ava-opposites'
+      fullPath: '/apps/ava-opposites'
+      preLoaderRoute: typeof AppsAvaOppositesRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/ava-numbers': {
+      id: '/apps/ava-numbers'
+      path: '/ava-numbers'
+      fullPath: '/apps/ava-numbers'
+      preLoaderRoute: typeof AppsAvaNumbersRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/ava-needs': {
+      id: '/apps/ava-needs'
+      path: '/ava-needs'
+      fullPath: '/apps/ava-needs'
+      preLoaderRoute: typeof AppsAvaNeedsRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/ava-letters': {
+      id: '/apps/ava-letters'
+      path: '/ava-letters'
+      fullPath: '/apps/ava-letters'
+      preLoaderRoute: typeof AppsAvaLettersRouteImport
+      parentRoute: typeof AppsRoute
+    }
     '/apps/ava-first-words': {
       id: '/apps/ava-first-words'
       path: '/ava-first-words'
       fullPath: '/apps/ava-first-words'
       preLoaderRoute: typeof AppsAvaFirstWordsRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/ava-actions': {
+      id: '/apps/ava-actions'
+      path: '/ava-actions'
+      fullPath: '/apps/ava-actions'
+      preLoaderRoute: typeof AppsAvaActionsRouteImport
       parentRoute: typeof AppsRoute
     }
     '/curriculum/$curriculumId/': {
@@ -327,16 +460,30 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppsRouteChildren {
+  AppsAvaActionsRoute: typeof AppsAvaActionsRoute
   AppsAvaFirstWordsRoute: typeof AppsAvaFirstWordsRoute
+  AppsAvaLettersRoute: typeof AppsAvaLettersRoute
+  AppsAvaNeedsRoute: typeof AppsAvaNeedsRoute
+  AppsAvaNumbersRoute: typeof AppsAvaNumbersRoute
+  AppsAvaOppositesRoute: typeof AppsAvaOppositesRoute
+  AppsAvaPositionsRoute: typeof AppsAvaPositionsRoute
   AppsAvaShapesRoute: typeof AppsAvaShapesRoute
+  AppsAvaTwoWordsRoute: typeof AppsAvaTwoWordsRoute
   AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
   AppsIndexRoute: typeof AppsIndexRoute
   AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
 }
 
 const AppsRouteChildren: AppsRouteChildren = {
+  AppsAvaActionsRoute: AppsAvaActionsRoute,
   AppsAvaFirstWordsRoute: AppsAvaFirstWordsRoute,
+  AppsAvaLettersRoute: AppsAvaLettersRoute,
+  AppsAvaNeedsRoute: AppsAvaNeedsRoute,
+  AppsAvaNumbersRoute: AppsAvaNumbersRoute,
+  AppsAvaOppositesRoute: AppsAvaOppositesRoute,
+  AppsAvaPositionsRoute: AppsAvaPositionsRoute,
   AppsAvaShapesRoute: AppsAvaShapesRoute,
+  AppsAvaTwoWordsRoute: AppsAvaTwoWordsRoute,
   AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,
   AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,

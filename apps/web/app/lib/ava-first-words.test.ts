@@ -1,17 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { AVA_FIRST_WORDS_SESSION_DEFAULT, AvaFirstWordsSessionSchema } from "@mind-palace/schemas";
 
-import {
-  AVA_FIRST_WORD_VIDEO_CLIPS,
-  AvaFirstWordSlugSchema,
-  AvaFirstWordVideoManifestSchema,
-} from "./ava-first-word-videos";
+import { AvaFirstWordSlugSchema } from "./ava-first-word-slugs";
 import {
   AVA_FIRST_WORD_CARDS,
   AVA_FIRST_WORD_CATEGORY_IDS,
   AvaFirstWordCardSchema,
   AvaFirstWordCatalogSchema,
-  AvaFirstWordVideoClipSchema,
   buildAvaFirstWordsDeck,
   countAvaFirstWordsReviewedCards,
   getAvaFirstWordCardsByCategory,
@@ -140,16 +135,12 @@ describe("Ava first-word catalog", () => {
     }
   });
 
-  test("gives all 100 cards a generated local image and valid five-second video clip", () => {
-    expect(Object.keys(AVA_FIRST_WORD_VIDEO_CLIPS)).toHaveLength(100);
-    expect(AvaFirstWordVideoManifestSchema.safeParse(AVA_FIRST_WORD_VIDEO_CLIPS).success).toBe(
-      true,
-    );
-
+  test("gives all 100 cards a generated local image", () => {
     for (const card of AVA_FIRST_WORD_CARDS) {
       expect(card.imagePath).toBe(`ava-first-words/images/${card.slug}.webp`);
-      expect(card.videoClip).toEqual(AVA_FIRST_WORD_VIDEO_CLIPS[card.slug]);
-      expect(AvaFirstWordVideoClipSchema.safeParse(card.videoClip).success).toBe(true);
+      expect(
+        Bun.file(new URL(`../../public/${card.imagePath}`, import.meta.url)).size,
+      ).toBeGreaterThan(1000);
     }
   });
 
@@ -159,18 +150,6 @@ describe("Ava first-word catalog", () => {
     const result = AvaFirstWordCardSchema.safeParse({ ...first, imagePath: "wrong.webp" });
     expect(result.success).toBe(false);
     if (!result.success) expect(result.error.issues[0]?.path).toEqual(["imagePath"]);
-  });
-
-  test("rejects malformed or non-five-second video clips", () => {
-    expect(
-      AvaFirstWordVideoClipSchema.safeParse({
-        youtubeVideoId: "too-short",
-        startSeconds: 0,
-        durationSeconds: 4,
-        sourceTitle: "Source title",
-        sourceChannel: "Source channel",
-      }).success,
-    ).toBe(false);
   });
 
   test("rejects incomplete catalogs", () => {

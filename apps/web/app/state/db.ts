@@ -1,7 +1,9 @@
 import type {
   AlchemyBoard,
   AvaFirstWordsSession,
+  AvaLearningSession,
   AvaShapesSession,
+  AvaSymbolsSession,
   CurriculumProgress,
   Progress,
   Settings,
@@ -15,6 +17,8 @@ export interface AppDB extends DBSchema {
   alchemyBoard: { key: string; value: AlchemyBoard };
   curriculumProgress: { key: string; value: CurriculumProgress };
   vectorDungeonSessions: { key: string; value: VectorDungeonSession };
+  avaLearningSessions: { key: string; value: AvaLearningSession };
+  avaSymbolSessions: { key: string; value: AvaSymbolsSession };
   avaShapeSessions: { key: string; value: AvaShapesSession };
   avaFirstWordSessions: { key: string; value: AvaFirstWordsSession };
 }
@@ -23,7 +27,7 @@ export interface AppDB extends DBSchema {
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
 export const DB_NAME = "@mind-palace/web";
-export const DB_VERSION = 7;
+export const DB_VERSION = 10;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
@@ -64,6 +68,17 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 7) {
         db.createObjectStore("avaFirstWordSessions", { keyPath: "id" });
+      }
+      // A local prototype used v7 for another store before first words landed.
+      // Repair that branch's database without recreating the shipped v7 store.
+      if (oldVersion < 8 && !db.objectStoreNames.contains("avaFirstWordSessions")) {
+        db.createObjectStore("avaFirstWordSessions", { keyPath: "id" });
+      }
+      if (oldVersion < 9) {
+        db.createObjectStore("avaSymbolSessions", { keyPath: "id" });
+      }
+      if (oldVersion < 10) {
+        db.createObjectStore("avaLearningSessions", { keyPath: "id" });
       }
     },
     blocked() {

@@ -1,0 +1,2187 @@
+{
+  "provider": "ElevenLabs",
+  "voice": "Sarah",
+  "voiceId": "EXAVITQu4vr4xnSDxMaL",
+  "model": "eleven_multilingual_v2",
+  "speed": 0.85,
+  "stability": 0.75,
+  "similarityBoost": 0.75,
+  "format": "mp3_44100_128",
+  "clips": [
+    {
+      "id": "ava-actions-jump",
+      "text": "Jump",
+      "path": "ava-studio/audio/ava-actions-jump.mp3"
+    },
+    {
+      "id": "ava-actions-jump-question",
+      "text": "Which one is jumping?",
+      "path": "ava-studio/audio/ava-actions-jump-question.mp3"
+    },
+    {
+      "id": "phrase-ava-jump",
+      "text": "Ava jumps",
+      "path": "ava-studio/audio/phrase-ava-jump.mp3"
+    },
+    {
+      "id": "phrase-mommy-jump",
+      "text": "Mommy jumps",
+      "path": "ava-studio/audio/phrase-mommy-jump.mp3"
+    },
+    {
+      "id": "phrase-daddy-jump",
+      "text": "Daddy jumps",
+      "path": "ava-studio/audio/phrase-daddy-jump.mp3"
+    },
+    {
+      "id": "phrase-dog-jump",
+      "text": "Dog jumps",
+      "path": "ava-studio/audio/phrase-dog-jump.mp3"
+    },
+    {
+      "id": "ava-actions-eat",
+      "text": "Eat",
+      "path": "ava-studio/audio/ava-actions-eat.mp3"
+    },
+    {
+      "id": "ava-actions-eat-question",
+      "text": "Which one is eating?",
+      "path": "ava-studio/audio/ava-actions-eat-question.mp3"
+    },
+    {
+      "id": "phrase-ava-eat",
+      "text": "Ava eats",
+      "path": "ava-studio/audio/phrase-ava-eat.mp3"
+    },
+    {
+      "id": "phrase-mommy-eat",
+      "text": "Mommy eats",
+      "path": "ava-studio/audio/phrase-mommy-eat.mp3"
+    },
+    {
+      "id": "phrase-daddy-eat",
+      "text": "Daddy eats",
+      "path": "ava-studio/audio/phrase-daddy-eat.mp3"
+    },
+    {
+      "id": "phrase-dog-eat",
+      "text": "Dog eats",
+      "path": "ava-studio/audio/phrase-dog-eat.mp3"
+    },
+    {
+      "id": "ava-actions-drink",
+      "text": "Drink",
+      "path": "ava-studio/audio/ava-actions-drink.mp3"
+    },
+    {
+      "id": "ava-actions-drink-question",
+      "text": "Which one is drinking?",
+      "path": "ava-studio/audio/ava-actions-drink-question.mp3"
+    },
+    {
+      "id": "phrase-ava-drink",
+      "text": "Ava drinks",
+      "path": "ava-studio/audio/phrase-ava-drink.mp3"
+    },
+    {
+      "id": "phrase-mommy-drink",
+      "text": "Mommy drinks",
+      "path": "ava-studio/audio/phrase-mommy-drink.mp3"
+    },
+    {
+      "id": "phrase-daddy-drink",
+      "text": "Daddy drinks",
+      "path": "ava-studio/audio/phrase-daddy-drink.mp3"
+    },
+    {
+      "id": "phrase-dog-drink",
+      "text": "Dog drinks",
+      "path": "ava-studio/audio/phrase-dog-drink.mp3"
+    },
+    {
+      "id": "ava-actions-sleep",
+      "text": "Sleep",
+      "path": "ava-studio/audio/ava-actions-sleep.mp3"
+    },
+    {
+      "id": "ava-actions-sleep-question",
+      "text": "Which one is sleeping?",
+      "path": "ava-studio/audio/ava-actions-sleep-question.mp3"
+    },
+    {
+      "id": "phrase-ava-sleep",
+      "text": "Ava sleeps",
+      "path": "ava-studio/audio/phrase-ava-sleep.mp3"
+    },
+    {
+      "id": "phrase-mommy-sleep",
+      "text": "Mommy sleeps",
+      "path": "ava-studio/audio/phrase-mommy-sleep.mp3"
+    },
+    {
+      "id": "phrase-daddy-sleep",
+      "text": "Daddy sleeps",
+      "path": "ava-studio/audio/phrase-daddy-sleep.mp3"
+    },
+    {
+      "id": "phrase-dog-sleep",
+      "text": "Dog sleeps",
+      "path": "ava-studio/audio/phrase-dog-sleep.mp3"
+    },
+    {
+      "id": "ava-actions-wash",
+      "text": "Wash",
+      "path": "ava-studio/audio/ava-actions-wash.mp3"
+    },
+    {
+      "id": "ava-actions-wash-question",
+      "text": "Which one is washing?",
+      "path": "ava-studio/audio/ava-actions-wash-question.mp3"
+    },
+    {
+      "id": "phrase-ava-wash",
+      "text": "Ava washes",
+      "path": "ava-studio/audio/phrase-ava-wash.mp3"
+    },
+    {
+      "id": "phrase-mommy-wash",
+      "text": "Mommy washes",
+      "path": "ava-studio/audio/phrase-mommy-wash.mp3"
+    },
+    {
+      "id": "phrase-daddy-wash",
+      "text": "Daddy washes",
+      "path": "ava-studio/audio/phrase-daddy-wash.mp3"
+    },
+    {
+      "id": "ava-actions-open",
+      "text": "Open",
+      "path": "ava-studio/audio/ava-actions-open.mp3"
+    },
+    {
+      "id": "ava-actions-open-question",
+      "text": "Which one is opening?",
+      "path": "ava-studio/audio/ava-actions-open-question.mp3"
+    },
+    {
+      "id": "phrase-ava-open",
+      "text": "Ava opens",
+      "path": "ava-studio/audio/phrase-ava-open.mp3"
+    },
+    {
+      "id": "phrase-mommy-open",
+      "text": "Mommy opens",
+      "path": "ava-studio/audio/phrase-mommy-open.mp3"
+    },
+    {
+      "id": "phrase-daddy-open",
+      "text": "Daddy opens",
+      "path": "ava-studio/audio/phrase-daddy-open.mp3"
+    },
+    {
+      "id": "ava-actions-hug",
+      "text": "Hug",
+      "path": "ava-studio/audio/ava-actions-hug.mp3"
+    },
+    {
+      "id": "ava-actions-hug-question",
+      "text": "Which one is hugging?",
+      "path": "ava-studio/audio/ava-actions-hug-question.mp3"
+    },
+    {
+      "id": "phrase-ava-hug",
+      "text": "Ava hugs",
+      "path": "ava-studio/audio/phrase-ava-hug.mp3"
+    },
+    {
+      "id": "phrase-mommy-hug",
+      "text": "Mommy hugs",
+      "path": "ava-studio/audio/phrase-mommy-hug.mp3"
+    },
+    {
+      "id": "phrase-daddy-hug",
+      "text": "Daddy hugs",
+      "path": "ava-studio/audio/phrase-daddy-hug.mp3"
+    },
+    {
+      "id": "ava-actions-run",
+      "text": "Run",
+      "path": "ava-studio/audio/ava-actions-run.mp3"
+    },
+    {
+      "id": "ava-actions-run-question",
+      "text": "Which one is running?",
+      "path": "ava-studio/audio/ava-actions-run-question.mp3"
+    },
+    {
+      "id": "phrase-ava-run",
+      "text": "Ava runs",
+      "path": "ava-studio/audio/phrase-ava-run.mp3"
+    },
+    {
+      "id": "phrase-mommy-run",
+      "text": "Mommy runs",
+      "path": "ava-studio/audio/phrase-mommy-run.mp3"
+    },
+    {
+      "id": "phrase-daddy-run",
+      "text": "Daddy runs",
+      "path": "ava-studio/audio/phrase-daddy-run.mp3"
+    },
+    {
+      "id": "phrase-dog-run",
+      "text": "Dog runs",
+      "path": "ava-studio/audio/phrase-dog-run.mp3"
+    },
+    {
+      "id": "ava-actions-walk",
+      "text": "Walk",
+      "path": "ava-studio/audio/ava-actions-walk.mp3"
+    },
+    {
+      "id": "ava-actions-walk-question",
+      "text": "Which one is walking?",
+      "path": "ava-studio/audio/ava-actions-walk-question.mp3"
+    },
+    {
+      "id": "phrase-ava-walk",
+      "text": "Ava walks",
+      "path": "ava-studio/audio/phrase-ava-walk.mp3"
+    },
+    {
+      "id": "phrase-mommy-walk",
+      "text": "Mommy walks",
+      "path": "ava-studio/audio/phrase-mommy-walk.mp3"
+    },
+    {
+      "id": "phrase-daddy-walk",
+      "text": "Daddy walks",
+      "path": "ava-studio/audio/phrase-daddy-walk.mp3"
+    },
+    {
+      "id": "phrase-dog-walk",
+      "text": "Dog walks",
+      "path": "ava-studio/audio/phrase-dog-walk.mp3"
+    },
+    {
+      "id": "ava-actions-dance",
+      "text": "Dance",
+      "path": "ava-studio/audio/ava-actions-dance.mp3"
+    },
+    {
+      "id": "ava-actions-dance-question",
+      "text": "Which one is dancing?",
+      "path": "ava-studio/audio/ava-actions-dance-question.mp3"
+    },
+    {
+      "id": "phrase-ava-dance",
+      "text": "Ava dances",
+      "path": "ava-studio/audio/phrase-ava-dance.mp3"
+    },
+    {
+      "id": "phrase-mommy-dance",
+      "text": "Mommy dances",
+      "path": "ava-studio/audio/phrase-mommy-dance.mp3"
+    },
+    {
+      "id": "phrase-daddy-dance",
+      "text": "Daddy dances",
+      "path": "ava-studio/audio/phrase-daddy-dance.mp3"
+    },
+    {
+      "id": "ava-actions-clap",
+      "text": "Clap",
+      "path": "ava-studio/audio/ava-actions-clap.mp3"
+    },
+    {
+      "id": "ava-actions-clap-question",
+      "text": "Which one is clapping?",
+      "path": "ava-studio/audio/ava-actions-clap-question.mp3"
+    },
+    {
+      "id": "phrase-ava-clap",
+      "text": "Ava claps",
+      "path": "ava-studio/audio/phrase-ava-clap.mp3"
+    },
+    {
+      "id": "phrase-mommy-clap",
+      "text": "Mommy claps",
+      "path": "ava-studio/audio/phrase-mommy-clap.mp3"
+    },
+    {
+      "id": "phrase-daddy-clap",
+      "text": "Daddy claps",
+      "path": "ava-studio/audio/phrase-daddy-clap.mp3"
+    },
+    {
+      "id": "ava-actions-wave",
+      "text": "Wave",
+      "path": "ava-studio/audio/ava-actions-wave.mp3"
+    },
+    {
+      "id": "ava-actions-wave-question",
+      "text": "Which one is waving?",
+      "path": "ava-studio/audio/ava-actions-wave-question.mp3"
+    },
+    {
+      "id": "phrase-ava-wave",
+      "text": "Ava waves",
+      "path": "ava-studio/audio/phrase-ava-wave.mp3"
+    },
+    {
+      "id": "phrase-mommy-wave",
+      "text": "Mommy waves",
+      "path": "ava-studio/audio/phrase-mommy-wave.mp3"
+    },
+    {
+      "id": "phrase-daddy-wave",
+      "text": "Daddy waves",
+      "path": "ava-studio/audio/phrase-daddy-wave.mp3"
+    },
+    {
+      "id": "ava-actions-sit",
+      "text": "Sit",
+      "path": "ava-studio/audio/ava-actions-sit.mp3"
+    },
+    {
+      "id": "ava-actions-sit-question",
+      "text": "Which one is sitting?",
+      "path": "ava-studio/audio/ava-actions-sit-question.mp3"
+    },
+    {
+      "id": "phrase-ava-sit",
+      "text": "Ava sits",
+      "path": "ava-studio/audio/phrase-ava-sit.mp3"
+    },
+    {
+      "id": "phrase-mommy-sit",
+      "text": "Mommy sits",
+      "path": "ava-studio/audio/phrase-mommy-sit.mp3"
+    },
+    {
+      "id": "phrase-daddy-sit",
+      "text": "Daddy sits",
+      "path": "ava-studio/audio/phrase-daddy-sit.mp3"
+    },
+    {
+      "id": "ava-actions-stand",
+      "text": "Stand",
+      "path": "ava-studio/audio/ava-actions-stand.mp3"
+    },
+    {
+      "id": "ava-actions-stand-question",
+      "text": "Which one is standing?",
+      "path": "ava-studio/audio/ava-actions-stand-question.mp3"
+    },
+    {
+      "id": "phrase-ava-stand",
+      "text": "Ava stands",
+      "path": "ava-studio/audio/phrase-ava-stand.mp3"
+    },
+    {
+      "id": "phrase-mommy-stand",
+      "text": "Mommy stands",
+      "path": "ava-studio/audio/phrase-mommy-stand.mp3"
+    },
+    {
+      "id": "phrase-daddy-stand",
+      "text": "Daddy stands",
+      "path": "ava-studio/audio/phrase-daddy-stand.mp3"
+    },
+    {
+      "id": "ava-actions-kick",
+      "text": "Kick",
+      "path": "ava-studio/audio/ava-actions-kick.mp3"
+    },
+    {
+      "id": "ava-actions-kick-question",
+      "text": "Which one is kicking?",
+      "path": "ava-studio/audio/ava-actions-kick-question.mp3"
+    },
+    {
+      "id": "phrase-ava-kick",
+      "text": "Ava kicks",
+      "path": "ava-studio/audio/phrase-ava-kick.mp3"
+    },
+    {
+      "id": "phrase-mommy-kick",
+      "text": "Mommy kicks",
+      "path": "ava-studio/audio/phrase-mommy-kick.mp3"
+    },
+    {
+      "id": "phrase-daddy-kick",
+      "text": "Daddy kicks",
+      "path": "ava-studio/audio/phrase-daddy-kick.mp3"
+    },
+    {
+      "id": "ava-actions-throw",
+      "text": "Throw",
+      "path": "ava-studio/audio/ava-actions-throw.mp3"
+    },
+    {
+      "id": "ava-actions-throw-question",
+      "text": "Which one is throwing?",
+      "path": "ava-studio/audio/ava-actions-throw-question.mp3"
+    },
+    {
+      "id": "phrase-ava-throw",
+      "text": "Ava throws",
+      "path": "ava-studio/audio/phrase-ava-throw.mp3"
+    },
+    {
+      "id": "phrase-mommy-throw",
+      "text": "Mommy throws",
+      "path": "ava-studio/audio/phrase-mommy-throw.mp3"
+    },
+    {
+      "id": "phrase-daddy-throw",
+      "text": "Daddy throws",
+      "path": "ava-studio/audio/phrase-daddy-throw.mp3"
+    },
+    {
+      "id": "ava-actions-catch",
+      "text": "Catch",
+      "path": "ava-studio/audio/ava-actions-catch.mp3"
+    },
+    {
+      "id": "ava-actions-catch-question",
+      "text": "Which one is catching?",
+      "path": "ava-studio/audio/ava-actions-catch-question.mp3"
+    },
+    {
+      "id": "phrase-ava-catch",
+      "text": "Ava catches",
+      "path": "ava-studio/audio/phrase-ava-catch.mp3"
+    },
+    {
+      "id": "phrase-mommy-catch",
+      "text": "Mommy catches",
+      "path": "ava-studio/audio/phrase-mommy-catch.mp3"
+    },
+    {
+      "id": "phrase-daddy-catch",
+      "text": "Daddy catches",
+      "path": "ava-studio/audio/phrase-daddy-catch.mp3"
+    },
+    {
+      "id": "ava-actions-push",
+      "text": "Push",
+      "path": "ava-studio/audio/ava-actions-push.mp3"
+    },
+    {
+      "id": "ava-actions-push-question",
+      "text": "Which one is pushing?",
+      "path": "ava-studio/audio/ava-actions-push-question.mp3"
+    },
+    {
+      "id": "phrase-ava-push",
+      "text": "Ava pushes",
+      "path": "ava-studio/audio/phrase-ava-push.mp3"
+    },
+    {
+      "id": "phrase-mommy-push",
+      "text": "Mommy pushes",
+      "path": "ava-studio/audio/phrase-mommy-push.mp3"
+    },
+    {
+      "id": "phrase-daddy-push",
+      "text": "Daddy pushes",
+      "path": "ava-studio/audio/phrase-daddy-push.mp3"
+    },
+    {
+      "id": "ava-actions-pull",
+      "text": "Pull",
+      "path": "ava-studio/audio/ava-actions-pull.mp3"
+    },
+    {
+      "id": "ava-actions-pull-question",
+      "text": "Which one is pulling?",
+      "path": "ava-studio/audio/ava-actions-pull-question.mp3"
+    },
+    {
+      "id": "phrase-ava-pull",
+      "text": "Ava pulls",
+      "path": "ava-studio/audio/phrase-ava-pull.mp3"
+    },
+    {
+      "id": "phrase-mommy-pull",
+      "text": "Mommy pulls",
+      "path": "ava-studio/audio/phrase-mommy-pull.mp3"
+    },
+    {
+      "id": "phrase-daddy-pull",
+      "text": "Daddy pulls",
+      "path": "ava-studio/audio/phrase-daddy-pull.mp3"
+    },
+    {
+      "id": "ava-actions-close",
+      "text": "Close",
+      "path": "ava-studio/audio/ava-actions-close.mp3"
+    },
+    {
+      "id": "ava-actions-close-question",
+      "text": "Which one is closing?",
+      "path": "ava-studio/audio/ava-actions-close-question.mp3"
+    },
+    {
+      "id": "phrase-ava-close",
+      "text": "Ava closes",
+      "path": "ava-studio/audio/phrase-ava-close.mp3"
+    },
+    {
+      "id": "phrase-mommy-close",
+      "text": "Mommy closes",
+      "path": "ava-studio/audio/phrase-mommy-close.mp3"
+    },
+    {
+      "id": "phrase-daddy-close",
+      "text": "Daddy closes",
+      "path": "ava-studio/audio/phrase-daddy-close.mp3"
+    },
+    {
+      "id": "ava-needs-more",
+      "text": "More",
+      "path": "ava-studio/audio/ava-needs-more.mp3"
+    },
+    {
+      "id": "ava-needs-more-question",
+      "text": "Which one means more?",
+      "path": "ava-studio/audio/ava-needs-more-question.mp3"
+    },
+    {
+      "id": "ava-needs-help",
+      "text": "Help",
+      "path": "ava-studio/audio/ava-needs-help.mp3"
+    },
+    {
+      "id": "ava-needs-help-question",
+      "text": "Which one means help?",
+      "path": "ava-studio/audio/ava-needs-help-question.mp3"
+    },
+    {
+      "id": "ava-needs-stop",
+      "text": "Stop",
+      "path": "ava-studio/audio/ava-needs-stop.mp3"
+    },
+    {
+      "id": "ava-needs-stop-question",
+      "text": "Which one means stop?",
+      "path": "ava-studio/audio/ava-needs-stop-question.mp3"
+    },
+    {
+      "id": "ava-needs-again",
+      "text": "Again",
+      "path": "ava-studio/audio/ava-needs-again.mp3"
+    },
+    {
+      "id": "ava-needs-again-question",
+      "text": "Which one means again?",
+      "path": "ava-studio/audio/ava-needs-again-question.mp3"
+    },
+    {
+      "id": "ava-needs-mine",
+      "text": "Mine",
+      "path": "ava-studio/audio/ava-needs-mine.mp3"
+    },
+    {
+      "id": "ava-needs-mine-question",
+      "text": "Which one means mine?",
+      "path": "ava-studio/audio/ava-needs-mine-question.mp3"
+    },
+    {
+      "id": "ava-needs-all-done",
+      "text": "All done",
+      "path": "ava-studio/audio/ava-needs-all-done.mp3"
+    },
+    {
+      "id": "ava-needs-all-done-question",
+      "text": "Which one means all done?",
+      "path": "ava-studio/audio/ava-needs-all-done-question.mp3"
+    },
+    {
+      "id": "ava-needs-please",
+      "text": "Please",
+      "path": "ava-studio/audio/ava-needs-please.mp3"
+    },
+    {
+      "id": "ava-needs-please-question",
+      "text": "Which one means please?",
+      "path": "ava-studio/audio/ava-needs-please-question.mp3"
+    },
+    {
+      "id": "ava-needs-thank-you",
+      "text": "Thank you",
+      "path": "ava-studio/audio/ava-needs-thank-you.mp3"
+    },
+    {
+      "id": "ava-needs-thank-you-question",
+      "text": "Which one means thank you?",
+      "path": "ava-studio/audio/ava-needs-thank-you-question.mp3"
+    },
+    {
+      "id": "ava-needs-yes",
+      "text": "Yes",
+      "path": "ava-studio/audio/ava-needs-yes.mp3"
+    },
+    {
+      "id": "ava-needs-yes-question",
+      "text": "Which one means yes?",
+      "path": "ava-studio/audio/ava-needs-yes-question.mp3"
+    },
+    {
+      "id": "ava-needs-no",
+      "text": "No",
+      "path": "ava-studio/audio/ava-needs-no.mp3"
+    },
+    {
+      "id": "ava-needs-no-question",
+      "text": "Which one means no?",
+      "path": "ava-studio/audio/ava-needs-no-question.mp3"
+    },
+    {
+      "id": "ava-needs-want",
+      "text": "Want",
+      "path": "ava-studio/audio/ava-needs-want.mp3"
+    },
+    {
+      "id": "ava-needs-want-question",
+      "text": "Which one means want?",
+      "path": "ava-studio/audio/ava-needs-want-question.mp3"
+    },
+    {
+      "id": "ava-needs-water",
+      "text": "Water",
+      "path": "ava-studio/audio/ava-needs-water.mp3"
+    },
+    {
+      "id": "ava-needs-water-question",
+      "text": "Which one means water?",
+      "path": "ava-studio/audio/ava-needs-water-question.mp3"
+    },
+    {
+      "id": "ava-needs-milk",
+      "text": "Milk",
+      "path": "ava-studio/audio/ava-needs-milk.mp3"
+    },
+    {
+      "id": "ava-needs-milk-question",
+      "text": "Which one means milk?",
+      "path": "ava-studio/audio/ava-needs-milk-question.mp3"
+    },
+    {
+      "id": "ava-needs-hungry",
+      "text": "Hungry",
+      "path": "ava-studio/audio/ava-needs-hungry.mp3"
+    },
+    {
+      "id": "ava-needs-hungry-question",
+      "text": "Which one means hungry?",
+      "path": "ava-studio/audio/ava-needs-hungry-question.mp3"
+    },
+    {
+      "id": "ava-needs-thirsty",
+      "text": "Thirsty",
+      "path": "ava-studio/audio/ava-needs-thirsty.mp3"
+    },
+    {
+      "id": "ava-needs-thirsty-question",
+      "text": "Which one means thirsty?",
+      "path": "ava-studio/audio/ava-needs-thirsty-question.mp3"
+    },
+    {
+      "id": "ava-needs-tired",
+      "text": "Tired",
+      "path": "ava-studio/audio/ava-needs-tired.mp3"
+    },
+    {
+      "id": "ava-needs-tired-question",
+      "text": "Which one means tired?",
+      "path": "ava-studio/audio/ava-needs-tired-question.mp3"
+    },
+    {
+      "id": "ava-needs-potty",
+      "text": "Potty",
+      "path": "ava-studio/audio/ava-needs-potty.mp3"
+    },
+    {
+      "id": "ava-needs-potty-question",
+      "text": "Which one means potty?",
+      "path": "ava-studio/audio/ava-needs-potty-question.mp3"
+    },
+    {
+      "id": "ava-needs-hurt",
+      "text": "Hurt",
+      "path": "ava-studio/audio/ava-needs-hurt.mp3"
+    },
+    {
+      "id": "ava-needs-hurt-question",
+      "text": "Which one means hurt?",
+      "path": "ava-studio/audio/ava-needs-hurt-question.mp3"
+    },
+    {
+      "id": "ava-needs-hot",
+      "text": "Hot",
+      "path": "ava-studio/audio/ava-needs-hot.mp3"
+    },
+    {
+      "id": "ava-needs-hot-question",
+      "text": "Which one means hot?",
+      "path": "ava-studio/audio/ava-needs-hot-question.mp3"
+    },
+    {
+      "id": "ava-needs-cold",
+      "text": "Cold",
+      "path": "ava-studio/audio/ava-needs-cold.mp3"
+    },
+    {
+      "id": "ava-needs-cold-question",
+      "text": "Which one means cold?",
+      "path": "ava-studio/audio/ava-needs-cold-question.mp3"
+    },
+    {
+      "id": "ava-opposites-big",
+      "text": "Big",
+      "path": "ava-studio/audio/ava-opposites-big.mp3"
+    },
+    {
+      "id": "ava-opposites-big-question",
+      "text": "Which one is big?",
+      "path": "ava-studio/audio/ava-opposites-big-question.mp3"
+    },
+    {
+      "id": "ava-opposites-small",
+      "text": "Small",
+      "path": "ava-studio/audio/ava-opposites-small.mp3"
+    },
+    {
+      "id": "ava-opposites-small-question",
+      "text": "Which one is small?",
+      "path": "ava-studio/audio/ava-opposites-small-question.mp3"
+    },
+    {
+      "id": "ava-opposites-tall",
+      "text": "Tall",
+      "path": "ava-studio/audio/ava-opposites-tall.mp3"
+    },
+    {
+      "id": "ava-opposites-tall-question",
+      "text": "Which one is tall?",
+      "path": "ava-studio/audio/ava-opposites-tall-question.mp3"
+    },
+    {
+      "id": "ava-opposites-short",
+      "text": "Short",
+      "path": "ava-studio/audio/ava-opposites-short.mp3"
+    },
+    {
+      "id": "ava-opposites-short-question",
+      "text": "Which one is short?",
+      "path": "ava-studio/audio/ava-opposites-short-question.mp3"
+    },
+    {
+      "id": "ava-opposites-hot-question",
+      "text": "Which one is hot?",
+      "path": "ava-studio/audio/ava-opposites-hot-question.mp3"
+    },
+    {
+      "id": "ava-opposites-cold-question",
+      "text": "Which one is cold?",
+      "path": "ava-studio/audio/ava-opposites-cold-question.mp3"
+    },
+    {
+      "id": "ava-opposites-wet",
+      "text": "Wet",
+      "path": "ava-studio/audio/ava-opposites-wet.mp3"
+    },
+    {
+      "id": "ava-opposites-wet-question",
+      "text": "Which one is wet?",
+      "path": "ava-studio/audio/ava-opposites-wet-question.mp3"
+    },
+    {
+      "id": "ava-opposites-dry",
+      "text": "Dry",
+      "path": "ava-studio/audio/ava-opposites-dry.mp3"
+    },
+    {
+      "id": "ava-opposites-dry-question",
+      "text": "Which one is dry?",
+      "path": "ava-studio/audio/ava-opposites-dry-question.mp3"
+    },
+    {
+      "id": "ava-opposites-fast",
+      "text": "Fast",
+      "path": "ava-studio/audio/ava-opposites-fast.mp3"
+    },
+    {
+      "id": "ava-opposites-fast-question",
+      "text": "Which one is fast?",
+      "path": "ava-studio/audio/ava-opposites-fast-question.mp3"
+    },
+    {
+      "id": "ava-opposites-slow",
+      "text": "Slow",
+      "path": "ava-studio/audio/ava-opposites-slow.mp3"
+    },
+    {
+      "id": "ava-opposites-slow-question",
+      "text": "Which one is slow?",
+      "path": "ava-studio/audio/ava-opposites-slow-question.mp3"
+    },
+    {
+      "id": "ava-opposites-happy",
+      "text": "Happy",
+      "path": "ava-studio/audio/ava-opposites-happy.mp3"
+    },
+    {
+      "id": "ava-opposites-happy-question",
+      "text": "Which one is happy?",
+      "path": "ava-studio/audio/ava-opposites-happy-question.mp3"
+    },
+    {
+      "id": "ava-opposites-sad",
+      "text": "Sad",
+      "path": "ava-studio/audio/ava-opposites-sad.mp3"
+    },
+    {
+      "id": "ava-opposites-sad-question",
+      "text": "Which one is sad?",
+      "path": "ava-studio/audio/ava-opposites-sad-question.mp3"
+    },
+    {
+      "id": "ava-opposites-open-question",
+      "text": "Which one is open?",
+      "path": "ava-studio/audio/ava-opposites-open-question.mp3"
+    },
+    {
+      "id": "ava-opposites-closed",
+      "text": "Closed",
+      "path": "ava-studio/audio/ava-opposites-closed.mp3"
+    },
+    {
+      "id": "ava-opposites-closed-question",
+      "text": "Which one is closed?",
+      "path": "ava-studio/audio/ava-opposites-closed-question.mp3"
+    },
+    {
+      "id": "ava-opposites-full",
+      "text": "Full",
+      "path": "ava-studio/audio/ava-opposites-full.mp3"
+    },
+    {
+      "id": "ava-opposites-full-question",
+      "text": "Which one is full?",
+      "path": "ava-studio/audio/ava-opposites-full-question.mp3"
+    },
+    {
+      "id": "ava-opposites-empty",
+      "text": "Empty",
+      "path": "ava-studio/audio/ava-opposites-empty.mp3"
+    },
+    {
+      "id": "ava-opposites-empty-question",
+      "text": "Which one is empty?",
+      "path": "ava-studio/audio/ava-opposites-empty-question.mp3"
+    },
+    {
+      "id": "ava-opposites-clean",
+      "text": "Clean",
+      "path": "ava-studio/audio/ava-opposites-clean.mp3"
+    },
+    {
+      "id": "ava-opposites-clean-question",
+      "text": "Which one is clean?",
+      "path": "ava-studio/audio/ava-opposites-clean-question.mp3"
+    },
+    {
+      "id": "ava-opposites-dirty",
+      "text": "Dirty",
+      "path": "ava-studio/audio/ava-opposites-dirty.mp3"
+    },
+    {
+      "id": "ava-opposites-dirty-question",
+      "text": "Which one is dirty?",
+      "path": "ava-studio/audio/ava-opposites-dirty-question.mp3"
+    },
+    {
+      "id": "ava-opposites-heavy",
+      "text": "Heavy",
+      "path": "ava-studio/audio/ava-opposites-heavy.mp3"
+    },
+    {
+      "id": "ava-opposites-heavy-question",
+      "text": "Which one is heavy?",
+      "path": "ava-studio/audio/ava-opposites-heavy-question.mp3"
+    },
+    {
+      "id": "ava-opposites-light",
+      "text": "Light",
+      "path": "ava-studio/audio/ava-opposites-light.mp3"
+    },
+    {
+      "id": "ava-opposites-light-question",
+      "text": "Which one is light?",
+      "path": "ava-studio/audio/ava-opposites-light-question.mp3"
+    },
+    {
+      "id": "ava-positions-inside",
+      "text": "Inside",
+      "path": "ava-studio/audio/ava-positions-inside.mp3"
+    },
+    {
+      "id": "ava-positions-inside-question",
+      "text": "Where is the ball? Find inside.",
+      "path": "ava-studio/audio/ava-positions-inside-question.mp3"
+    },
+    {
+      "id": "ava-positions-outside",
+      "text": "Outside",
+      "path": "ava-studio/audio/ava-positions-outside.mp3"
+    },
+    {
+      "id": "ava-positions-outside-question",
+      "text": "Where is the ball? Find outside.",
+      "path": "ava-studio/audio/ava-positions-outside-question.mp3"
+    },
+    {
+      "id": "ava-positions-on",
+      "text": "On",
+      "path": "ava-studio/audio/ava-positions-on.mp3"
+    },
+    {
+      "id": "ava-positions-on-question",
+      "text": "Where is the ball? Find on.",
+      "path": "ava-studio/audio/ava-positions-on-question.mp3"
+    },
+    {
+      "id": "ava-positions-under",
+      "text": "Under",
+      "path": "ava-studio/audio/ava-positions-under.mp3"
+    },
+    {
+      "id": "ava-positions-under-question",
+      "text": "Where is the ball? Find under.",
+      "path": "ava-studio/audio/ava-positions-under-question.mp3"
+    },
+    {
+      "id": "ava-positions-behind",
+      "text": "Behind",
+      "path": "ava-studio/audio/ava-positions-behind.mp3"
+    },
+    {
+      "id": "ava-positions-behind-question",
+      "text": "Where is the ball? Find behind.",
+      "path": "ava-studio/audio/ava-positions-behind-question.mp3"
+    },
+    {
+      "id": "ava-positions-in-front",
+      "text": "In front",
+      "path": "ava-studio/audio/ava-positions-in-front.mp3"
+    },
+    {
+      "id": "ava-positions-in-front-question",
+      "text": "Where is the ball? Find in front.",
+      "path": "ava-studio/audio/ava-positions-in-front-question.mp3"
+    },
+    {
+      "id": "ava-positions-beside",
+      "text": "Beside",
+      "path": "ava-studio/audio/ava-positions-beside.mp3"
+    },
+    {
+      "id": "ava-positions-beside-question",
+      "text": "Where is the ball? Find beside.",
+      "path": "ava-studio/audio/ava-positions-beside-question.mp3"
+    },
+    {
+      "id": "ava-positions-between",
+      "text": "Between",
+      "path": "ava-studio/audio/ava-positions-between.mp3"
+    },
+    {
+      "id": "ava-positions-between-question",
+      "text": "Where is the ball? Find between.",
+      "path": "ava-studio/audio/ava-positions-between-question.mp3"
+    },
+    {
+      "id": "ava-positions-above",
+      "text": "Above",
+      "path": "ava-studio/audio/ava-positions-above.mp3"
+    },
+    {
+      "id": "ava-positions-above-question",
+      "text": "Where is the ball? Find above.",
+      "path": "ava-studio/audio/ava-positions-above-question.mp3"
+    },
+    {
+      "id": "ava-positions-below",
+      "text": "Below",
+      "path": "ava-studio/audio/ava-positions-below.mp3"
+    },
+    {
+      "id": "ava-positions-below-question",
+      "text": "Where is the ball? Find below.",
+      "path": "ava-studio/audio/ava-positions-below-question.mp3"
+    },
+    {
+      "id": "ava-positions-near",
+      "text": "Near",
+      "path": "ava-studio/audio/ava-positions-near.mp3"
+    },
+    {
+      "id": "ava-positions-near-question",
+      "text": "Where is the ball? Find near.",
+      "path": "ava-studio/audio/ava-positions-near-question.mp3"
+    },
+    {
+      "id": "ava-positions-far",
+      "text": "Far",
+      "path": "ava-studio/audio/ava-positions-far.mp3"
+    },
+    {
+      "id": "ava-positions-far-question",
+      "text": "Where is the ball? Find far.",
+      "path": "ava-studio/audio/ava-positions-far-question.mp3"
+    },
+    {
+      "id": "ava-two-words-ava-jumps-question",
+      "text": "Can you find ava jumps?",
+      "path": "ava-studio/audio/ava-two-words-ava-jumps-question.mp3"
+    },
+    {
+      "id": "ava-two-words-mommy-eats-question",
+      "text": "Can you find mommy eats?",
+      "path": "ava-studio/audio/ava-two-words-mommy-eats-question.mp3"
+    },
+    {
+      "id": "ava-two-words-daddy-hugs-question",
+      "text": "Can you find daddy hugs?",
+      "path": "ava-studio/audio/ava-two-words-daddy-hugs-question.mp3"
+    },
+    {
+      "id": "ava-two-words-dog-runs-question",
+      "text": "Can you find dog runs?",
+      "path": "ava-studio/audio/ava-two-words-dog-runs-question.mp3"
+    },
+    {
+      "id": "ava-two-words-ava-drinks-question",
+      "text": "Can you find ava drinks?",
+      "path": "ava-studio/audio/ava-two-words-ava-drinks-question.mp3"
+    },
+    {
+      "id": "ava-two-words-mommy-waves-question",
+      "text": "Can you find mommy waves?",
+      "path": "ava-studio/audio/ava-two-words-mommy-waves-question.mp3"
+    },
+    {
+      "id": "ava-two-words-daddy-claps-question",
+      "text": "Can you find daddy claps?",
+      "path": "ava-studio/audio/ava-two-words-daddy-claps-question.mp3"
+    },
+    {
+      "id": "ava-two-words-dog-sleeps-question",
+      "text": "Can you find dog sleeps?",
+      "path": "ava-studio/audio/ava-two-words-dog-sleeps-question.mp3"
+    },
+    {
+      "id": "ava-two-words-more-milk",
+      "text": "More milk",
+      "path": "ava-studio/audio/ava-two-words-more-milk.mp3"
+    },
+    {
+      "id": "ava-two-words-more-milk-question",
+      "text": "Can you find more milk?",
+      "path": "ava-studio/audio/ava-two-words-more-milk-question.mp3"
+    },
+    {
+      "id": "ava-two-words-more-water",
+      "text": "More water",
+      "path": "ava-studio/audio/ava-two-words-more-water.mp3"
+    },
+    {
+      "id": "ava-two-words-more-water-question",
+      "text": "Can you find more water?",
+      "path": "ava-studio/audio/ava-two-words-more-water-question.mp3"
+    },
+    {
+      "id": "ava-two-words-big-dog",
+      "text": "Big dog",
+      "path": "ava-studio/audio/ava-two-words-big-dog.mp3"
+    },
+    {
+      "id": "ava-two-words-big-dog-question",
+      "text": "Can you find big dog?",
+      "path": "ava-studio/audio/ava-two-words-big-dog-question.mp3"
+    },
+    {
+      "id": "ava-two-words-little-dog",
+      "text": "Little dog",
+      "path": "ava-studio/audio/ava-two-words-little-dog.mp3"
+    },
+    {
+      "id": "ava-two-words-little-dog-question",
+      "text": "Can you find little dog?",
+      "path": "ava-studio/audio/ava-two-words-little-dog-question.mp3"
+    },
+    {
+      "id": "ava-two-words-red-ball",
+      "text": "Red ball",
+      "path": "ava-studio/audio/ava-two-words-red-ball.mp3"
+    },
+    {
+      "id": "ava-two-words-red-ball-question",
+      "text": "Can you find red ball?",
+      "path": "ava-studio/audio/ava-two-words-red-ball-question.mp3"
+    },
+    {
+      "id": "ava-two-words-blue-ball",
+      "text": "Blue ball",
+      "path": "ava-studio/audio/ava-two-words-blue-ball.mp3"
+    },
+    {
+      "id": "ava-two-words-blue-ball-question",
+      "text": "Can you find blue ball?",
+      "path": "ava-studio/audio/ava-two-words-blue-ball-question.mp3"
+    },
+    {
+      "id": "ava-two-words-door-open",
+      "text": "Door open",
+      "path": "ava-studio/audio/ava-two-words-door-open.mp3"
+    },
+    {
+      "id": "ava-two-words-door-open-question",
+      "text": "Can you find door open?",
+      "path": "ava-studio/audio/ava-two-words-door-open-question.mp3"
+    },
+    {
+      "id": "ava-two-words-door-closed",
+      "text": "Door closed",
+      "path": "ava-studio/audio/ava-two-words-door-closed.mp3"
+    },
+    {
+      "id": "ava-two-words-door-closed-question",
+      "text": "Can you find door closed?",
+      "path": "ava-studio/audio/ava-two-words-door-closed-question.mp3"
+    },
+    {
+      "id": "ava-two-words-ava-dances-question",
+      "text": "Can you find ava dances?",
+      "path": "ava-studio/audio/ava-two-words-ava-dances-question.mp3"
+    },
+    {
+      "id": "ava-two-words-mommy-walks-question",
+      "text": "Can you find mommy walks?",
+      "path": "ava-studio/audio/ava-two-words-mommy-walks-question.mp3"
+    },
+    {
+      "id": "ava-two-words-daddy-sits-question",
+      "text": "Can you find daddy sits?",
+      "path": "ava-studio/audio/ava-two-words-daddy-sits-question.mp3"
+    },
+    {
+      "id": "ava-two-words-dog-jumps-question",
+      "text": "Can you find dog jumps?",
+      "path": "ava-studio/audio/ava-two-words-dog-jumps-question.mp3"
+    },
+    {
+      "id": "word-mommy",
+      "text": "Mommy",
+      "path": "ava-studio/audio/word-mommy.mp3"
+    },
+    {
+      "id": "word-daddy",
+      "text": "Daddy",
+      "path": "ava-studio/audio/word-daddy.mp3"
+    },
+    {
+      "id": "word-baby",
+      "text": "Baby",
+      "path": "ava-studio/audio/word-baby.mp3"
+    },
+    {
+      "id": "word-grandma",
+      "text": "Grandma",
+      "path": "ava-studio/audio/word-grandma.mp3"
+    },
+    {
+      "id": "word-grandpa",
+      "text": "Grandpa",
+      "path": "ava-studio/audio/word-grandpa.mp3"
+    },
+    {
+      "id": "word-brother",
+      "text": "Brother",
+      "path": "ava-studio/audio/word-brother.mp3"
+    },
+    {
+      "id": "word-sister",
+      "text": "Sister",
+      "path": "ava-studio/audio/word-sister.mp3"
+    },
+    {
+      "id": "word-friend",
+      "text": "Friend",
+      "path": "ava-studio/audio/word-friend.mp3"
+    },
+    {
+      "id": "word-boy",
+      "text": "Boy",
+      "path": "ava-studio/audio/word-boy.mp3"
+    },
+    {
+      "id": "word-girl",
+      "text": "Girl",
+      "path": "ava-studio/audio/word-girl.mp3"
+    },
+    {
+      "id": "word-dog",
+      "text": "Dog",
+      "path": "ava-studio/audio/word-dog.mp3"
+    },
+    {
+      "id": "word-cat",
+      "text": "Cat",
+      "path": "ava-studio/audio/word-cat.mp3"
+    },
+    {
+      "id": "word-bird",
+      "text": "Bird",
+      "path": "ava-studio/audio/word-bird.mp3"
+    },
+    {
+      "id": "word-fish",
+      "text": "Fish",
+      "path": "ava-studio/audio/word-fish.mp3"
+    },
+    {
+      "id": "word-cow",
+      "text": "Cow",
+      "path": "ava-studio/audio/word-cow.mp3"
+    },
+    {
+      "id": "word-horse",
+      "text": "Horse",
+      "path": "ava-studio/audio/word-horse.mp3"
+    },
+    {
+      "id": "word-duck",
+      "text": "Duck",
+      "path": "ava-studio/audio/word-duck.mp3"
+    },
+    {
+      "id": "word-bunny",
+      "text": "Bunny",
+      "path": "ava-studio/audio/word-bunny.mp3"
+    },
+    {
+      "id": "word-bear",
+      "text": "Bear",
+      "path": "ava-studio/audio/word-bear.mp3"
+    },
+    {
+      "id": "word-frog",
+      "text": "Frog",
+      "path": "ava-studio/audio/word-frog.mp3"
+    },
+    {
+      "id": "word-apple",
+      "text": "Apple",
+      "path": "ava-studio/audio/word-apple.mp3"
+    },
+    {
+      "id": "word-banana",
+      "text": "Banana",
+      "path": "ava-studio/audio/word-banana.mp3"
+    },
+    {
+      "id": "word-bread",
+      "text": "Bread",
+      "path": "ava-studio/audio/word-bread.mp3"
+    },
+    {
+      "id": "word-cheese",
+      "text": "Cheese",
+      "path": "ava-studio/audio/word-cheese.mp3"
+    },
+    {
+      "id": "word-egg",
+      "text": "Egg",
+      "path": "ava-studio/audio/word-egg.mp3"
+    },
+    {
+      "id": "word-cookie",
+      "text": "Cookie",
+      "path": "ava-studio/audio/word-cookie.mp3"
+    },
+    {
+      "id": "word-juice",
+      "text": "Juice",
+      "path": "ava-studio/audio/word-juice.mp3"
+    },
+    {
+      "id": "word-peas",
+      "text": "Peas",
+      "path": "ava-studio/audio/word-peas.mp3"
+    },
+    {
+      "id": "word-eyes",
+      "text": "Eyes",
+      "path": "ava-studio/audio/word-eyes.mp3"
+    },
+    {
+      "id": "word-nose",
+      "text": "Nose",
+      "path": "ava-studio/audio/word-nose.mp3"
+    },
+    {
+      "id": "word-mouth",
+      "text": "Mouth",
+      "path": "ava-studio/audio/word-mouth.mp3"
+    },
+    {
+      "id": "word-ears",
+      "text": "Ears",
+      "path": "ava-studio/audio/word-ears.mp3"
+    },
+    {
+      "id": "word-hands",
+      "text": "Hands",
+      "path": "ava-studio/audio/word-hands.mp3"
+    },
+    {
+      "id": "word-feet",
+      "text": "Feet",
+      "path": "ava-studio/audio/word-feet.mp3"
+    },
+    {
+      "id": "word-hair",
+      "text": "Hair",
+      "path": "ava-studio/audio/word-hair.mp3"
+    },
+    {
+      "id": "word-teeth",
+      "text": "Teeth",
+      "path": "ava-studio/audio/word-teeth.mp3"
+    },
+    {
+      "id": "word-belly",
+      "text": "Belly",
+      "path": "ava-studio/audio/word-belly.mp3"
+    },
+    {
+      "id": "word-face",
+      "text": "Face",
+      "path": "ava-studio/audio/word-face.mp3"
+    },
+    {
+      "id": "word-bed",
+      "text": "Bed",
+      "path": "ava-studio/audio/word-bed.mp3"
+    },
+    {
+      "id": "word-chair",
+      "text": "Chair",
+      "path": "ava-studio/audio/word-chair.mp3"
+    },
+    {
+      "id": "word-table",
+      "text": "Table",
+      "path": "ava-studio/audio/word-table.mp3"
+    },
+    {
+      "id": "word-door",
+      "text": "Door",
+      "path": "ava-studio/audio/word-door.mp3"
+    },
+    {
+      "id": "word-window",
+      "text": "Window",
+      "path": "ava-studio/audio/word-window.mp3"
+    },
+    {
+      "id": "word-bath",
+      "text": "Bath",
+      "path": "ava-studio/audio/word-bath.mp3"
+    },
+    {
+      "id": "word-book",
+      "text": "Book",
+      "path": "ava-studio/audio/word-book.mp3"
+    },
+    {
+      "id": "word-blanket",
+      "text": "Blanket",
+      "path": "ava-studio/audio/word-blanket.mp3"
+    },
+    {
+      "id": "word-phone",
+      "text": "Phone",
+      "path": "ava-studio/audio/word-phone.mp3"
+    },
+    {
+      "id": "word-ball",
+      "text": "Ball",
+      "path": "ava-studio/audio/word-ball.mp3"
+    },
+    {
+      "id": "word-blocks",
+      "text": "Blocks",
+      "path": "ava-studio/audio/word-blocks.mp3"
+    },
+    {
+      "id": "word-doll",
+      "text": "Doll",
+      "path": "ava-studio/audio/word-doll.mp3"
+    },
+    {
+      "id": "word-teddy-bear",
+      "text": "Teddy Bear",
+      "path": "ava-studio/audio/word-teddy-bear.mp3"
+    },
+    {
+      "id": "word-car",
+      "text": "Car",
+      "path": "ava-studio/audio/word-car.mp3"
+    },
+    {
+      "id": "word-train",
+      "text": "Train",
+      "path": "ava-studio/audio/word-train.mp3"
+    },
+    {
+      "id": "word-bubbles",
+      "text": "Bubbles",
+      "path": "ava-studio/audio/word-bubbles.mp3"
+    },
+    {
+      "id": "word-puzzle",
+      "text": "Puzzle",
+      "path": "ava-studio/audio/word-puzzle.mp3"
+    },
+    {
+      "id": "word-crayon",
+      "text": "Crayon",
+      "path": "ava-studio/audio/word-crayon.mp3"
+    },
+    {
+      "id": "word-drum",
+      "text": "Drum",
+      "path": "ava-studio/audio/word-drum.mp3"
+    },
+    {
+      "id": "word-sun",
+      "text": "Sun",
+      "path": "ava-studio/audio/word-sun.mp3"
+    },
+    {
+      "id": "word-moon",
+      "text": "Moon",
+      "path": "ava-studio/audio/word-moon.mp3"
+    },
+    {
+      "id": "word-star",
+      "text": "Star",
+      "path": "ava-studio/audio/word-star.mp3"
+    },
+    {
+      "id": "word-tree",
+      "text": "Tree",
+      "path": "ava-studio/audio/word-tree.mp3"
+    },
+    {
+      "id": "word-flower",
+      "text": "Flower",
+      "path": "ava-studio/audio/word-flower.mp3"
+    },
+    {
+      "id": "word-grass",
+      "text": "Grass",
+      "path": "ava-studio/audio/word-grass.mp3"
+    },
+    {
+      "id": "word-rain",
+      "text": "Rain",
+      "path": "ava-studio/audio/word-rain.mp3"
+    },
+    {
+      "id": "word-cloud",
+      "text": "Cloud",
+      "path": "ava-studio/audio/word-cloud.mp3"
+    },
+    {
+      "id": "word-rock",
+      "text": "Rock",
+      "path": "ava-studio/audio/word-rock.mp3"
+    },
+    {
+      "id": "word-leaf",
+      "text": "Leaf",
+      "path": "ava-studio/audio/word-leaf.mp3"
+    },
+    {
+      "id": "word-bus",
+      "text": "Bus",
+      "path": "ava-studio/audio/word-bus.mp3"
+    },
+    {
+      "id": "word-truck",
+      "text": "Truck",
+      "path": "ava-studio/audio/word-truck.mp3"
+    },
+    {
+      "id": "word-bicycle",
+      "text": "Bicycle",
+      "path": "ava-studio/audio/word-bicycle.mp3"
+    },
+    {
+      "id": "word-airplane",
+      "text": "Airplane",
+      "path": "ava-studio/audio/word-airplane.mp3"
+    },
+    {
+      "id": "word-boat",
+      "text": "Boat",
+      "path": "ava-studio/audio/word-boat.mp3"
+    },
+    {
+      "id": "word-stroller",
+      "text": "Stroller",
+      "path": "ava-studio/audio/word-stroller.mp3"
+    },
+    {
+      "id": "word-wagon",
+      "text": "Wagon",
+      "path": "ava-studio/audio/word-wagon.mp3"
+    },
+    {
+      "id": "word-tractor",
+      "text": "Tractor",
+      "path": "ava-studio/audio/word-tractor.mp3"
+    },
+    {
+      "id": "word-helicopter",
+      "text": "Helicopter",
+      "path": "ava-studio/audio/word-helicopter.mp3"
+    },
+    {
+      "id": "word-scooter",
+      "text": "Scooter",
+      "path": "ava-studio/audio/word-scooter.mp3"
+    },
+    {
+      "id": "word-up",
+      "text": "Up",
+      "path": "ava-studio/audio/word-up.mp3"
+    },
+    {
+      "id": "word-down",
+      "text": "Down",
+      "path": "ava-studio/audio/word-down.mp3"
+    },
+    {
+      "id": "word-go",
+      "text": "Go",
+      "path": "ava-studio/audio/word-go.mp3"
+    },
+    {
+      "id": "ava-numbers-0",
+      "text": "Zero",
+      "path": "ava-studio/audio/ava-numbers-0.mp3"
+    },
+    {
+      "id": "ava-numbers-1",
+      "text": "One",
+      "path": "ava-studio/audio/ava-numbers-1.mp3"
+    },
+    {
+      "id": "ava-numbers-2",
+      "text": "Two",
+      "path": "ava-studio/audio/ava-numbers-2.mp3"
+    },
+    {
+      "id": "ava-numbers-3",
+      "text": "Three",
+      "path": "ava-studio/audio/ava-numbers-3.mp3"
+    },
+    {
+      "id": "ava-numbers-4",
+      "text": "Four",
+      "path": "ava-studio/audio/ava-numbers-4.mp3"
+    },
+    {
+      "id": "ava-numbers-5",
+      "text": "Five",
+      "path": "ava-studio/audio/ava-numbers-5.mp3"
+    },
+    {
+      "id": "ava-numbers-6",
+      "text": "Six",
+      "path": "ava-studio/audio/ava-numbers-6.mp3"
+    },
+    {
+      "id": "ava-numbers-7",
+      "text": "Seven",
+      "path": "ava-studio/audio/ava-numbers-7.mp3"
+    },
+    {
+      "id": "ava-numbers-8",
+      "text": "Eight",
+      "path": "ava-studio/audio/ava-numbers-8.mp3"
+    },
+    {
+      "id": "ava-numbers-9",
+      "text": "Nine",
+      "path": "ava-studio/audio/ava-numbers-9.mp3"
+    },
+    {
+      "id": "ava-numbers-10",
+      "text": "Ten",
+      "path": "ava-studio/audio/ava-numbers-10.mp3"
+    },
+    {
+      "id": "ava-letters-a",
+      "text": "A for Apple",
+      "path": "ava-studio/audio/ava-letters-a.mp3"
+    },
+    {
+      "id": "ava-letters-b",
+      "text": "B for Ball",
+      "path": "ava-studio/audio/ava-letters-b.mp3"
+    },
+    {
+      "id": "ava-letters-c",
+      "text": "C for Cat",
+      "path": "ava-studio/audio/ava-letters-c.mp3"
+    },
+    {
+      "id": "ava-letters-d",
+      "text": "D for Dog",
+      "path": "ava-studio/audio/ava-letters-d.mp3"
+    },
+    {
+      "id": "ava-letters-e",
+      "text": "E for Egg",
+      "path": "ava-studio/audio/ava-letters-e.mp3"
+    },
+    {
+      "id": "ava-letters-f",
+      "text": "F for Fish",
+      "path": "ava-studio/audio/ava-letters-f.mp3"
+    },
+    {
+      "id": "ava-letters-g",
+      "text": "G for Goat",
+      "path": "ava-studio/audio/ava-letters-g.mp3"
+    },
+    {
+      "id": "ava-letters-h",
+      "text": "H for Hat",
+      "path": "ava-studio/audio/ava-letters-h.mp3"
+    },
+    {
+      "id": "ava-letters-i",
+      "text": "I for Igloo",
+      "path": "ava-studio/audio/ava-letters-i.mp3"
+    },
+    {
+      "id": "ava-letters-j",
+      "text": "J for Juice",
+      "path": "ava-studio/audio/ava-letters-j.mp3"
+    },
+    {
+      "id": "ava-letters-k",
+      "text": "K for Kite",
+      "path": "ava-studio/audio/ava-letters-k.mp3"
+    },
+    {
+      "id": "ava-letters-l",
+      "text": "L for Lion",
+      "path": "ava-studio/audio/ava-letters-l.mp3"
+    },
+    {
+      "id": "ava-letters-m",
+      "text": "M for Moon",
+      "path": "ava-studio/audio/ava-letters-m.mp3"
+    },
+    {
+      "id": "ava-letters-n",
+      "text": "N for Nest",
+      "path": "ava-studio/audio/ava-letters-n.mp3"
+    },
+    {
+      "id": "ava-letters-o",
+      "text": "O for Orange",
+      "path": "ava-studio/audio/ava-letters-o.mp3"
+    },
+    {
+      "id": "ava-letters-p",
+      "text": "P for Pig",
+      "path": "ava-studio/audio/ava-letters-p.mp3"
+    },
+    {
+      "id": "ava-letters-q",
+      "text": "Q for Queen",
+      "path": "ava-studio/audio/ava-letters-q.mp3"
+    },
+    {
+      "id": "ava-letters-r",
+      "text": "R for Rainbow",
+      "path": "ava-studio/audio/ava-letters-r.mp3"
+    },
+    {
+      "id": "ava-letters-s",
+      "text": "S for Sun",
+      "path": "ava-studio/audio/ava-letters-s.mp3"
+    },
+    {
+      "id": "ava-letters-t",
+      "text": "T for Tree",
+      "path": "ava-studio/audio/ava-letters-t.mp3"
+    },
+    {
+      "id": "ava-letters-u",
+      "text": "U for Umbrella",
+      "path": "ava-studio/audio/ava-letters-u.mp3"
+    },
+    {
+      "id": "ava-letters-v",
+      "text": "V for Violin",
+      "path": "ava-studio/audio/ava-letters-v.mp3"
+    },
+    {
+      "id": "ava-letters-w",
+      "text": "W for Whale",
+      "path": "ava-studio/audio/ava-letters-w.mp3"
+    },
+    {
+      "id": "ava-letters-x",
+      "text": "X for Xylophone",
+      "path": "ava-studio/audio/ava-letters-x.mp3"
+    },
+    {
+      "id": "ava-letters-y",
+      "text": "Y for Yo-yo",
+      "path": "ava-studio/audio/ava-letters-y.mp3"
+    },
+    {
+      "id": "ava-letters-z",
+      "text": "Z for Zebra",
+      "path": "ava-studio/audio/ava-letters-z.mp3"
+    },
+    {
+      "id": "shape-colorless-square",
+      "text": "Square",
+      "path": "ava-studio/audio/shape-colorless-square.mp3"
+    },
+    {
+      "id": "shape-colorless-oval",
+      "text": "Oval",
+      "path": "ava-studio/audio/shape-colorless-oval.mp3"
+    },
+    {
+      "id": "shape-colorless-rhombus",
+      "text": "Rhombus",
+      "path": "ava-studio/audio/shape-colorless-rhombus.mp3"
+    },
+    {
+      "id": "shape-colorless-circle",
+      "text": "Circle",
+      "path": "ava-studio/audio/shape-colorless-circle.mp3"
+    },
+    {
+      "id": "shape-colorless-triangle",
+      "text": "Triangle",
+      "path": "ava-studio/audio/shape-colorless-triangle.mp3"
+    },
+    {
+      "id": "shape-red-square",
+      "text": "Red square",
+      "path": "ava-studio/audio/shape-red-square.mp3"
+    },
+    {
+      "id": "shape-red-oval",
+      "text": "Red oval",
+      "path": "ava-studio/audio/shape-red-oval.mp3"
+    },
+    {
+      "id": "shape-red-rhombus",
+      "text": "Red rhombus",
+      "path": "ava-studio/audio/shape-red-rhombus.mp3"
+    },
+    {
+      "id": "shape-red-circle",
+      "text": "Red circle",
+      "path": "ava-studio/audio/shape-red-circle.mp3"
+    },
+    {
+      "id": "shape-red-triangle",
+      "text": "Red triangle",
+      "path": "ava-studio/audio/shape-red-triangle.mp3"
+    },
+    {
+      "id": "shape-orange-square",
+      "text": "Orange square",
+      "path": "ava-studio/audio/shape-orange-square.mp3"
+    },
+    {
+      "id": "shape-orange-oval",
+      "text": "Orange oval",
+      "path": "ava-studio/audio/shape-orange-oval.mp3"
+    },
+    {
+      "id": "shape-orange-rhombus",
+      "text": "Orange rhombus",
+      "path": "ava-studio/audio/shape-orange-rhombus.mp3"
+    },
+    {
+      "id": "shape-orange-circle",
+      "text": "Orange circle",
+      "path": "ava-studio/audio/shape-orange-circle.mp3"
+    },
+    {
+      "id": "shape-orange-triangle",
+      "text": "Orange triangle",
+      "path": "ava-studio/audio/shape-orange-triangle.mp3"
+    },
+    {
+      "id": "shape-yellow-square",
+      "text": "Yellow square",
+      "path": "ava-studio/audio/shape-yellow-square.mp3"
+    },
+    {
+      "id": "shape-yellow-oval",
+      "text": "Yellow oval",
+      "path": "ava-studio/audio/shape-yellow-oval.mp3"
+    },
+    {
+      "id": "shape-yellow-rhombus",
+      "text": "Yellow rhombus",
+      "path": "ava-studio/audio/shape-yellow-rhombus.mp3"
+    },
+    {
+      "id": "shape-yellow-circle",
+      "text": "Yellow circle",
+      "path": "ava-studio/audio/shape-yellow-circle.mp3"
+    },
+    {
+      "id": "shape-yellow-triangle",
+      "text": "Yellow triangle",
+      "path": "ava-studio/audio/shape-yellow-triangle.mp3"
+    },
+    {
+      "id": "shape-green-square",
+      "text": "Green square",
+      "path": "ava-studio/audio/shape-green-square.mp3"
+    },
+    {
+      "id": "shape-green-oval",
+      "text": "Green oval",
+      "path": "ava-studio/audio/shape-green-oval.mp3"
+    },
+    {
+      "id": "shape-green-rhombus",
+      "text": "Green rhombus",
+      "path": "ava-studio/audio/shape-green-rhombus.mp3"
+    },
+    {
+      "id": "shape-green-circle",
+      "text": "Green circle",
+      "path": "ava-studio/audio/shape-green-circle.mp3"
+    },
+    {
+      "id": "shape-green-triangle",
+      "text": "Green triangle",
+      "path": "ava-studio/audio/shape-green-triangle.mp3"
+    },
+    {
+      "id": "shape-blue-square",
+      "text": "Blue square",
+      "path": "ava-studio/audio/shape-blue-square.mp3"
+    },
+    {
+      "id": "shape-blue-oval",
+      "text": "Blue oval",
+      "path": "ava-studio/audio/shape-blue-oval.mp3"
+    },
+    {
+      "id": "shape-blue-rhombus",
+      "text": "Blue rhombus",
+      "path": "ava-studio/audio/shape-blue-rhombus.mp3"
+    },
+    {
+      "id": "shape-blue-circle",
+      "text": "Blue circle",
+      "path": "ava-studio/audio/shape-blue-circle.mp3"
+    },
+    {
+      "id": "shape-blue-triangle",
+      "text": "Blue triangle",
+      "path": "ava-studio/audio/shape-blue-triangle.mp3"
+    },
+    {
+      "id": "shape-purple-square",
+      "text": "Purple square",
+      "path": "ava-studio/audio/shape-purple-square.mp3"
+    },
+    {
+      "id": "shape-purple-oval",
+      "text": "Purple oval",
+      "path": "ava-studio/audio/shape-purple-oval.mp3"
+    },
+    {
+      "id": "shape-purple-rhombus",
+      "text": "Purple rhombus",
+      "path": "ava-studio/audio/shape-purple-rhombus.mp3"
+    },
+    {
+      "id": "shape-purple-circle",
+      "text": "Purple circle",
+      "path": "ava-studio/audio/shape-purple-circle.mp3"
+    },
+    {
+      "id": "shape-purple-triangle",
+      "text": "Purple triangle",
+      "path": "ava-studio/audio/shape-purple-triangle.mp3"
+    },
+    {
+      "id": "shape-pink-square",
+      "text": "Pink square",
+      "path": "ava-studio/audio/shape-pink-square.mp3"
+    },
+    {
+      "id": "shape-pink-oval",
+      "text": "Pink oval",
+      "path": "ava-studio/audio/shape-pink-oval.mp3"
+    },
+    {
+      "id": "shape-pink-rhombus",
+      "text": "Pink rhombus",
+      "path": "ava-studio/audio/shape-pink-rhombus.mp3"
+    },
+    {
+      "id": "shape-pink-circle",
+      "text": "Pink circle",
+      "path": "ava-studio/audio/shape-pink-circle.mp3"
+    },
+    {
+      "id": "shape-pink-triangle",
+      "text": "Pink triangle",
+      "path": "ava-studio/audio/shape-pink-triangle.mp3"
+    },
+    {
+      "id": "ava-needs-more-connect",
+      "text": "More food",
+      "path": "ava-studio/audio/ava-needs-more-connect.mp3"
+    },
+    {
+      "id": "ava-needs-help-connect",
+      "text": "Help please",
+      "path": "ava-studio/audio/ava-needs-help-connect.mp3"
+    },
+    {
+      "id": "ava-needs-stop-connect",
+      "text": "Stop car",
+      "path": "ava-studio/audio/ava-needs-stop-connect.mp3"
+    },
+    {
+      "id": "ava-needs-again-connect",
+      "text": "Jump again",
+      "path": "ava-studio/audio/ava-needs-again-connect.mp3"
+    },
+    {
+      "id": "ava-needs-mine-connect",
+      "text": "My bear",
+      "path": "ava-studio/audio/ava-needs-mine-connect.mp3"
+    },
+    {
+      "id": "ava-needs-please-connect",
+      "text": "Teddy please",
+      "path": "ava-studio/audio/ava-needs-please-connect.mp3"
+    },
+    {
+      "id": "ava-needs-yes-connect",
+      "text": "Yes please",
+      "path": "ava-studio/audio/ava-needs-yes-connect.mp3"
+    },
+    {
+      "id": "ava-needs-no-connect",
+      "text": "No thanks",
+      "path": "ava-studio/audio/ava-needs-no-connect.mp3"
+    },
+    {
+      "id": "ava-needs-want-connect",
+      "text": "Want ball",
+      "path": "ava-studio/audio/ava-needs-want-connect.mp3"
+    },
+    {
+      "id": "ava-needs-water-connect",
+      "text": "Drink water",
+      "path": "ava-studio/audio/ava-needs-water-connect.mp3"
+    },
+    {
+      "id": "ava-needs-hungry-connect",
+      "text": "Eat food",
+      "path": "ava-studio/audio/ava-needs-hungry-connect.mp3"
+    },
+    {
+      "id": "ava-needs-potty-connect",
+      "text": "Potty time",
+      "path": "ava-studio/audio/ava-needs-potty-connect.mp3"
+    },
+    {
+      "id": "ava-needs-hurt-connect",
+      "text": "Knee hurts",
+      "path": "ava-studio/audio/ava-needs-hurt-connect.mp3"
+    },
+    {
+      "id": "ava-needs-hot-connect",
+      "text": "Hot cup",
+      "path": "ava-studio/audio/ava-needs-hot-connect.mp3"
+    },
+    {
+      "id": "ava-needs-cold-connect",
+      "text": "Cold ice",
+      "path": "ava-studio/audio/ava-needs-cold-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-big-connect",
+      "text": "Big ball",
+      "path": "ava-studio/audio/ava-opposites-big-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-small-connect",
+      "text": "Small ball",
+      "path": "ava-studio/audio/ava-opposites-small-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-tall-connect",
+      "text": "Tall tower",
+      "path": "ava-studio/audio/ava-opposites-tall-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-short-connect",
+      "text": "Short tower",
+      "path": "ava-studio/audio/ava-opposites-short-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-wet-connect",
+      "text": "Wet sponge",
+      "path": "ava-studio/audio/ava-opposites-wet-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-dry-connect",
+      "text": "Dry sponge",
+      "path": "ava-studio/audio/ava-opposites-dry-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-fast-connect",
+      "text": "Fast car",
+      "path": "ava-studio/audio/ava-opposites-fast-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-slow-connect",
+      "text": "Slow car",
+      "path": "ava-studio/audio/ava-opposites-slow-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-happy-connect",
+      "text": "Happy Ava",
+      "path": "ava-studio/audio/ava-opposites-happy-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-sad-connect",
+      "text": "Sad Ava",
+      "path": "ava-studio/audio/ava-opposites-sad-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-full-connect",
+      "text": "Full cup",
+      "path": "ava-studio/audio/ava-opposites-full-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-empty-connect",
+      "text": "Empty cup",
+      "path": "ava-studio/audio/ava-opposites-empty-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-clean-connect",
+      "text": "Clean sponge",
+      "path": "ava-studio/audio/ava-opposites-clean-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-dirty-connect",
+      "text": "Dirty sponge",
+      "path": "ava-studio/audio/ava-opposites-dirty-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-heavy-connect",
+      "text": "Heavy weight",
+      "path": "ava-studio/audio/ava-opposites-heavy-connect.mp3"
+    },
+    {
+      "id": "ava-opposites-light-connect",
+      "text": "Light feather",
+      "path": "ava-studio/audio/ava-opposites-light-connect.mp3"
+    },
+    {
+      "id": "ava-positions-inside-connect",
+      "text": "Ball in box",
+      "path": "ava-studio/audio/ava-positions-inside-connect.mp3"
+    },
+    {
+      "id": "ava-positions-outside-connect",
+      "text": "Ball outside",
+      "path": "ava-studio/audio/ava-positions-outside-connect.mp3"
+    },
+    {
+      "id": "ava-positions-on-connect",
+      "text": "Ball on box",
+      "path": "ava-studio/audio/ava-positions-on-connect.mp3"
+    },
+    {
+      "id": "ava-positions-under-connect",
+      "text": "Ball under table",
+      "path": "ava-studio/audio/ava-positions-under-connect.mp3"
+    },
+    {
+      "id": "ava-positions-behind-connect",
+      "text": "Ball behind box",
+      "path": "ava-studio/audio/ava-positions-behind-connect.mp3"
+    },
+    {
+      "id": "ava-positions-in-front-connect",
+      "text": "Ball in front",
+      "path": "ava-studio/audio/ava-positions-in-front-connect.mp3"
+    },
+    {
+      "id": "ava-positions-beside-connect",
+      "text": "Ball beside box",
+      "path": "ava-studio/audio/ava-positions-beside-connect.mp3"
+    },
+    {
+      "id": "ava-positions-between-connect",
+      "text": "Ball between boxes",
+      "path": "ava-studio/audio/ava-positions-between-connect.mp3"
+    },
+    {
+      "id": "ava-positions-above-connect",
+      "text": "Ball above box",
+      "path": "ava-studio/audio/ava-positions-above-connect.mp3"
+    },
+    {
+      "id": "ava-positions-below-connect",
+      "text": "Ball below table",
+      "path": "ava-studio/audio/ava-positions-below-connect.mp3"
+    },
+    {
+      "id": "ava-positions-near-connect",
+      "text": "Ball near box",
+      "path": "ava-studio/audio/ava-positions-near-connect.mp3"
+    },
+    {
+      "id": "ava-positions-far-connect",
+      "text": "Ball far away",
+      "path": "ava-studio/audio/ava-positions-far-connect.mp3"
+    }
+  ]
+}
