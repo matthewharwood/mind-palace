@@ -6,12 +6,12 @@ import {
 } from "@mind-palace/schemas";
 import type { Rating } from "@mind-palace/srs";
 import { Info, RotateCcw, Volume2 } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useSyncExternalStore } from "react";
 import * as z from "zod";
 
 import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
-import { useAvaCard3D } from "~/canvas/use-ava-card-3d";
 import { AvaMedia } from "~/components/ava-media";
+import { AvaScene } from "~/components/ava-scene";
 import { RatingButtons } from "~/components/rating-buttons";
 import {
   AVA_FIRST_WORD_CARDS,
@@ -43,49 +43,6 @@ const AvaFirstWordPicture = defineComponent(
       />
     </div>
   ),
-);
-
-const AvaFirstWordCard3DPropsSchema = z.object({
-  card: AvaFirstWordCardSchema,
-});
-type AvaFirstWordCard3DProps = z.infer<typeof AvaFirstWordCard3DPropsSchema>;
-
-const AvaFirstWordCard3D = defineComponent(
-  AvaFirstWordCard3DPropsSchema,
-  ({ card }: AvaFirstWordCard3DProps): ReactNode => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const status = useAvaCard3D(canvasRef, {
-      kind: "picture",
-      imageUrl: `${BASE_URL}${card.imagePath}`,
-    });
-
-    return (
-      <div className="relative size-full min-h-0 overflow-hidden bg-[radial-gradient(circle_at_top,#fff8e8_0%,#f0dcc7_100%)]">
-        {status !== "ready" ? (
-          <div className="absolute inset-0">
-            <AvaFirstWordPicture card={card} />
-            {status === "error" ? (
-              <p
-                role="status"
-                className="absolute inset-x-0 bottom-0 border-black/10 border-t bg-canvas-white/95 px-4 py-3 text-center font-medium text-muted-ash text-sm"
-              >
-                3D is unavailable on this device. Showing the local picture.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        <canvas
-          ref={canvasRef}
-          role="img"
-          aria-hidden={status !== "ready"}
-          aria-label={`${card.label} shown as a lit 3D picture card`}
-          data-test="ava-first-word-3d"
-          data-word={card.slug}
-          className={`absolute inset-0 block !size-full ${status === "ready" ? "opacity-100" : "opacity-0"}`}
-        />
-      </div>
-    );
-  },
 );
 
 export const AvaFirstWordsPropsSchema = z.object({
@@ -150,8 +107,8 @@ export const AvaFirstWords = defineComponent(
                 {reviewed} of {AVA_FIRST_WORD_CARDS.length} words introduced
               </p>
               <p className="mt-2 text-muted-ash leading-5">
-                Video clips stream from YouTube only after you tap play. The picture and 3D card
-                stay available offline.
+                Original pictures, real modeled objects, and short local demonstrations help explore
+                the same word in different ways.
               </p>
               <button
                 type="button"
@@ -170,10 +127,9 @@ export const AvaFirstWords = defineComponent(
             mode={displaySession.viewMode}
             onModeChange={onModeChange}
             twoDContent={<AvaFirstWordPicture card={card} />}
-            threeDContent={<AvaFirstWordCard3D card={card} />}
-            youtubeVideoId={card.videoClip?.youtubeVideoId}
-            youtubeStartSeconds={card.videoClip?.startSeconds}
-            youtubeSourceLabel={card.videoClip?.sourceChannel}
+            threeDContent={<AvaScene sceneId={`word-${card.slug}`} label={card.label} />}
+            videoSrc={`${BASE_URL}ava-studio/videos/word-${card.slug}.mp4`}
+            videoPoster={`${BASE_URL}ava-studio/posters/word-${card.slug}.jpg`}
             videoFallback={<AvaFirstWordPicture card={card} />}
           />
 

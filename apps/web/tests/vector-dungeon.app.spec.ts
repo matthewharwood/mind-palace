@@ -52,7 +52,7 @@ function readVectorDungeonSession(): Promise<{
 test.describe("Vector Dungeon app", () => {
   test("root navigation reaches the DM app and exposes the PDF", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /Dungeon Master Apps/ }).click();
+    await page.getByRole("link", { name: /Kid apps/ }).click();
     await expect(page).toHaveURL(/\/apps$/);
     await page.getByRole("link", { name: /Vector Dungeon/ }).click();
     await expect(page).toHaveURL(/\/apps\/vector-dungeon$/);

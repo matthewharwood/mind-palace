@@ -1,37 +1,15 @@
 import { Box, ImageIcon, Play, Video } from "lucide-react";
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
-
-import { buildAvaYoutubeClipUrl } from "~/lib/ava-media";
+import { type ReactNode, useEffect, useState } from "react";
+import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
 import { defineComponent } from "~/lib/define-component";
-import { type AvaMediaMode, type AvaMediaProps, AvaMediaPropsSchema } from "./schema";
+import { useHydrated } from "~/lib/use-hydrated";
+import { type AvaMediaProps, AvaMediaPropsSchema } from "./schema";
 
-const MODE_OPTIONS = [
+const MODES = [
   { value: "2d", label: "2D", icon: ImageIcon },
   { value: "3d", label: "3D", icon: Box },
   { value: "video", label: "Video", icon: Video },
-] as const satisfies ReadonlyArray<{
-  value: AvaMediaMode;
-  label: string;
-  icon: typeof ImageIcon;
-}>;
-
-function subscribeToOnlineStatus(onStoreChange: () => void): () => void {
-  window.addEventListener("online", onStoreChange);
-  window.addEventListener("offline", onStoreChange);
-  return () => {
-    window.removeEventListener("online", onStoreChange);
-    window.removeEventListener("offline", onStoreChange);
-  };
-}
-
-function getOnlineStatus(): boolean {
-  return navigator.onLine;
-}
-
-function getServerOnlineStatus(): boolean {
-  return false;
-}
-
+] as const;
 export const AvaMedia = defineComponent(
   AvaMediaPropsSchema,
   ({
@@ -40,133 +18,108 @@ export const AvaMedia = defineComponent(
     onModeChange,
     twoDContent,
     threeDContent,
-    youtubeVideoId,
-    youtubeStartSeconds = 0,
-    youtubeSourceLabel,
+    videoSrc,
+    videoPoster,
     videoFallback,
   }: AvaMediaProps): ReactNode => {
-    const online = useSyncExternalStore(
-      subscribeToOnlineStatus,
-      getOnlineStatus,
-      getServerOnlineStatus,
-    );
-    const [startedClipKey, setStartedClipKey] = useState<string | null>(null);
-    const [loadedClipKey, setLoadedClipKey] = useState<string | null>(null);
-    const fallback = videoFallback ?? twoDContent;
-    const clipKey = youtubeVideoId ? `${youtubeVideoId}:${youtubeStartSeconds}` : null;
-
+    const hydrated = useHydrated();
+    const [started, setStarted] = useState<string | null>(null);
+    const [failed, setFailed] = useState<string | null>(null);
     useEffect(() => {
-      if (!clipKey || loadedClipKey !== clipKey) return;
-      const timer = window.setTimeout(() => {
-        setStartedClipKey(null);
-        setLoadedClipKey(null);
-      }, 6_250);
-      return () => window.clearTimeout(timer);
-    }, [clipKey, loadedClipKey]);
-
+      if (mode === "video" && videoSrc) return stopAvaWordSpeech;
+    }, [videoSrc, mode]);
+    const captions = encodeURIComponent(`WEBVTT\n\n00:00.000 --> 00:02.000\n${label}\n`);
+    const fallback = videoFallback ?? twoDContent;
     let content: ReactNode;
-    if (mode === "2d") {
-      content = twoDContent;
-    } else if (mode === "3d") {
-      content = threeDContent;
-    } else if (!youtubeVideoId || !online) {
-      const reason = youtubeVideoId
-        ? "Video is unavailable while offline. Showing the local view."
-        : "No video clip is available. Showing the local view.";
+    if (mode === "2d") content = twoDContent;
+    else if (mode === "3d") content = threeDContent;
+    else if (!videoSrc || failed === videoSrc)
       content = (
         <div className="grid size-full min-h-0 grid-rows-[minmax(0,1fr)_auto]">
           <div className="min-h-0 overflow-hidden">{fallback}</div>
-          <p
-            role="status"
-            className="border-black/10 border-t bg-canvas-white px-4 py-3 text-center font-medium text-muted-ash text-sm dark:border-white/10"
-          >
-            {reason}
+          <p role="status" className="bg-white/90 px-4 py-3 text-center text-[#64745f] text-xs">
+            This demonstration could not load. You can still explore the picture and 3D scene.
           </p>
         </div>
       );
-    } else if (startedClipKey !== clipKey) {
+    else if (started !== videoSrc)
       content = (
-        <button
-          type="button"
-          onClick={() => {
-            setLoadedClipKey(null);
-            setStartedClipKey(clipKey);
-          }}
-          aria-label={`Play a five-second video clip for ${label}`}
-          className="group grid size-full min-h-48 place-items-center bg-[radial-gradient(circle_at_center,#eff8ff_0%,#dcecff_100%)] p-6 text-midnight-ink transition-colors hover:bg-[#dcecff] focus-visible:outline-2 focus-visible:outline-intelligence-blue focus-visible:outline-offset-[-4px] dark:bg-none dark:bg-white/5"
-        >
-          <span className="flex max-w-sm flex-col items-center text-center">
-            <span className="grid size-16 place-items-center rounded-full bg-intelligence-blue text-white shadow-[0_12px_30px_rgba(60,129,246,0.35)] transition-transform group-active:scale-95">
-              <Play className="ml-1 size-7" fill="currentColor" aria-hidden="true" />
-            </span>
-            <span className="mt-4 font-semibold text-lg">Play 5-second clip</span>
-            <span className="mt-1 text-muted-ash text-sm leading-5">
-              YouTube loads only after this tap.
-            </span>
-            {youtubeSourceLabel ? (
-              <span className="mt-2 text-muted-ash text-xs">Source: {youtubeSourceLabel}</span>
-            ) : null}
-          </span>
-        </button>
-      );
-    } else {
-      content = (
-        <div className="relative size-full min-h-48 bg-black">
-          <iframe
-            src={buildAvaYoutubeClipUrl(youtubeVideoId, youtubeStartSeconds)}
-            title={`${label} five-second YouTube video clip`}
-            loading="lazy"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            referrerPolicy="strict-origin-when-cross-origin"
-            onLoad={() => setLoadedClipKey(clipKey)}
-            className="aspect-video size-full border-0 bg-black"
-          />
+        <div className="relative size-full min-h-0 bg-[#fbf5e9]">
+          {fallback}
           <button
             type="button"
             onClick={() => {
-              setStartedClipKey(null);
-              setLoadedClipKey(null);
+              setStarted(videoSrc);
+              setFailed(null);
             }}
-            className="absolute top-2 right-2 rounded-full bg-black/75 px-3 py-2 font-semibold text-white text-xs shadow-sm backdrop-blur focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2"
+            aria-label={`Play a video for ${label}`}
+            className="absolute inset-x-4 bottom-4 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#648368] px-5 font-semibold text-white text-sm shadow-sm"
           >
-            Show picture
+            <Play className="size-4" aria-hidden="true" />
+            Watch it happen
           </button>
         </div>
       );
-    }
-
+    else
+      content = (
+        <div className="flex size-full min-h-0 flex-col bg-[#fbf5e9]">
+          <video
+            key={videoSrc}
+            src={videoSrc}
+            poster={videoPoster}
+            controls
+            autoPlay
+            muted
+            playsInline
+            preload="none"
+            onPlay={() => speakAvaWord(label)}
+            onPause={({ currentTarget }) => {
+              if (!currentTarget.ended) stopAvaWordSpeech();
+            }}
+            onError={() => setFailed(videoSrc)}
+            aria-label={`${label} representations video`}
+            className="min-h-0 w-full flex-1 object-contain"
+          >
+            <track
+              kind="captions"
+              label="English"
+              src={`data:text/vtt;charset=utf-8,${captions}`}
+              default
+            />
+          </video>
+          <p className="px-4 py-2 text-center text-[#64745f] text-xs">
+            Watch, listen, and try it together.
+          </p>
+        </div>
+      );
     return (
       <section
         aria-label={`${label} media`}
         data-mode={mode}
         className="flex size-full min-h-64 flex-col gap-3 sm:min-h-72 lg:min-h-0"
       >
-        <fieldset className="grid grid-cols-3 gap-1 rounded-xl bg-black/[0.05] p-1 dark:bg-white/[0.07]">
+        <fieldset className="grid shrink-0 grid-cols-3 gap-1 rounded-2xl border border-[#e8e4d8] bg-[#eeece2] p-1">
           <legend className="sr-only">{label} view mode</legend>
-          {MODE_OPTIONS.map(({ value, label: optionLabel, icon: Icon }) => {
-            const active = mode === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onModeChange(value)}
-                className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 font-semibold text-sm transition-colors focus-visible:outline-2 focus-visible:outline-intelligence-blue focus-visible:outline-offset-2 ${
-                  active
-                    ? "bg-canvas-white text-midnight-ink shadow-sm dark:bg-white/10"
-                    : "text-muted-ash hover:text-midnight-ink"
-                }`}
-              >
-                <Icon className="size-4" aria-hidden="true" />
-                {optionLabel}
-              </button>
-            );
-          })}
+          {MODES.map(({ value, label: modeLabel, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              disabled={!hydrated}
+              aria-pressed={mode === value}
+              onClick={() => {
+                stopAvaWordSpeech();
+                onModeChange(value);
+              }}
+              className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 font-semibold text-sm transition-colors focus-visible:outline-2 focus-visible:outline-intelligence-blue focus-visible:outline-offset-2 ${mode === value ? "bg-white text-[#4f6556] shadow-sm" : "text-[#64745f] hover:text-[#4f6556]"}`}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {modeLabel}
+            </button>
+          ))}
         </fieldset>
-
         <section
           aria-label={`${label} ${mode.toUpperCase()} view`}
-          className="min-h-0 flex-1 overflow-hidden rounded-[1.5rem] border border-black/[0.07] bg-canvas-white shadow-card dark:border-white/10"
+          className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#e8e4d8] bg-[#fbf5e9] shadow-[0_3px_12px_rgba(96,78,48,.035)]"
         >
           {content}
         </section>
@@ -174,3 +127,4 @@ export const AvaMedia = defineComponent(
     );
   },
 );
+export type { AvaMediaMode, AvaMediaProps } from "./schema";

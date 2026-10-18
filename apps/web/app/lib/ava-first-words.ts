@@ -2,16 +2,7 @@ import { type AvaFirstWordsSession, AvaFirstWordsSessionSchema } from "@mind-pal
 import { createCardState, isDue, type Rating, review } from "@mind-palace/srs";
 import * as z from "zod";
 
-import {
-  AVA_FIRST_WORD_VIDEO_CLIPS,
-  AvaFirstWordSlugSchema,
-  AvaFirstWordVideoClipSchema,
-} from "./ava-first-word-videos";
-
-export {
-  type AvaFirstWordVideoClip,
-  AvaFirstWordVideoClipSchema,
-} from "./ava-first-word-videos";
+import { AvaFirstWordSlugSchema } from "./ava-first-word-slugs";
 
 export const AVA_FIRST_WORD_CATEGORY_IDS = [
   "family",
@@ -48,7 +39,6 @@ export const AvaFirstWordCardSchema = z
     label: z.string().min(1),
     category: AvaFirstWordCategorySchema,
     imagePath: z.string().min(1),
-    videoClip: AvaFirstWordVideoClipSchema,
   })
   .refine((card) => card.imagePath === `ava-first-words/images/${card.slug}.webp`, {
     error: "imagePath must match the card slug",
@@ -243,7 +233,6 @@ export const AVA_FIRST_WORD_CARDS: readonly AvaFirstWordCard[] = AvaFirstWordCat
       label,
       category,
       imagePath: `ava-first-words/images/${slug}.webp`,
-      videoClip: AVA_FIRST_WORD_VIDEO_CLIPS[slug],
     })),
   ),
 );

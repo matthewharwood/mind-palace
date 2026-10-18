@@ -3,11 +3,17 @@ import {
   type AlchemyBoard,
   AlchemyBoardSchema,
   AVA_FIRST_WORDS_SESSION_DEFAULT,
+  AVA_LETTERS_SESSION_DEFAULT,
+  AVA_NUMBERS_SESSION_DEFAULT,
   AVA_SHAPES_SESSION_DEFAULT,
   type AvaFirstWordsSession,
   AvaFirstWordsSessionSchema,
+  type AvaLearningSession,
+  AvaLearningSessionSchema,
   type AvaShapesSession,
   AvaShapesSessionSchema,
+  type AvaSymbolsSession,
+  AvaSymbolsSessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
   type Progress,
@@ -29,6 +35,9 @@ export type HydratedState = {
   curriculumProgress: ReadonlyMap<string, CurriculumProgress>;
   vectorDungeonSession: VectorDungeonSession;
   avaShapesSession: AvaShapesSession;
+  avaLearningSessions: ReadonlyMap<string, AvaLearningSession>;
+  avaNumbersSession: AvaSymbolsSession;
+  avaLettersSession: AvaSymbolsSession;
   avaFirstWordsSession: AvaFirstWordsSession;
 };
 
@@ -52,6 +61,9 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
       curriculumProgress: new Map(),
       vectorDungeonSession: VECTOR_DUNGEON_SESSION_DEFAULT,
       avaShapesSession: AVA_SHAPES_SESSION_DEFAULT,
+      avaLearningSessions: new Map(),
+      avaNumbersSession: AVA_NUMBERS_SESSION_DEFAULT,
+      avaLettersSession: AVA_LETTERS_SESSION_DEFAULT,
       avaFirstWordsSession: AVA_FIRST_WORDS_SESSION_DEFAULT,
     };
     resolvedSnapshot = empty;
@@ -65,6 +77,9 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     rawCurriculum,
     rawVectorDungeonSession,
     rawAvaShapesSession,
+    rawAvaLearningSessions,
+    rawAvaNumbersSession,
+    rawAvaLettersSession,
     rawAvaFirstWordsSession,
   ] = await Promise.all([
     db.getAll("progress"),
@@ -73,6 +88,9 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     db.getAll("curriculumProgress"),
     db.get("vectorDungeonSessions", "vector-dungeon"),
     db.get("avaShapeSessions", "ava-shapes"),
+    db.getAll("avaLearningSessions"),
+    db.get("avaSymbolSessions", "ava-numbers"),
+    db.get("avaSymbolSessions", "ava-letters"),
     db.get("avaFirstWordSessions", "ava-first-words"),
   ]);
   const progress = new Map<string, Progress>();
@@ -103,6 +121,18 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     curriculumProgress,
     vectorDungeonSession,
     avaShapesSession,
+    avaLearningSessions: new Map(
+      rawAvaLearningSessions.map((raw) => {
+        const parsed = AvaLearningSessionSchema.parse(raw);
+        return [parsed.id, parsed];
+      }),
+    ),
+    avaNumbersSession: AvaSymbolsSessionSchema.parse(
+      rawAvaNumbersSession ?? AVA_NUMBERS_SESSION_DEFAULT,
+    ),
+    avaLettersSession: AvaSymbolsSessionSchema.parse(
+      rawAvaLettersSession ?? AVA_LETTERS_SESSION_DEFAULT,
+    ),
     avaFirstWordsSession,
   };
   resolvedSnapshot = snapshot;

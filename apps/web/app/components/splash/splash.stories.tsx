@@ -33,8 +33,8 @@ export const TwoEntrances: Story = {
           onSelect: () => undefined,
         },
         {
-          label: "Dungeon Master Apps",
-          description: "Parent-run printable adventures",
+          label: "Kid apps",
+          description: "Shapes, words, numbers, letters, and play",
           onSelect: () => undefined,
         },
       ]}

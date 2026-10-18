@@ -2,9 +2,15 @@ import {
   ALCHEMY_BOARD_DEFAULT,
   AlchemyBoardSchema,
   AVA_FIRST_WORDS_SESSION_DEFAULT,
+  AVA_LETTERS_SESSION_DEFAULT,
+  AVA_NUMBERS_SESSION_DEFAULT,
   AVA_SHAPES_SESSION_DEFAULT,
+  type AvaCollectionId,
   AvaFirstWordsSessionSchema,
+  type AvaLearningSession,
+  AvaLearningSessionSchema,
   AvaShapesSessionSchema,
+  AvaSymbolsSessionSchema,
   type CurriculumProgress,
   CurriculumProgressSchema,
   type Progress,
@@ -22,7 +28,9 @@ import { getDB } from "./db";
 import {
   persistAlchemyBoard,
   persistAvaFirstWordsSession,
+  persistAvaLearningSession,
   persistAvaShapesSession,
+  persistAvaSymbolsSession,
   persistCurriculumProgress,
   persistProgress,
   persistSettings,
@@ -134,3 +142,58 @@ export const avaFirstWordsSessionAtom = atomWithIDB(
     read: async () => (await getDB()).get("avaFirstWordSessions", "ava-first-words"),
   },
 );
+
+export const avaNumbersSessionAtom = atomWithIDB(
+  AvaSymbolsSessionSchema,
+  (snapshot) => snapshot.avaNumbersSession,
+  persistAvaSymbolsSession,
+  AVA_NUMBERS_SESSION_DEFAULT,
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "avaNumbersSession" && message.key === "ava-numbers") onChange();
+      }),
+    read: async () => (await getDB()).get("avaSymbolSessions", "ava-numbers"),
+  },
+);
+
+export const avaLettersSessionAtom = atomWithIDB(
+  AvaSymbolsSessionSchema,
+  (snapshot) => snapshot.avaLettersSession,
+  persistAvaSymbolsSession,
+  AVA_LETTERS_SESSION_DEFAULT,
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "avaLettersSession" && message.key === "ava-letters") onChange();
+      }),
+    read: async () => (await getDB()).get("avaSymbolSessions", "ava-letters"),
+  },
+);
+
+type AvaLearningAtom = WritableAtom<
+  AvaLearningSession,
+  [AvaLearningSession | ((previous: AvaLearningSession) => AvaLearningSession)],
+  void
+>;
+const avaLearningAtoms = new Map<AvaCollectionId, AvaLearningAtom>();
+export function getAvaLearningSessionAtom(id: AvaCollectionId): AvaLearningAtom {
+  let cached = avaLearningAtoms.get(id);
+  if (!cached) {
+    cached = atomWithIDB(
+      AvaLearningSessionSchema,
+      (snapshot) => snapshot.avaLearningSessions.get(id),
+      persistAvaLearningSession,
+      AvaLearningSessionSchema.parse({ id }),
+      {
+        subscribe: (onChange) =>
+          subscribeRemoteWrites((message) => {
+            if (message.store === "avaLearningSessions" && message.key === id) onChange();
+          }),
+        read: async () => (await getDB()).get("avaLearningSessions", id),
+      },
+    );
+    avaLearningAtoms.set(id, cached);
+  }
+  return cached;
+}

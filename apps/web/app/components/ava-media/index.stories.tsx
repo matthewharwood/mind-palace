@@ -78,9 +78,7 @@ export const Interactive: Story = {
     onModeChange: () => undefined,
     twoDContent: TwoDExample,
     threeDContent: ThreeDExample,
-    youtubeVideoId: "jlzX8jt0Now",
-    youtubeStartSeconds: 18,
-    youtubeSourceLabel: "YouTube learning channel",
+    videoSrc: `${import.meta.env.BASE_URL}ava-studio/videos/shape-circle-yellow.mp4`,
     videoFallback: LocalFallbackExample,
   },
 };
@@ -90,6 +88,6 @@ export const MissingClipFallback: Story = {
   args: {
     ...Interactive.args,
     mode: "video",
-    youtubeVideoId: null,
+    videoSrc: undefined,
   },
 };

@@ -11,7 +11,7 @@ test.describe("Vector Dungeon stories", () => {
   test("Splash renders both entry actions", async ({ page }) => {
     await page.goto(story("app-splash--two-entrances"));
     await expect(page.getByRole("button", { name: /Study Guide/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Dungeon Master Apps/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Kid apps/ })).toBeVisible();
   });
 
   test("AppHub renders the Vector Dungeon app card", async ({ page }) => {

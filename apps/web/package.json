@@ -17,7 +17,9 @@
     "test:e2e": "env -u NO_COLOR playwright test",
     "test:e2e:fast": "env -u NO_COLOR PLAYWRIGHT_FAST=1 playwright test --project=storybook",
     "check:sonar": "eslint --config eslint.sonar.config.mjs --no-warn-ignored --max-warnings 0 \"app/**/*.{ts,tsx}\" \"tests/**/*.ts\" \"scripts/**/*.ts\"",
-    "verify:rust-cards": "bun scripts/verify-rust-cards.ts"
+    "verify:rust-cards": "bun scripts/verify-rust-cards.ts",
+    "build:ava-media": "bun run scripts/ava-studio/build.ts",
+    "build:ava-symbol-media": "bun run scripts/build-ava-symbol-media.ts"
   },
   "dependencies": {
     "@codemirror/lang-rust": "^6",

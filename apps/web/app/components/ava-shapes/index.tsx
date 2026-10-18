@@ -13,9 +13,10 @@ import { type ReactNode, useEffect, useRef, useSyncExternalStore } from "react";
 import * as z from "zod";
 
 import { playAvaShapeSound } from "~/audio/ava-shape-sounds";
-import { useAvaCard3D } from "~/canvas/use-ava-card-3d";
+import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
 import { usePixiApp } from "~/canvas/use-pixi-app";
 import { AvaMedia } from "~/components/ava-media";
+import { AvaScene } from "~/components/ava-scene";
 import { RatingButtons } from "~/components/rating-buttons";
 import {
   AVA_COLORLESS_SHAPE_CARDS,
@@ -41,21 +42,6 @@ const PIXI_FILL: Record<AvaShapeColor, number> = {
 const subscribeToHydration = (): (() => void) => () => undefined;
 const getClientHydrationSnapshot = (): boolean => true;
 const getServerHydrationSnapshot = (): boolean => false;
-
-const AvaShapeVideoClipSchema = z.object({
-  youtubeVideoId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
-  startSeconds: z.int().min(0),
-});
-
-const AVA_SHAPE_VIDEO_CLIPS = z
-  .record(z.enum(["square", "oval", "rhombus", "circle", "triangle"]), AvaShapeVideoClipSchema)
-  .parse({
-    circle: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 18 },
-    square: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 63 },
-    triangle: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 108 },
-    oval: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 211 },
-    rhombus: { youtubeVideoId: "jlzX8jt0Now", startSeconds: 266 },
-  });
 
 export const AvaShapeCanvasPropsSchema = z.object({
   card: AvaShapeCardSchema,
@@ -124,42 +110,13 @@ export type AvaShapeCanvas3DProps = z.infer<typeof AvaShapeCanvas3DPropsSchema>;
 
 export const AvaShapeCanvas3D = defineComponent(
   AvaShapeCanvas3DPropsSchema,
-  ({ card }: AvaShapeCanvas3DProps): ReactNode => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const status = useAvaCard3D(canvasRef, {
-      kind: "shape",
-      shape: card.shape,
-      color: card.color,
-    });
-
-    return (
-      <div className="relative size-full min-h-0 min-w-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5fbff_0%,#c9d9e9_100%)]">
-        {status !== "ready" ? (
-          <div className="absolute inset-0">
-            <AvaShapeCanvas card={card} />
-            {status === "error" ? (
-              <p
-                role="status"
-                className="absolute inset-x-0 bottom-0 border-black/10 border-t bg-canvas-white/95 px-4 py-3 text-center font-medium text-muted-ash text-sm"
-              >
-                3D is unavailable on this device. Showing the local shape.
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-        <canvas
-          ref={canvasRef}
-          role="img"
-          aria-hidden={status !== "ready"}
-          aria-label={`${avaShapeAnswer(card)} rendered as a lit 3D shape`}
-          data-test="ava-shape-canvas-3d"
-          data-shape={card.shape}
-          data-color={card.color}
-          className={`absolute inset-0 block !size-full ${status === "ready" ? "opacity-100" : "opacity-0"}`}
-        />
-      </div>
-    );
-  },
+  ({ card }: AvaShapeCanvas3DProps): ReactNode => (
+    <AvaScene
+      sceneId={`shape-${card.shape}-${card.color}`}
+      label={avaShapeAnswer(card)}
+      ariaLabel={`${avaShapeAnswer(card)} rendered as a lit 3D shape`}
+    />
+  ),
 );
 
 export const AvaShapesPropsSchema = z.object({
@@ -186,9 +143,9 @@ export const AvaShapes = defineComponent(
     const foundationReviewed = AVA_COLORLESS_SHAPE_CARDS.filter(
       (foundationCard) => (displaySession.states[foundationCard.id]?.reps ?? 0) > 0,
     ).length;
-    const videoClip = card ? AVA_SHAPE_VIDEO_CLIPS[card.shape] : undefined;
 
     function play(cardToPlay: AvaShapeCard): void {
+      speakAvaWord(avaShapeAnswer(cardToPlay));
       void playAvaShapeSound(cardToPlay).catch(() => undefined);
     }
 
@@ -199,7 +156,9 @@ export const AvaShapes = defineComponent(
 
     useEffect(() => {
       if (!card || !interactive) return;
+      speakAvaWord(avaShapeAnswer(card));
       void playAvaShapeSound(card).catch(() => undefined);
+      return stopAvaWordSpeech;
     }, [card, interactive]);
 
     return (
@@ -239,8 +198,8 @@ export const AvaShapes = defineComponent(
               onModeChange={onModeChange}
               twoDContent={<AvaShapeCanvas card={card} />}
               threeDContent={<AvaShapeCanvas3D card={card} />}
-              youtubeVideoId={videoClip?.youtubeVideoId}
-              youtubeStartSeconds={videoClip?.startSeconds}
+              videoSrc={`${import.meta.env.BASE_URL}ava-studio/videos/shape-${card.shape}-${card.color}.mp4`}
+              videoPoster={`${import.meta.env.BASE_URL}ava-studio/posters/shape-${card.shape}-${card.color}.jpg`}
               videoFallback={<AvaShapeCanvas card={card} />}
             />
 
