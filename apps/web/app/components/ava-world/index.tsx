@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Flower2, Heart } from "lucide-react";
 import type { ReactNode } from "react";
 import * as z from "zod";
+import { avaIllustrationPath } from "~/lib/ava-illustrations";
 import { AVA_COLLECTIONS } from "~/lib/ava-learning-catalog";
 import { defineComponent } from "~/lib/define-component";
 
@@ -96,7 +97,7 @@ export const AvaWorld = defineComponent(
                 className="group flex h-full gap-4 rounded-2xl border border-[#e6e7d8] bg-white/80 p-3 transition-colors hover:bg-white"
               >
                 <img
-                  src={`${BASE}ava-studio/posters/${PICTURES[collection.id]}.jpg`}
+                  src={`${BASE}${avaIllustrationPath(PICTURES[collection.id])}`}
                   alt=""
                   className="size-24 shrink-0 rounded-xl object-cover"
                 />
@@ -123,7 +124,7 @@ export const AvaWorld = defineComponent(
                 className="flex h-full flex-col gap-3 rounded-2xl border border-[#e6e7d8] bg-white/70 p-3"
               >
                 <img
-                  src={`${BASE}ava-studio/posters/${app.scene}.jpg`}
+                  src={`${BASE}${avaIllustrationPath(app.scene)}`}
                   alt=""
                   className="aspect-[3/2] w-full rounded-xl object-contain"
                 />

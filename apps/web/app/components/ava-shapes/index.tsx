@@ -15,6 +15,7 @@ import * as z from "zod";
 import { playAvaShapeSound } from "~/audio/ava-shape-sounds";
 import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
 import { usePixiApp } from "~/canvas/use-pixi-app";
+import { AvaIllustration } from "~/components/ava-illustration";
 import { AvaMedia } from "~/components/ava-media";
 import { AvaScene } from "~/components/ava-scene";
 import { RatingButtons } from "~/components/rating-buttons";
@@ -196,7 +197,12 @@ export const AvaShapes = defineComponent(
               label={avaShapeAnswer(card)}
               mode={displaySession.viewMode}
               onModeChange={onModeChange}
-              twoDContent={<AvaShapeCanvas card={card} />}
+              twoDContent={
+                <AvaIllustration
+                  sceneId={`shape-${card.shape}-${card.color}`}
+                  label={`${avaShapeAnswer(card)} illustration`}
+                />
+              }
               threeDContent={<AvaShapeCanvas3D card={card} />}
               videoSrc={`${import.meta.env.BASE_URL}ava-studio/videos/shape-${card.shape}-${card.color}.mp4`}
               videoPoster={`${import.meta.env.BASE_URL}ava-studio/posters/shape-${card.shape}-${card.color}.jpg`}

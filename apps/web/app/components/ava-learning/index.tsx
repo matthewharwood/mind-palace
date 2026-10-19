@@ -8,6 +8,7 @@ import { ArrowLeft, ArrowRight, Check, Heart, Link2, Play, Sparkles, Volume2 } f
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
+import { AvaIllustration } from "~/components/ava-illustration";
 import { AvaMedia } from "~/components/ava-media";
 import { AvaScene } from "~/components/ava-scene";
 import {
@@ -202,16 +203,17 @@ export const AvaLearning = defineComponent(
                 label={label}
                 mode={displayed.viewMode}
                 onModeChange={(viewMode) => change({ ...session, viewMode })}
-                twoDContent={
+                twoDContent={<AvaIllustration sceneId={sceneId} label={`${label} illustration`} />}
+                threeDContent={<AvaScene sceneId={sceneId} label={label} />}
+                videoSrc={`${BASE}ava-studio/videos/${sceneId}.mp4`}
+                videoPoster={`${BASE}ava-studio/posters/${sceneId}.jpg`}
+                videoFallback={
                   <img
                     src={`${BASE}ava-studio/posters/${sceneId}.jpg`}
                     alt={`${label} illustration`}
                     className="size-full object-contain"
                   />
                 }
-                threeDContent={<AvaScene sceneId={sceneId} label={label} />}
-                videoSrc={`${BASE}ava-studio/videos/${sceneId}.mp4`}
-                videoPoster={`${BASE}ava-studio/posters/${sceneId}.jpg`}
               />
             </div>
             <aside className="flex flex-col justify-between gap-5 rounded-3xl border border-[#e8e3d8] bg-white/90 p-5">

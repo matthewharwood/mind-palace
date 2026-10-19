@@ -3,6 +3,7 @@ import { createCardState, isDue, type Rating, review } from "@mind-palace/srs";
 import * as z from "zod";
 
 import { AvaFirstWordSlugSchema } from "./ava-first-word-slugs";
+import { avaIllustrationPath } from "./ava-illustrations";
 
 export const AVA_FIRST_WORD_CATEGORY_IDS = [
   "family",
@@ -40,7 +41,7 @@ export const AvaFirstWordCardSchema = z
     category: AvaFirstWordCategorySchema,
     imagePath: z.string().min(1),
   })
-  .refine((card) => card.imagePath === `ava-first-words/images/${card.slug}.webp`, {
+  .refine((card) => card.imagePath === avaIllustrationPath(`word-${card.slug}`), {
     error: "imagePath must match the card slug",
     path: ["imagePath"],
   });
@@ -232,7 +233,7 @@ export const AVA_FIRST_WORD_CARDS: readonly AvaFirstWordCard[] = AvaFirstWordCat
       slug,
       label,
       category,
-      imagePath: `ava-first-words/images/${slug}.webp`,
+      imagePath: avaIllustrationPath(`word-${slug}`),
     })),
   ),
 );

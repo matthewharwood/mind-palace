@@ -1,5 +1,9 @@
 # Ava's First 100 Words artwork
 
+The current 2D experience uses the individually generated illustrations documented in [Ava's generated 2D illustrations](ava-2d-illustrations.md). Seventeen action and needs cards share those collections' illustrations; the other 83 first-word scenes have their own images. The older files below remain as historical source assets and are no longer the 2D card source.
+
+## Original artwork
+
 The 100 source images in `apps/web/public/ava-first-words/images/` were created with
 OpenAI's built-in image-generation tool in generation mode. Ten 5-by-2 sprite sheets
 were generated, then mechanically split into WebP cards at quality 84. The generated

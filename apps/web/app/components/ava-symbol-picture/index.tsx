@@ -1,9 +1,9 @@
 import { AvaSymbolRepresentationSchema } from "@mind-palace/schemas";
 import type { ReactNode } from "react";
 import * as z from "zod";
-
+import { AvaIllustration } from "~/components/ava-illustration";
 import { AvaScene } from "~/components/ava-scene";
-import { AvaSymbolCardSchema, buildAvaSymbolImage, getAvaSymbolLabel } from "~/lib/ava-symbols";
+import { AvaSymbolCardSchema, getAvaSymbolLabel } from "~/lib/ava-symbols";
 import { defineComponent } from "~/lib/define-component";
 
 const AvaSymbolPicturePropsSchema = z.object({
@@ -15,7 +15,6 @@ const AvaSymbolPicturePropsSchema = z.object({
 export const AvaSymbolPicture = defineComponent(
   AvaSymbolPicturePropsSchema,
   ({ card, representation, mode }): ReactNode => {
-    const imageUrl = buildAvaSymbolImage(card, representation);
     const label = getAvaSymbolLabel(card);
     if (mode === "3d")
       return (
@@ -28,10 +27,10 @@ export const AvaSymbolPicture = defineComponent(
       );
     return (
       <div className="relative grid size-full min-h-0 place-items-center overflow-hidden bg-[#fffaf0]">
-        <img
-          src={imageUrl}
-          alt={`${label}: ${representation} representation`}
-          className="absolute inset-0 size-full object-contain"
+        <AvaIllustration
+          sceneId={`${card.kind}-${card.id}`}
+          representation={representation}
+          label={`${label}: ${representation} representation`}
         />
       </div>
     );

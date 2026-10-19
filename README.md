@@ -42,7 +42,7 @@ Every change in this repo is judged against these four rules. Anything that viol
 
 | App | Route | What it teaches |
 |---|---|---|
-| Ava's Shape Sounds | `/apps/ava-shapes` | Teacher-led spaced-repetition flashcards for square, oval, rhombus, circle, and triangle. The five colorless shapes unlock the colored combinations; PixiJS draws each card and Web Audio composes a shape voice with a color voice. |
+| Ava's Shape Sounds | `/apps/ava-shapes` | Teacher-led spaced-repetition flashcards for square, oval, rhombus, circle, and triangle. The five colorless shapes unlock the colored combinations, with generated 2D illustrations, modeled 3D views, and local video demonstrations. |
 | Ava's First 100 Words | `/apps/ava-first-words` | Familiar first words with picture cards, 3D views, and short video clips. |
 | Ava's Numbers | `/apps/ava-numbers` | All numbers 0–10 as numerals, ten-frame dot groups, and number words. |
 | Ava's Letters | `/apps/ava-letters` | All 26 letters with uppercase, lowercase, and picture-word representations. |

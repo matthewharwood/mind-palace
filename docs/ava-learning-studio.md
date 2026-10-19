@@ -16,7 +16,7 @@ The sequence is a product organization, not an age-based assessment or treatment
 
 ## Media with a teaching purpose
 
-- **2D:** a stable, uncluttered illustration. The original 100-word images and number/letter diagrams remain; new collections use authored Blender stills.
+- **2D:** individually generated ImageGen illustrations throughout all nine apps, with one coordinated aesthetic. Actions and combinations include arrows, motion marks, and concise movement cues. Numbers and letters each have three distinct illustrated representations. See [the 2D artwork guide](ava-2d-illustrations.md) for coverage, prompts, and provenance.
 - **3D:** actual geometry, with drag and keyboard-accessible turn buttons. Articulated people act, a ball occupies a real location relative to a box/table, numbers have individually countable beads, and letters are extruded solids with modeled example objects. No picture cards, texture-mapped illustrations, or camera-facing image planes.
 - **Video:** two-second H.264 demonstrations rendered from the same geometry. Actions move; static objects turn to reveal volume; counting beads appear sequentially. Videos start from an explicit play button. Recognize provides two silent loops and a replay control; reduced motion keeps these paused until requested.
 - **Speech:** 435 deduplicated ElevenLabs clips, including words, questions, and combinations. Local MP3 files use Sarah (`EXAVITQu4vr4xnSDxMaL`), multilingual v2, speed 0.85, stability/similarity 0.75. On-device speech is a recovery path for an unavailable clip or an unlisted label. No credentials or generation API calls ship to the browser.
@@ -47,7 +47,7 @@ The user selected app workflows only and explicitly requested that existing grap
 
 Figma does not expose the app’s self-hosted PP Editorial Sans/Old fonts, so the designs use editable DM Sans and PP Editorial New substitutes. Chrome control timed out after the desktop was reported locked, preventing a live capture during this pass. The designs were composed from source with the Figma API and inspected through rendered exports; that limitation and the font substitutions are also recorded in the file.
 
-The repository's existing PWA integration remains disabled in its Vite configuration. These changes do not claim that first-time media downloads work offline. No release or deployment has been performed.
+The repository's existing PWA integration remains disabled in its Vite configuration. These changes do not claim that first-time media downloads work offline. The original learning studio release landed in PR #47; the generated 2D artwork is a subsequent change.
 
 ### Verification snapshot
 
