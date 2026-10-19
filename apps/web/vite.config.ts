@@ -4,6 +4,9 @@ import { defineConfig, loadEnv } from "vite";
 
 import { onRollupWarn, sharedPlugins } from "./vite.shared";
 
+const CURRICULUM_MODULE_PATTERN = /\/app\/data\/curricula\/([^/]+)/;
+const TS_EXTENSION_PATTERN = /\.ts$/;
+
 // PWA layer (vite-plugin-pwa + Workbox) is intentionally OFF.
 // Reason: vite-plugin-pwa's `closeBundle` hook fires before TanStack Start's
 // prerender pass, so `dist/client/sw.js` is never written and the
@@ -29,6 +32,9 @@ function enableTanStackDevtools(): boolean {
 }
 
 function manualChunks(id: string): string | undefined {
+  const curriculum = id.match(CURRICULUM_MODULE_PATTERN)?.[1];
+  if (curriculum && curriculum !== "index.ts")
+    return `curriculum-${curriculum.replace(TS_EXTENSION_PATTERN, "")}`;
   if (!id.includes("node_modules")) return undefined;
   if (id.includes("@tanstack")) return "vendor-tanstack";
   if (id.includes("react")) return "vendor-react";
@@ -60,10 +66,10 @@ export default defineConfig(async ({ mode }) => {
       allowedHosts: [".ts.net"],
     },
     build: {
-      // TanStack Start + Router form one intentionally shared vendor bucket.
-      // Keep Vite warning-free for the current baseline while still catching
-      // meaningful growth above that bucket's normal ~543 kB minified size.
-      chunkSizeWarningLimit: 600,
+      // Optional Three.js WebGPU ships as one upstream ~673 kB module. Keep
+      // its lazy viewer intact, with a 700 kB budget. Group curricula apart
+      // from router code and omit unused grammars to remove the old 1 MB chunk.
+      chunkSizeWarningLimit: 700,
       rollupOptions: {
         onwarn: onRollupWarn,
         output: { manualChunks },

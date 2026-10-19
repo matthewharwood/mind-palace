@@ -1,4 +1,4 @@
-import type { Highlighter } from "shiki";
+import type { HighlighterCore } from "shiki/core";
 
 // Shiki syntax highlighter for all READ-ONLY code surfaces (inline `code` and
 // fenced blocks in cards), any language. Loaded lazily as a singleton so the
@@ -9,7 +9,6 @@ import type { Highlighter } from "shiki";
 // (`--shiki-dark`); `app/styles/index.css` swaps them under `.dark`.
 
 const THEMES = { dark: "github-dark", light: "github-light" } as const;
-const LANGS = ["rust", "bash", "json", "toml", "typescript", "tsx"];
 const ALIASES: Record<string, string> = {
   js: "typescript",
   sh: "bash",
@@ -17,12 +16,26 @@ const ALIASES: Record<string, string> = {
   ts: "typescript",
 };
 
-let highlighterPromise: Promise<Highlighter> | null = null;
+let highlighterPromise: Promise<HighlighterCore> | null = null;
 
-function getHighlighter(): Promise<Highlighter> {
+function getHighlighter(): Promise<HighlighterCore> {
   if (!highlighterPromise) {
-    highlighterPromise = import("shiki").then((shiki) =>
-      shiki.createHighlighter({ langs: LANGS, themes: [THEMES.light, THEMES.dark] }),
+    // Import only the six supported grammars. The full bundle emits hundreds
+    // of unused grammar chunks, including individual files over 600 kB.
+    highlighterPromise = Promise.all([import("shiki/core"), import("shiki/engine/oniguruma")]).then(
+      ([shiki, { createOnigurumaEngine }]) =>
+        shiki.createHighlighterCore({
+          engine: createOnigurumaEngine(import("shiki/wasm")),
+          langs: [
+            import("shiki/langs/rust.mjs"),
+            import("shiki/langs/bash.mjs"),
+            import("shiki/langs/json.mjs"),
+            import("shiki/langs/toml.mjs"),
+            import("shiki/langs/typescript.mjs"),
+            import("shiki/langs/tsx.mjs"),
+          ],
+          themes: [import("shiki/themes/github-light.mjs"), import("shiki/themes/github-dark.mjs")],
+        }),
     );
   }
   return highlighterPromise;

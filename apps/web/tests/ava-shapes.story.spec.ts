@@ -55,7 +55,7 @@ test.describe("Ava Shapes stories", () => {
 
     await expectDocumentFitsViewport(page);
     await expect(page.getByRole("heading", { name: "Shape foundations" })).toHaveCount(0);
-    await expect(page.getByRole("img", { name: /Square shape drawn with WebGL/ })).toBeVisible();
+    await expect(page.getByRole("img", { name: /Square illustration/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Square" })).toBeVisible();
     await expect(page.getByText("How did Ava do?")).toBeVisible();
     await expect(page.getByRole("button", { name: /Good/ })).toBeVisible();
@@ -83,9 +83,7 @@ test.describe("Ava Shapes stories", () => {
 
     await expectDocumentFitsViewport(page);
     await expect(page.getByRole("heading", { name: "Shape + color" })).toHaveCount(0);
-    await expect(
-      page.getByRole("img", { name: /Red square shape drawn with WebGL/ }),
-    ).toBeVisible();
+    await expect(page.getByRole("img", { name: /Red square illustration/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Red square" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reveal answer" })).toHaveCount(0);
     await expectInitialAudioCue(page, RED_SQUARE_CUE);

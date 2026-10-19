@@ -10,6 +10,7 @@ import { type ReactNode, useEffect, useSyncExternalStore } from "react";
 import * as z from "zod";
 
 import { speakAvaWord, stopAvaWordSpeech } from "~/audio/ava-word-speech";
+import { AvaIllustration } from "~/components/ava-illustration";
 import { AvaMedia } from "~/components/ava-media";
 import { AvaScene } from "~/components/ava-scene";
 import { RatingButtons } from "~/components/rating-buttons";
@@ -36,10 +37,9 @@ const AvaFirstWordPicture = defineComponent(
   AvaFirstWordPicturePropsSchema,
   ({ card }: AvaFirstWordPictureProps): ReactNode => (
     <div className="grid size-full min-h-0 place-items-center overflow-hidden bg-[#fffaf0] p-3 sm:p-5">
-      <img
-        src={`${BASE_URL}${card.imagePath}`}
-        alt={`Illustration of ${card.label.toLowerCase()}`}
-        className="max-h-full max-w-full rounded-3xl object-contain drop-shadow-[0_18px_26px_rgba(91,60,37,0.16)]"
+      <AvaIllustration
+        sceneId={`word-${card.slug}`}
+        label={`Illustration of ${card.label.toLowerCase()}`}
       />
     </div>
   ),
@@ -130,7 +130,15 @@ export const AvaFirstWords = defineComponent(
             threeDContent={<AvaScene sceneId={`word-${card.slug}`} label={card.label} />}
             videoSrc={`${BASE_URL}ava-studio/videos/word-${card.slug}.mp4`}
             videoPoster={`${BASE_URL}ava-studio/posters/word-${card.slug}.jpg`}
-            videoFallback={<AvaFirstWordPicture card={card} />}
+            videoFallback={
+              <div className="grid size-full min-h-0 place-items-center overflow-hidden bg-[#fffaf0] p-3 sm:p-5">
+                <img
+                  src={`${BASE_URL}ava-first-words/images/${card.slug}.webp`}
+                  alt={`Illustration of ${card.label.toLowerCase()}`}
+                  className="max-h-full max-w-full rounded-3xl object-contain drop-shadow-[0_18px_26px_rgba(91,60,37,0.16)]"
+                />
+              </div>
+            }
           />
 
           <div className="flex min-h-0 flex-col justify-end gap-2 rounded-[1.5rem] border border-black/[0.07] bg-canvas-white p-3 shadow-card sm:gap-3 sm:rounded-3xl sm:p-4 dark:border-white/10">

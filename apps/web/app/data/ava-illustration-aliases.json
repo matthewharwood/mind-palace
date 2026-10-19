@@ -1,0 +1,19 @@
+{
+  "word-eat": "ava-eat",
+  "word-drink": "ava-drink",
+  "word-sleep": "ava-sleep",
+  "word-sit": "ava-sit",
+  "word-stand": "ava-stand",
+  "word-walk": "ava-walk",
+  "word-run": "ava-run",
+  "word-jump": "ava-jump",
+  "word-clap": "ava-clap",
+  "word-hug": "ava-hug",
+  "word-more": "ava-need-more",
+  "word-all-done": "ava-need-all-done",
+  "word-yes": "ava-need-yes",
+  "word-no": "ava-need-no",
+  "word-please": "ava-need-please",
+  "word-thank-you": "ava-need-thank-you",
+  "word-help": "ava-need-help"
+}

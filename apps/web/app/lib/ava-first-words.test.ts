@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { AVA_FIRST_WORDS_SESSION_DEFAULT, AvaFirstWordsSessionSchema } from "@mind-palace/schemas";
-
 import { AvaFirstWordSlugSchema } from "./ava-first-word-slugs";
 import {
   AVA_FIRST_WORD_CARDS,
@@ -14,6 +13,7 @@ import {
   rateAvaFirstWordCard,
   selectAvaFirstWordCard,
 } from "./ava-first-words";
+import { avaIllustrationPath } from "./ava-illustrations";
 
 const NOW = 1_000_000_000;
 
@@ -137,7 +137,7 @@ describe("Ava first-word catalog", () => {
 
   test("gives all 100 cards a generated local image", () => {
     for (const card of AVA_FIRST_WORD_CARDS) {
-      expect(card.imagePath).toBe(`ava-first-words/images/${card.slug}.webp`);
+      expect(card.imagePath).toBe(avaIllustrationPath(`word-${card.slug}`));
       expect(
         Bun.file(new URL(`../../public/${card.imagePath}`, import.meta.url)).size,
       ).toBeGreaterThan(1000);

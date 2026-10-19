@@ -93,6 +93,15 @@ export const AvaSymbols = defineComponent(
               }
               videoSrc={`${BASE_URL}ava-symbols/videos/${session.id}/${card.id}.mp4`}
               videoPoster={buildAvaSymbolImage(card, "symbol")}
+              videoFallback={
+                <div className="relative grid size-full min-h-0 place-items-center overflow-hidden bg-[#fffaf0]">
+                  <img
+                    src={buildAvaSymbolImage(card, displayed.representation)}
+                    alt={`${label}: ${displayed.representation} representation`}
+                    className="absolute inset-0 size-full object-contain"
+                  />
+                </div>
+              }
             />
             <fieldset className="grid shrink-0 grid-cols-3 gap-1 rounded-xl bg-black/5 p-1 dark:bg-white/5">
               <legend className="sr-only">Representation</legend>
