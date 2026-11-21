@@ -568,6 +568,25 @@ export const PlaythroughResultSchema = z.object({
 });
 export type PlaythroughResult = z.infer<typeof PlaythroughResultSchema>;
 
+export const PracticeModeSchema = z.enum(["flow", "wait"]);
+export type PracticeMode = z.infer<typeof PracticeModeSchema>;
+
+export const HandPracticeModeSchema = z.enum(["both", "rh", "lh"]);
+export type HandPracticeMode = z.infer<typeof HandPracticeModeSchema>;
+
+export const NotationScaffoldSchema = z.enum(["guided-colors", "intervals-only", "pure-urtext"]);
+export type NotationScaffold = z.infer<typeof NotationScaffoldSchema>;
+
+export const MeasureLoopRangeSchema = z
+  .object({
+    startBar: z.int().min(1),
+    endBar: z.int().min(1),
+  })
+  .refine((r) => r.endBar >= r.startBar, {
+    message: "endBar must be >= startBar",
+  });
+export type MeasureLoopRange = z.infer<typeof MeasureLoopRangeSchema>;
+
 export const MusicModePreferencesSchema = z.object({
   blindKeyboard: z.boolean().default(true),
   lookAheadMasking: z.boolean().default(true),
@@ -579,6 +598,14 @@ export const MusicModePreferencesSchema = z.object({
   sustainPedal: z.boolean().default(true),
   autoFocusOnPlay: z.boolean().default(true),
   showQwertyHints: z.boolean().default(false),
+  practiceMode: PracticeModeSchema.default("flow"),
+  handMode: HandPracticeModeSchema.default("both"),
+  notationScaffold: NotationScaffoldSchema.default("intervals-only"),
+  tempoScalePct: z.int().min(25).max(125).default(100),
+  autoTempoRamp: z.boolean().default(false),
+  loopLeadIn: z.boolean().default(true),
+  accompanimentVolume: z.number().min(0).max(1).default(0.7),
+  micEnabled: z.boolean().default(false),
   habitIdentityCue: z
     .string()
     .default("I read intervals and shapes ahead of my hands, one bar at a time."),

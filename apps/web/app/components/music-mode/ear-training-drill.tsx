@@ -1,8 +1,19 @@
-import { CheckCircle2, Ear, Hand, RefreshCw, Sparkles, Volume2, XCircle } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import {
+  CheckCircle2,
+  Ear,
+  Hand,
+  Mic,
+  MicOff,
+  RefreshCw,
+  Sparkles,
+  Volume2,
+  XCircle,
+} from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
 import {
+  MicListenerStatusSchema,
   playMusicSfx,
   playPianoChord,
   playPianoInterval,
@@ -49,6 +60,12 @@ export const EarTrainingDrillPropsSchema = z.object({
   blindKeyboard: z.boolean().default(true),
   showQwertyHints: z.boolean().default(false),
   lastFlowReason: z.string().optional(),
+  micStatus: MicListenerStatusSchema.default("idle"),
+  micLevel: z.number().min(0).max(1).default(0),
+  onToggleMic: z.custom<() => void>().optional(),
+  subscribeMicNoteOn: z
+    .custom<(listener: (midi: number, velocity: number) => void) => () => void>()
+    .optional(),
   onExerciseKindChange: z.custom<(kind: ExerciseKind) => void>(),
   onDrillResult: z.custom<(result: DrillResult) => void>(),
 });
@@ -370,6 +387,16 @@ function resolveDrillRating(correct: boolean, elapsedMs: number): FSRSRating {
   return elapsedMs < 2500 ? "easy" : "good";
 }
 
+function removeMidiFromPressed(midi: number): (prev: number[]) => number[] {
+  return (prev) => prev.filter((n) => n !== midi);
+}
+
+function resolveEarMicDotClass(micListening: boolean, micStatus: string): string {
+  if (micListening) return "bg-emerald-500";
+  if (micStatus === "denied" || micStatus === "error") return "bg-rose-500";
+  return "bg-black/20 dark:bg-white/20";
+}
+
 function resolveOptionTone(answered: boolean, isRightAnswer: boolean, isPicked: boolean): string {
   if (!answered) {
     return "border-black/10 bg-whisper-gray/70 text-midnight-ink hover:border-intelligence-blue/50 hover:bg-whisper-gray dark:border-white/10";
@@ -391,6 +418,10 @@ export const EarTrainingDrill = defineComponent(
     blindKeyboard,
     showQwertyHints,
     lastFlowReason,
+    micStatus,
+    micLevel,
+    onToggleMic,
+    subscribeMicNoteOn,
     onExerciseKindChange,
     onDrillResult,
   }): ReactNode => {
@@ -407,6 +438,7 @@ export const EarTrainingDrill = defineComponent(
     const isCorrect = selectedOption === prompt.answerLabel;
     const isKeyboardAnswerMode =
       exerciseKind === "ear-dictation" || exerciseKind === "tactile-blind-frame";
+    const micListening = micStatus === "listening";
 
     function submitResult(correct: boolean, label: string): void {
       if (answered) return;
@@ -430,9 +462,16 @@ export const EarTrainingDrill = defineComponent(
       submitResult(option === prompt.answerLabel, option);
     }
 
-    function handleKeyboardNoteOn(midi: number, velocity: number): void {
-      playPianoNote({ midi, velocity });
+    function handleKeyboardNoteOn(midi: number, velocity: number, fromMic = false): void {
+      if (!fromMic && !micListening) {
+        playPianoNote({ midi, velocity });
+      }
       setPressedNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
+      if (fromMic) {
+        setTimeout(() => {
+          setPressedNotes(removeMidiFromPressed(midi));
+        }, 220);
+      }
       if (answered || !isKeyboardAnswerMode) return;
 
       if (exerciseKind === "tactile-blind-frame") {
@@ -454,6 +493,20 @@ export const EarTrainingDrill = defineComponent(
         setLiveAnnouncement(`Recorded note ${nextSeq.length} of ${prompt.notes.length}`);
       }
     }
+
+    const micNoteHandlerRef = useRef<(midi: number, velocity: number) => void>(() => undefined);
+    useEffect(() => {
+      micNoteHandlerRef.current = (midi, velocity) => {
+        handleKeyboardNoteOn(midi, velocity, true);
+      };
+    });
+
+    useEffect(() => {
+      if (!subscribeMicNoteOn) return;
+      return subscribeMicNoteOn((midi, velocity) => {
+        micNoteHandlerRef.current(midi, velocity);
+      });
+    }, [subscribeMicNoteOn]);
 
     function handleKeyboardNoteOff(midi: number): void {
       releasePianoNote(midi);
@@ -550,6 +603,36 @@ export const EarTrainingDrill = defineComponent(
           >
             Slow Arpeggiate
           </button>
+          {onToggleMic ? (
+            <button
+              type="button"
+              aria-label={micListening ? "Disable acoustic mic" : "Enable acoustic mic"}
+              aria-pressed={micListening}
+              onClick={onToggleMic}
+              className={[
+                "relative inline-flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-2 font-medium text-xs transition-colors",
+                micListening
+                  ? "border-emerald-500/40 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                  : "border-black/10 bg-whisper-gray text-midnight-ink hover:bg-light-taupe dark:border-white/10",
+              ].join(" ")}
+            >
+              {micStatus === "denied" || micStatus === "error" ? (
+                <MicOff className="size-3.5 text-rose-600" aria-hidden="true" />
+              ) : (
+                <Mic className="size-3.5" aria-hidden="true" />
+              )}
+              <span>{micListening ? "Mic On" : "Mic"}</span>
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-full ${resolveEarMicDotClass(micListening, micStatus)}`}
+                style={
+                  micListening
+                    ? { transform: `scale(${(0.85 + micLevel * 0.65).toFixed(2)})` }
+                    : undefined
+                }
+              />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={nextCard}

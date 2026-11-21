@@ -1,12 +1,17 @@
 import {
   type FSRSRating,
+  type HandPracticeMode,
   type Measure,
+  type MeasureLoopRange,
   type PlaythroughResult,
   PlaythroughResultSchema,
+  type PracticeMode,
   type RecitalTake,
   type RecitalTakeEvent,
   type ScorePassage,
 } from "./schemas";
+
+export type PlaythroughTimingRating = "early" | "on-beat" | "late";
 
 export interface ExpectedBeatSlot {
   readonly slotIndex: number;
@@ -17,12 +22,27 @@ export interface ExpectedBeatSlot {
   readonly matchedMidis: readonly number[];
 }
 
+export interface AccompanimentBeatEvent {
+  readonly beatStart: number;
+  readonly durationBeats: number;
+  readonly midis: readonly number[];
+}
+
+export interface PlaythroughOptions {
+  readonly practiceMode?: PracticeMode;
+  readonly handMode?: HandPracticeMode;
+  readonly loopRange?: MeasureLoopRange | null;
+}
+
 export interface PlaythroughSession {
   readonly passageId: string;
   readonly bpm: number;
   readonly beatsPerBar: number;
   readonly totalMeasures: number;
   readonly fallbackHardestBar: number;
+  readonly practiceMode: PracticeMode;
+  readonly handMode: HandPracticeMode;
+  readonly loopRange: MeasureLoopRange | null;
   readonly slots: readonly ExpectedBeatSlot[];
   readonly slotCursor: number;
   readonly hits: number;
@@ -38,6 +58,7 @@ export interface PlaythroughNoteOutcome {
   readonly slotCompleted: boolean;
   readonly allSlotsComplete: boolean;
   readonly targetMidis: readonly number[];
+  readonly timing: PlaythroughTimingRating | null;
 }
 
 export interface CleanPassTracker {
@@ -65,14 +86,36 @@ function quantizeBeat(beat: number): number {
   return Math.round(beat * 16) / 16;
 }
 
+function matchesHandMode(staff: "treble" | "bass", handMode: HandPracticeMode): boolean {
+  if (handMode === "both") return true;
+  return handMode === "rh" ? staff === "treble" : staff === "bass";
+}
+
+function classifyBeatTimingOffset(beatDelta: number): PlaythroughTimingRating {
+  if (Math.abs(beatDelta) <= 0.22) return "on-beat";
+  return beatDelta < 0 ? "early" : "late";
+}
+
+function normalizeLoopRange(
+  loopRange: MeasureLoopRange | null | undefined,
+  totalMeasures: number,
+): MeasureLoopRange | null {
+  if (!loopRange || totalMeasures <= 0) return null;
+  const startBar = Math.max(1, Math.min(totalMeasures, loopRange.startBar));
+  const endBar = Math.max(startBar, Math.min(totalMeasures, loopRange.endBar));
+  return { startBar, endBar };
+}
+
 export function extractMeasureBeatSlots(
   measure: Measure,
   beatsPerBar = 4,
   barOffsetIndex = 0,
+  handMode: HandPracticeMode = "both",
 ): ExpectedBeatSlot[] {
   const byBeat = new Map<number, Set<number>>();
   for (const ev of measure.events) {
     if (ev.isRest || ev.pitches.length === 0) continue;
+    if (!matchesHandMode(ev.staff, handMode)) continue;
     const key = quantizeBeat(ev.beatStart);
     const set = byBeat.get(key) ?? new Set<number>();
     for (const p of ev.pitches) set.add(p.midi);
@@ -90,14 +133,44 @@ export function extractMeasureBeatSlots(
   }));
 }
 
-export function extractPassageBeatSlots(passage: ScorePassage): ExpectedBeatSlot[] {
+export function extractAccompanimentEvents(
+  measure: Measure,
+  handMode: HandPracticeMode,
+): AccompanimentBeatEvent[] {
+  if (handMode === "both") return [];
+  const accompanimentStaff = handMode === "rh" ? "bass" : "treble";
+  const events: AccompanimentBeatEvent[] = [];
+  for (const ev of measure.events) {
+    if (ev.isRest || ev.pitches.length === 0) continue;
+    if (ev.staff !== accompanimentStaff) continue;
+    events.push({
+      beatStart: ev.beatStart,
+      durationBeats: ev.durationBeats,
+      midis: ev.pitches.map((p) => p.midi),
+    });
+  }
+  return events.sort((a, b) => a.beatStart - b.beatStart);
+}
+
+export function extractPassageBeatSlots(
+  passage: ScorePassage,
+  handMode: HandPracticeMode = "both",
+  loopRange: MeasureLoopRange | null = null,
+): ExpectedBeatSlot[] {
   const beatsPerBar = getBeatsPerBar(passage);
+  const normalizedLoop = normalizeLoopRange(loopRange, passage.measures.length);
   const all: ExpectedBeatSlot[] = [];
   let runningIndex = 0;
   for (let i = 0; i < passage.measures.length; i += 1) {
     const measure = passage.measures[i];
     if (!measure) continue;
-    const measureSlots = extractMeasureBeatSlots(measure, beatsPerBar, i);
+    if (
+      normalizedLoop &&
+      (measure.number < normalizedLoop.startBar || measure.number > normalizedLoop.endBar)
+    ) {
+      continue;
+    }
+    const measureSlots = extractMeasureBeatSlots(measure, beatsPerBar, i, handMode);
     for (const slot of measureSlots) {
       all.push({ ...slot, slotIndex: runningIndex });
       runningIndex += 1;
@@ -106,15 +179,25 @@ export function extractPassageBeatSlots(passage: ScorePassage): ExpectedBeatSlot
   return all;
 }
 
-export function createPlaythroughSession(passage: ScorePassage, bpm: number): PlaythroughSession {
+export function createPlaythroughSession(
+  passage: ScorePassage,
+  bpm: number,
+  options: PlaythroughOptions = {},
+): PlaythroughSession {
   const beatsPerBar = getBeatsPerBar(passage);
+  const practiceMode = options.practiceMode ?? "flow";
+  const handMode = options.handMode ?? "both";
+  const loopRange = normalizeLoopRange(options.loopRange, passage.measures.length);
   return {
     passageId: passage.id,
     bpm: Math.min(220, Math.max(30, Math.round(bpm))),
     beatsPerBar,
     totalMeasures: passage.measures.length,
-    fallbackHardestBar: passage.previewNotes.hardestBarNumber,
-    slots: extractPassageBeatSlots(passage),
+    fallbackHardestBar: loopRange ? loopRange.startBar : passage.previewNotes.hardestBarNumber,
+    practiceMode,
+    handMode,
+    loopRange,
+    slots: extractPassageBeatSlots(passage, handMode, loopRange),
     slotCursor: 0,
     hits: 0,
     attempts: 0,
@@ -122,6 +205,27 @@ export function createPlaythroughSession(passage: ScorePassage, bpm: number): Pl
     takeEvents: [],
     finished: false,
   };
+}
+
+export function getAwaitedBeatSlot(session: PlaythroughSession): ExpectedBeatSlot | null {
+  if (session.finished) return null;
+  return session.slots[session.slotCursor] ?? null;
+}
+
+export function computeNextAutoTempoScale(
+  currentPct: number,
+  loopAccuracy: number,
+): { readonly nextPct: number; readonly delta: number } {
+  const clampedCurrent = Math.max(25, Math.min(125, Math.round(currentPct)));
+  if (loopAccuracy >= 0.9 && clampedCurrent < 100) {
+    const nextPct = Math.min(100, clampedCurrent + 5);
+    return { nextPct, delta: nextPct - clampedCurrent };
+  }
+  if (loopAccuracy < 0.7 && clampedCurrent > 50) {
+    const nextPct = Math.max(50, clampedCurrent - 5);
+    return { nextPct, delta: nextPct - clampedCurrent };
+  }
+  return { nextPct: clampedCurrent, delta: 0 };
 }
 
 /**
@@ -172,7 +276,14 @@ export function advancePlaythroughPosition(
     return { session, autoFinished: true };
   }
 
-  if (barNumber > session.totalMeasures) {
+  // Wait Mode never auto-skips slots or auto-finishes by transport clock;
+  // progression is strictly driven by matching every MIDI note in slots[slotCursor].
+  if (session.practiceMode === "wait") {
+    return { session, autoFinished: false };
+  }
+
+  const endBoundary = session.loopRange ? session.loopRange.endBar : session.totalMeasures;
+  if (barNumber > endBoundary) {
     return {
       session: { ...session, finished: true },
       autoFinished: true,
@@ -204,7 +315,7 @@ export function advancePlaythroughPosition(
 /**
  * Beat-ordered note matching for Step 3 (`Play`).
  * Matches against the current pending beat slot (or immediately adjacent slot within
- * a tight lookahead window), never an unordered bag-of-notes for the whole measure.
+ * a tight lookahead window in Flow Mode), never an unordered bag-of-notes for the whole measure.
  */
 export function recordPlaythroughNote(
   session: PlaythroughSession,
@@ -215,8 +326,8 @@ export function recordPlaythroughNote(
   const clampedBar = Math.max(1, Math.min(session.totalMeasures, barNumber));
   const beatOffset = Math.max(0, (clampedBar - 1) * session.beatsPerBar + Math.max(0, beatFloat));
 
-  // Candidate window: current pending slot, plus the immediately next slot only if
-  // the player is within 1 beat of it (strictly beat-ordered).
+  // Candidate window: current pending slot; in Flow Mode also allow the immediately next
+  // slot when the player is within 0.75 beat of it (strictly beat-ordered).
   const candidateIndices: number[] = [];
   if (session.slotCursor < session.slots.length) {
     candidateIndices.push(session.slotCursor);
@@ -224,6 +335,7 @@ export function recordPlaythroughNote(
   const nextSlot = session.slots[session.slotCursor + 1];
   const currSlot = session.slots[session.slotCursor];
   if (
+    session.practiceMode === "flow" &&
     nextSlot &&
     currSlot &&
     nextSlot.barNumber === clampedBar &&
@@ -246,6 +358,7 @@ export function recordPlaythroughNote(
   let nextSlots = session.slots;
   let nextCursor = session.slotCursor;
   let slotCompleted = false;
+  let timing: PlaythroughTimingRating | null = null;
 
   if (hit) {
     const target = session.slots[matchedIndex];
@@ -256,14 +369,18 @@ export function recordPlaythroughNote(
         i === matchedIndex ? { ...s, matchedMidis: updatedMatched } : s,
       );
       nextCursor = advanceCursorPastCompleted(nextSlots, session.slotCursor);
+      if (session.practiceMode === "flow") {
+        timing = classifyBeatTimingOffset(beatOffset - target.globalBeat);
+      }
     }
   }
 
+  const missBar = session.practiceMode === "wait" && currSlot ? currSlot.barNumber : clampedBar;
   const nextMissesByBar = hit
     ? session.missesByBar
     : {
         ...session.missesByBar,
-        [clampedBar]: (session.missesByBar[clampedBar] ?? 0) + 1,
+        [missBar]: (session.missesByBar[missBar] ?? 0) + 1,
       };
 
   const nextEvent: RecitalTakeEvent = {
@@ -272,6 +389,7 @@ export function recordPlaythroughNote(
     hit,
   };
 
+  const allSlotsComplete = nextCursor >= nextSlots.length && nextSlots.length > 0;
   const nextSession: PlaythroughSession = {
     ...session,
     slots: nextSlots,
@@ -280,15 +398,19 @@ export function recordPlaythroughNote(
     attempts: session.attempts + 1,
     missesByBar: nextMissesByBar,
     takeEvents: [...session.takeEvents, nextEvent],
+    finished: session.practiceMode === "wait" && allSlotsComplete ? true : session.finished,
   };
 
-  const allSlotsComplete = nextCursor >= nextSlots.length && nextSlots.length > 0;
+  const nextTargetBar =
+    session.practiceMode === "wait" ? (nextSlots[nextCursor]?.barNumber ?? clampedBar) : clampedBar;
+
   return {
     session: nextSession,
     hit,
     slotCompleted,
     allSlotsComplete,
-    targetMidis: getActiveSlotTargetMidis(nextSession, clampedBar),
+    targetMidis: getActiveSlotTargetMidis(nextSession, nextTargetBar),
+    timing,
   };
 }
 
@@ -370,10 +492,13 @@ export function pickBestRecitalTake(
 // Step 4 ("Fix Bar"): 1 Clean Pass Beat-Ordered Validator
 // ---------------------------------------------------------------------------
 
-export function createCleanPassTracker(measure: Measure): CleanPassTracker {
+export function createCleanPassTracker(
+  measure: Measure,
+  handMode: HandPracticeMode = "both",
+): CleanPassTracker {
   return {
     measureNumber: measure.number,
-    slots: extractMeasureBeatSlots(measure),
+    slots: extractMeasureBeatSlots(measure, 4, 0, handMode),
     slotCursor: 0,
     cleanPassComplete: false,
     resetCount: 0,

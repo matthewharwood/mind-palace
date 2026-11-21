@@ -3,6 +3,8 @@ import {
   Check,
   ChevronRight,
   Headphones,
+  Mic,
+  MicOff,
   Minimize2,
   Play,
   RotateCcw,
@@ -17,6 +19,8 @@ import * as z from "zod";
 import {
   createMusicMetronome,
   getTransportClock,
+  type MicListenerStatus,
+  MicListenerStatusSchema,
   type MusicMetronomeController,
   playMusicSfx,
   playPianoChord,
@@ -30,17 +34,29 @@ import { FIVE_STEP_RITUAL } from "~/lib/music-mode/curriculum";
 import {
   advancePlaythroughPosition,
   type CleanPassTracker,
+  computeNextAutoTempoScale,
   createCleanPassTracker,
   createPlaythroughSession,
+  extractAccompanimentEvents,
   finalizePlaythrough,
   getActiveSlotTargetMidis,
+  getAwaitedBeatSlot,
   type PlaythroughSession,
+  type PlaythroughTimingRating,
   recordCleanPassNote,
   recordPlaythroughNote,
 } from "~/lib/music-mode/playthrough-sim";
 import {
   type FSRSRating,
+  type HandPracticeMode,
+  HandPracticeModeSchema,
+  type MeasureLoopRange,
+  MeasureLoopRangeSchema,
+  type NotationScaffold,
+  NotationScaffoldSchema,
   type PlaythroughResult,
+  type PracticeMode,
+  PracticeModeSchema,
   type RecitalTake,
   RecitalTakeSchema,
   type ScorePassage,
@@ -74,9 +90,24 @@ export const SightReadingRitualPropsSchema = z.object({
   showQwertyHints: z.boolean().default(false),
   autoFocusOnPlay: z.boolean().default(true),
   focusMode: z.boolean().default(false),
+  practiceMode: PracticeModeSchema.default("flow"),
+  handMode: HandPracticeModeSchema.default("both"),
+  notationScaffold: NotationScaffoldSchema.default("intervals-only"),
+  tempoScalePct: z.int().min(25).max(125).default(100),
+  autoTempoRamp: z.boolean().default(false),
+  loopLeadIn: z.boolean().default(true),
+  accompanimentVolume: z.number().min(0).max(1).default(0.7),
+  loopRange: MeasureLoopRangeSchema.nullable().default(null),
+  micStatus: MicListenerStatusSchema.default("idle"),
+  micLevel: z.number().min(0).max(1).default(0),
   bestTake: RecitalTakeSchema.optional(),
   onFocusModeChange: z.custom<(focused: boolean) => void>().optional(),
   onOpenControls: z.custom<() => void>().optional(),
+  onToggleMic: z.custom<() => void>().optional(),
+  subscribeMicNoteOn: z
+    .custom<(listener: (midi: number, velocity: number) => void) => () => void>()
+    .optional(),
+  onTempoScaleChange: z.custom<(nextPct: number) => void>().optional(),
   onStepChange: z.custom<(step: SightReadingStep) => void>(),
   onRate: z.custom<(result: RitualRatingResult) => void>(),
   onNextPassage: z.custom<() => void>().optional(),
@@ -166,6 +197,110 @@ function resolveRhythmSfxAccuracy(hit: TimingHit): "on-beat" | "early" | "late" 
   return hit.offsetMs < 0 ? "early" : "late";
 }
 
+function scheduleMeasureAccompaniment(
+  passage: ScorePassage,
+  measureNumber: number,
+  bpm: number,
+  handMode: HandPracticeMode,
+  accompanimentVolume: number,
+): void {
+  if (handMode === "both" || accompanimentVolume <= 0) return;
+  const measure = passage.measures.find((m) => m.number === measureNumber);
+  if (!measure) return;
+  const events = extractAccompanimentEvents(measure, handMode);
+  if (events.length === 0) return;
+  const secPerBeat = 60 / Math.max(30, bpm);
+  const velocity = Math.max(0.15, Math.min(0.95, accompanimentVolume * 0.85));
+  for (const ev of events) {
+    playPianoChord({
+      notes: ev.midis,
+      velocity,
+      delaySeconds: ev.beatStart * secPerBeat,
+      durationSeconds: Math.max(0.22, ev.durationBeats * secPerBeat * 0.9),
+    });
+  }
+}
+
+function resolveTimingCueBadge(timing: PlaythroughTimingRating): { label: string; tone: string } {
+  if (timing === "on-beat") {
+    return {
+      label: "On-Beat",
+      tone: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    };
+  }
+  if (timing === "early") {
+    return {
+      label: "Early",
+      tone: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    };
+  }
+  return {
+    label: "Late",
+    tone: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+  };
+}
+
+function resolveMicDotClass(status: MicListenerStatus): string {
+  if (status === "listening") return "bg-emerald-500";
+  if (status === "denied" || status === "error") return "bg-rose-500";
+  if (status === "requesting") return "bg-amber-500";
+  return "bg-black/25 dark:bg-white/25";
+}
+
+function resolveTransportMicButtonClass(
+  micListening: boolean,
+  micStatus: MicListenerStatus,
+): string {
+  if (micListening) {
+    return "border-emerald-500/45 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300";
+  }
+  if (micStatus === "denied" || micStatus === "error") {
+    return "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+  }
+  return "border-black/10 bg-canvas-white text-midnight-ink hover:bg-light-taupe dark:border-white/10";
+}
+
+function resolvePlayButtonLabel(playing: boolean, practiceMode: PracticeMode): string {
+  if (playing) return "Stop";
+  return practiceMode === "wait" ? "Start Wait" : "Play";
+}
+
+function resolveCountInBars(loopRange: MeasureLoopRange | null, loopLeadIn: boolean): number {
+  if (!loopRange) return 1;
+  return loopLeadIn ? 1 : 0;
+}
+
+function resolveNoteInputPosition(params: {
+  practiceMode: PracticeMode;
+  playing: boolean;
+  clockRunning: boolean;
+  clockIsCountIn: boolean;
+  clockBar: number;
+  clockBeatFloat: number;
+  awaitedBar: number | undefined;
+  awaitedBeat: number | undefined;
+  loopRange: MeasureLoopRange | null;
+  loopLeadIn: boolean;
+  fallbackBar: number;
+  fallbackBeat: number;
+}): { bar: number; beatFloat: number } {
+  if (params.practiceMode === "wait") {
+    return {
+      bar: params.awaitedBar ?? params.fallbackBar,
+      beatFloat: params.awaitedBeat ?? params.fallbackBeat,
+    };
+  }
+  if (params.playing && params.clockRunning && !params.clockIsCountIn) {
+    const startBar = params.loopRange?.startBar ?? 1;
+    const countIn = resolveCountInBars(params.loopRange, params.loopLeadIn);
+    return {
+      bar: Math.max(1, startBar + (params.clockBar - countIn)),
+      beatFloat: params.clockBeatFloat,
+    };
+  }
+  return { bar: params.fallbackBar, beatFloat: params.fallbackBeat };
+}
+
 function resolveFlowBanner(accuracy: number): { tone: string; text: string } {
   const pct = Math.round(accuracy * 100);
   if (accuracy < 0.8) {
@@ -194,12 +329,16 @@ function PreviewStepView({
   passage,
   showIntervalsOverlay,
   showRomanNumerals,
+  notationScaffold,
+  handMode,
   onAnnounce,
   onContinue,
 }: {
   passage: ScorePassage;
   showIntervalsOverlay: boolean;
   showRomanNumerals: boolean;
+  notationScaffold: NotationScaffold;
+  handMode: HandPracticeMode;
   onAnnounce: (text: string) => void;
   onContinue: () => void;
 }): ReactNode {
@@ -304,6 +443,8 @@ function PreviewStepView({
         onPreviewFocusChange={setPreviewFocus}
         showIntervalShapes={showIntervalsOverlay}
         showRomanNumerals={showRomanNumerals}
+        notationScaffold={notationScaffold}
+        handMode={handMode}
       />
 
       <div className="grid gap-2 sm:grid-cols-2">
@@ -547,6 +688,61 @@ function RhythmStepView({
 // Step 3: Look-Ahead Play-Through (rAF clock + beat-ordered sim + auto-finish)
 // ---------------------------------------------------------------------------
 
+function buildTransportStatusChips(
+  practiceMode: PracticeMode,
+  handMode: HandPracticeMode,
+  loopRange: MeasureLoopRange | null,
+  tempoScalePct: number,
+  autoTempoRamp: boolean,
+): string[] {
+  const chips: string[] = [];
+  if (practiceMode === "wait") chips.push("Wait");
+  if (handMode !== "both") chips.push(handMode.toUpperCase());
+  if (loopRange) chips.push(`m.${loopRange.startBar}–${loopRange.endBar}`);
+  if (tempoScalePct !== 100 || autoTempoRamp) {
+    chips.push(`${tempoScalePct}%${autoTempoRamp ? "↑" : ""}`);
+  }
+  return chips;
+}
+
+function TransportMicButton({
+  micStatus,
+  micLevel,
+  onToggleMic,
+}: {
+  micStatus: MicListenerStatus;
+  micLevel: number;
+  onToggleMic: () => void;
+}): ReactNode {
+  const micListening = micStatus === "listening";
+  const micError = micStatus === "denied" || micStatus === "error";
+  return (
+    <button
+      type="button"
+      aria-label={micListening ? "Disable acoustic mic" : "Enable acoustic mic"}
+      aria-pressed={micListening}
+      onClick={onToggleMic}
+      className={[
+        "relative inline-flex size-11 items-center justify-center rounded-lg border transition-colors",
+        resolveTransportMicButtonClass(micListening, micStatus),
+      ].join(" ")}
+    >
+      {micError ? (
+        <MicOff className="size-4" aria-hidden="true" />
+      ) : (
+        <Mic className="size-4" aria-hidden="true" />
+      )}
+      <span
+        aria-hidden="true"
+        className={`absolute top-1.5 right-1.5 size-2 rounded-full ${resolveMicDotClass(micStatus)}`}
+        style={
+          micListening ? { transform: `scale(${(0.85 + micLevel * 0.65).toFixed(2)})` } : undefined
+        }
+      />
+    </button>
+  );
+}
+
 function PlayThroughTransportBar({
   bpm,
   isCountIn,
@@ -555,8 +751,17 @@ function PlayThroughTransportBar({
   accuracyLabel,
   playing,
   focusMode,
+  practiceMode,
+  handMode,
+  loopRange,
+  tempoScalePct,
+  autoTempoRamp,
+  lastTiming,
+  micStatus,
+  micLevel,
   onTogglePlay,
   onFinish,
+  onToggleMic,
   onOpenControls,
   onExitFocus,
 }: {
@@ -567,14 +772,33 @@ function PlayThroughTransportBar({
   accuracyLabel: string;
   playing: boolean;
   focusMode: boolean;
+  practiceMode: PracticeMode;
+  handMode: HandPracticeMode;
+  loopRange: MeasureLoopRange | null;
+  tempoScalePct: number;
+  autoTempoRamp: boolean;
+  lastTiming: PlaythroughTimingRating | null;
+  micStatus: MicListenerStatus;
+  micLevel: number;
   onTogglePlay: () => void;
   onFinish: () => void;
+  onToggleMic?: () => void;
   onOpenControls?: () => void;
   onExitFocus?: () => void;
 }): ReactNode {
+  const statusChips = buildTransportStatusChips(
+    practiceMode,
+    handMode,
+    loopRange,
+    tempoScalePct,
+    autoTempoRamp,
+  );
+  const timingBadge =
+    practiceMode === "flow" && lastTiming ? resolveTimingCueBadge(lastTiming) : null;
+
   return (
     <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-xl border border-black/10 bg-whisper-gray/80 px-3 py-1.5 dark:border-white/10">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
         <span className="font-mono font-semibold text-midnight-ink">{bpm} BPM</span>
         <span className="text-muted-ash">·</span>
         <span className="font-mono text-midnight-ink">
@@ -583,9 +807,29 @@ function PlayThroughTransportBar({
         <span className="rounded-full bg-canvas-white px-2.5 py-0.5 font-mono text-[11px] text-midnight-ink">
           {accuracyLabel}
         </span>
+        {timingBadge ? (
+          <span
+            className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold ${timingBadge.tone}`}
+          >
+            {timingBadge.label}
+          </span>
+        ) : null}
+        {statusChips.map((chip) => (
+          <button
+            key={chip}
+            type="button"
+            onClick={onOpenControls}
+            className="rounded-full border border-intelligence-blue/30 bg-intelligence-blue/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-intelligence-blue transition-colors hover:bg-intelligence-blue/20"
+          >
+            {chip}
+          </button>
+        ))}
       </div>
 
       <div className="flex items-center gap-1.5">
+        {onToggleMic ? (
+          <TransportMicButton micStatus={micStatus} micLevel={micLevel} onToggleMic={onToggleMic} />
+        ) : null}
         <button
           type="button"
           onClick={onTogglePlay}
@@ -597,7 +841,7 @@ function PlayThroughTransportBar({
           ].join(" ")}
         >
           {playing ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
-          {playing ? "Stop" : "Play"}
+          {resolvePlayButtonLabel(playing, practiceMode)}
         </button>
         <button
           type="button"
@@ -632,53 +876,66 @@ function PlayThroughTransportBar({
   );
 }
 
-function PlayThroughStepView({
-  passage,
-  bpm,
-  blindKeyboard,
-  lookAheadMasking,
-  showIntervalsOverlay,
-  showRomanNumerals,
-  showQwertyHints,
-  autoFocusOnPlay,
-  focusMode,
-  onFocusModeChange,
-  onOpenControls,
-  onAnnounce,
-  onComplete,
-}: {
+interface PlaythroughControllerArgs {
   passage: ScorePassage;
   bpm: number;
-  blindKeyboard: boolean;
-  lookAheadMasking: boolean;
-  showIntervalsOverlay: boolean;
-  showRomanNumerals: boolean;
-  showQwertyHints: boolean;
   autoFocusOnPlay: boolean;
-  focusMode: boolean;
+  practiceMode: PracticeMode;
+  handMode: HandPracticeMode;
+  tempoScalePct: number;
+  autoTempoRamp: boolean;
+  loopLeadIn: boolean;
+  accompanimentVolume: number;
+  loopRange: MeasureLoopRange | null;
+  micStatus: MicListenerStatus;
+  subscribeMicNoteOn?: (listener: (midi: number, velocity: number) => void) => () => void;
+  onTempoScaleChange?: (nextPct: number) => void;
   onFocusModeChange?: (focused: boolean) => void;
-  onOpenControls?: () => void;
   onAnnounce: (text: string) => void;
   onComplete: (result: PlaythroughResult) => void;
-}): ReactNode {
+}
+
+function usePlaythroughController(args: PlaythroughControllerArgs) {
+  const {
+    passage,
+    bpm,
+    autoFocusOnPlay,
+    practiceMode,
+    handMode,
+    tempoScalePct,
+    autoTempoRamp,
+    loopLeadIn,
+    accompanimentVolume,
+    loopRange,
+    micStatus,
+    subscribeMicNoteOn,
+    onTempoScaleChange,
+    onFocusModeChange,
+    onAnnounce,
+    onComplete,
+  } = args;
+
   const [playing, setPlaying] = useState(false);
   const [isCountIn, setIsCountIn] = useState(false);
-  const [activeMeasure, setActiveMeasure] = useState(1);
+  const [activeMeasure, setActiveMeasure] = useState(() => loopRange?.startBar ?? 1);
   const [activeBeat, setActiveBeat] = useState(0);
   const [octaveShift, setOctaveShift] = useState(0);
   const [pressedNotes, setPressedNotes] = useState<number[]>([]);
   const [correctNotes, setCorrectNotes] = useState<number[]>([]);
   const [wrongNotes, setWrongNotes] = useState<number[]>([]);
+  const [lastTiming, setLastTiming] = useState<PlaythroughTimingRating | null>(null);
   const [finalePulseKey, setFinalePulseKey] = useState(0);
   const [session, setSession] = useState<PlaythroughSession>(() =>
-    createPlaythroughSession(passage, bpm),
+    createPlaythroughSession(passage, bpm, { practiceMode, handMode, loopRange }),
   );
 
   const sessionRef = useRef<PlaythroughSession>(session);
   const metroRef = useRef<MusicMetronomeController | null>(null);
-  const activeMeasureRef = useRef(1);
+  const activeMeasureRef = useRef(loopRange?.startBar ?? 1);
   const activeBeatRef = useRef(0);
   const flashTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const timingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micListening = micStatus === "listening";
 
   useEffect(() => {
     sessionRef.current = session;
@@ -690,10 +947,30 @@ function PlayThroughStepView({
   }, [activeMeasure, activeBeat]);
 
   useEffect(() => {
+    if (playing) return;
+    const next = createPlaythroughSession(passage, bpm, { practiceMode, handMode, loopRange });
+    sessionRef.current = next;
+    setSession(next);
+    const firstSlot = getAwaitedBeatSlot(next);
+    setActiveMeasure(firstSlot?.barNumber ?? loopRange?.startBar ?? 1);
+    setActiveBeat(firstSlot?.beatStart ?? 0);
+  }, [
+    passage,
+    bpm,
+    practiceMode,
+    handMode,
+    loopRange?.startBar,
+    loopRange?.endBar,
+    loopRange,
+    playing,
+  ]);
+
+  useEffect(() => {
     return () => {
       metroRef.current?.stop();
       stopAllPianoNotes();
       for (const timer of flashTimersRef.current) clearTimeout(timer);
+      if (timingTimerRef.current) clearTimeout(timingTimerRef.current);
     };
   }, []);
 
@@ -714,6 +991,14 @@ function PlayThroughStepView({
     flashTimersRef.current.push(id);
   }
 
+  function showTimingCue(timing: PlaythroughTimingRating): void {
+    setLastTiming(timing);
+    if (timingTimerRef.current) clearTimeout(timingTimerRef.current);
+    timingTimerRef.current = setTimeout(() => {
+      setLastTiming(null);
+    }, 900);
+  }
+
   function finishPlayThrough(currentSession: PlaythroughSession): void {
     metroRef.current?.stop();
     setPlaying(false);
@@ -731,21 +1016,60 @@ function PlayThroughStepView({
     onComplete(result);
   }
 
-  function startPlayThrough(): void {
+  function handleLoopPassComplete(completedSession: PlaythroughSession): void {
+    const loopAccuracy =
+      completedSession.attempts > 0 ? completedSession.hits / completedSession.attempts : 0;
+    let nextBpm = bpm;
+    if (autoTempoRamp && onTempoScaleChange) {
+      const { nextPct, delta } = computeNextAutoTempoScale(tempoScalePct, loopAccuracy);
+      if (delta !== 0) {
+        onTempoScaleChange(nextPct);
+        const baseBpm = Math.max(30, Math.round((bpm * 100) / Math.max(25, tempoScalePct)));
+        nextBpm = Math.min(220, Math.max(30, Math.round((baseBpm * nextPct) / 100)));
+        onAnnounce(
+          delta > 0
+            ? `Clean loop (${Math.round(loopAccuracy * 100)}%)! Auto-ramping speed to ${nextPct}%.`
+            : `Loop accuracy ${Math.round(loopAccuracy * 100)}%. Easing speed to ${nextPct}%.`,
+        );
+      }
+    }
+    if (practiceMode === "wait") {
+      const restarted = createPlaythroughSession(passage, nextBpm, {
+        practiceMode,
+        handMode,
+        loopRange,
+      });
+      sessionRef.current = restarted;
+      setSession(restarted);
+      const firstSlot = getAwaitedBeatSlot(restarted);
+      setActiveMeasure(firstSlot?.barNumber ?? loopRange?.startBar ?? 1);
+      setActiveBeat(firstSlot?.beatStart ?? 0);
+      return;
+    }
+    startFlowPlayThrough(nextBpm);
+  }
+
+  function startFlowPlayThrough(overrideBpm?: number): void {
+    const targetBpm = overrideBpm ?? bpm;
     metroRef.current?.stop();
-    const fresh = createPlaythroughSession(passage, bpm);
+    const fresh = createPlaythroughSession(passage, targetBpm, {
+      practiceMode: "flow",
+      handMode,
+      loopRange,
+    });
     sessionRef.current = fresh;
     setSession(fresh);
-    setActiveMeasure(1);
+    const startBar = loopRange ? loopRange.startBar : 1;
+    const countInBars = resolveCountInBars(loopRange, loopLeadIn);
+    setActiveMeasure(startBar);
     setActiveBeat(0);
-    setIsCountIn(true);
+    setIsCountIn(countInBars > 0);
     setCorrectNotes([]);
     setWrongNotes([]);
 
-    const countInBars = 1;
     const metro = createMusicMetronome(
       {
-        bpm,
+        bpm: targetBpm,
         timeSignature: toAudioTimeSignature(passage.timeSignature),
         polyrhythm: passage.polyrhythm,
         countInBars,
@@ -757,14 +1081,27 @@ function PlayThroughStepView({
           return;
         }
         setIsCountIn(false);
-        const barNumber = tick.bar - countInBars + 1;
+        const barNumber = startBar + (tick.bar - countInBars);
         const advanced = advancePlaythroughPosition(sessionRef.current, barNumber, tick.beat);
         sessionRef.current = advanced.session;
         setSession(advanced.session);
 
         if (advanced.autoFinished) {
-          finishPlayThrough(advanced.session);
+          if (loopRange) {
+            handleLoopPassComplete(advanced.session);
+          } else {
+            finishPlayThrough(advanced.session);
+          }
           return;
+        }
+        if (tick.beat === 0 && !micListening) {
+          scheduleMeasureAccompaniment(
+            passage,
+            barNumber,
+            targetBpm,
+            handMode,
+            accompanimentVolume,
+          );
         }
         setActiveMeasure(barNumber);
         setActiveBeat(tick.beat);
@@ -774,7 +1111,35 @@ function PlayThroughStepView({
     metro.start();
     setPlaying(true);
     if (autoFocusOnPlay) onFocusModeChange?.(true);
-    onAnnounce(`Count-in started at ${bpm} BPM.`);
+    onAnnounce(
+      countInBars > 0
+        ? `Count-in started at ${targetBpm} BPM.`
+        : `Loop started at ${targetBpm} BPM.`,
+    );
+  }
+
+  function startPlayThrough(): void {
+    if (practiceMode === "wait") {
+      metroRef.current?.stop();
+      const fresh = createPlaythroughSession(passage, bpm, {
+        practiceMode: "wait",
+        handMode,
+        loopRange,
+      });
+      sessionRef.current = fresh;
+      setSession(fresh);
+      const firstSlot = getAwaitedBeatSlot(fresh);
+      setActiveMeasure(firstSlot?.barNumber ?? loopRange?.startBar ?? 1);
+      setActiveBeat(firstSlot?.beatStart ?? 0);
+      setIsCountIn(false);
+      setCorrectNotes([]);
+      setWrongNotes([]);
+      setPlaying(true);
+      if (autoFocusOnPlay) onFocusModeChange?.(true);
+      onAnnounce("Wait Mode active. Play each highlighted note to advance.");
+      return;
+    }
+    startFlowPlayThrough();
   }
 
   function togglePlay(): void {
@@ -788,17 +1153,34 @@ function PlayThroughStepView({
     }
   }
 
-  function handleNoteOn(midi: number, velocity: number): void {
-    playPianoNote({ midi, velocity });
+  function handleNoteOn(midi: number, velocity: number, fromMic = false): void {
+    if (!fromMic && !micListening) {
+      playPianoNote({ midi, velocity });
+    }
     setPressedNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
+    if (fromMic) {
+      const releaseTimer = setTimeout(() => {
+        setPressedNotes(removeMidiNote(midi));
+      }, 220);
+      flashTimersRef.current.push(releaseTimer);
+    }
 
     const clock = getTransportClock();
-    const bar =
-      playing && clock.running && !clock.isCountIn
-        ? Math.max(1, clock.bar)
-        : activeMeasureRef.current;
-    const beatFloat =
-      playing && clock.running && !clock.isCountIn ? clock.beatFloat : activeBeatRef.current;
+    const awaited = getAwaitedBeatSlot(sessionRef.current);
+    const { bar, beatFloat } = resolveNoteInputPosition({
+      practiceMode,
+      playing,
+      clockRunning: clock.running,
+      clockIsCountIn: clock.isCountIn,
+      clockBar: clock.bar,
+      clockBeatFloat: clock.beatFloat,
+      awaitedBar: awaited?.barNumber,
+      awaitedBeat: awaited?.beatStart,
+      loopRange,
+      loopLeadIn,
+      fallbackBar: activeMeasureRef.current,
+      fallbackBeat: activeBeatRef.current,
+    });
 
     const outcome = recordPlaythroughNote(sessionRef.current, midi, bar, beatFloat);
     sessionRef.current = outcome.session;
@@ -806,8 +1188,22 @@ function PlayThroughStepView({
 
     if (outcome.hit) {
       flashNote(midi, "correct");
-      if (outcome.allSlotsComplete && !playing) {
-        finishPlayThrough(outcome.session);
+      if (outcome.timing) {
+        showTimingCue(outcome.timing);
+      }
+      if (practiceMode === "wait") {
+        const nextAwaited = getAwaitedBeatSlot(outcome.session);
+        if (nextAwaited) {
+          setActiveMeasure(nextAwaited.barNumber);
+          setActiveBeat(nextAwaited.beatStart);
+        }
+      }
+      if (outcome.allSlotsComplete && (practiceMode === "wait" || !playing)) {
+        if (loopRange) {
+          handleLoopPassComplete(outcome.session);
+        } else {
+          finishPlayThrough(outcome.session);
+        }
       }
     } else {
       playMusicSfx("gentleMiss");
@@ -819,6 +1215,20 @@ function PlayThroughStepView({
     releasePianoNote(midi);
     setPressedNotes((prev) => prev.filter((n) => n !== midi));
   }
+
+  const micNoteHandlerRef = useRef<(midi: number, velocity: number) => void>(() => undefined);
+  useEffect(() => {
+    micNoteHandlerRef.current = (midi, velocity) => {
+      handleNoteOn(midi, velocity, true);
+    };
+  });
+
+  useEffect(() => {
+    if (!subscribeMicNoteOn) return;
+    return subscribeMicNoteOn((midi, velocity) => {
+      micNoteHandlerRef.current(midi, velocity);
+    });
+  }, [subscribeMicNoteOn]);
 
   useMusicInputMap({
     enabled: true,
@@ -832,24 +1242,129 @@ function PlayThroughStepView({
     onExitFocus: () => onFocusModeChange?.(false),
   });
 
-  const targetMidis = getActiveSlotTargetMidis(session, activeMeasure);
+  return {
+    playing,
+    isCountIn,
+    activeMeasure,
+    activeBeat,
+    octaveShift,
+    pressedNotes,
+    correctNotes,
+    wrongNotes,
+    lastTiming,
+    finalePulseKey,
+    session,
+    setActiveMeasure,
+    setOctaveShift,
+    togglePlay,
+    finishCurrent: () => finishPlayThrough(sessionRef.current),
+    handleNoteOn,
+    handleNoteOff,
+  };
+}
+
+function PlayThroughStepView({
+  passage,
+  bpm,
+  blindKeyboard,
+  lookAheadMasking,
+  showIntervalsOverlay,
+  showRomanNumerals,
+  showQwertyHints,
+  autoFocusOnPlay,
+  focusMode,
+  practiceMode,
+  handMode,
+  notationScaffold,
+  tempoScalePct,
+  autoTempoRamp,
+  loopLeadIn,
+  accompanimentVolume,
+  loopRange,
+  micStatus,
+  micLevel,
+  onToggleMic,
+  subscribeMicNoteOn,
+  onTempoScaleChange,
+  onFocusModeChange,
+  onOpenControls,
+  onAnnounce,
+  onComplete,
+}: {
+  passage: ScorePassage;
+  bpm: number;
+  blindKeyboard: boolean;
+  lookAheadMasking: boolean;
+  showIntervalsOverlay: boolean;
+  showRomanNumerals: boolean;
+  showQwertyHints: boolean;
+  autoFocusOnPlay: boolean;
+  focusMode: boolean;
+  practiceMode: PracticeMode;
+  handMode: HandPracticeMode;
+  notationScaffold: NotationScaffold;
+  tempoScalePct: number;
+  autoTempoRamp: boolean;
+  loopLeadIn: boolean;
+  accompanimentVolume: number;
+  loopRange: MeasureLoopRange | null;
+  micStatus: MicListenerStatus;
+  micLevel: number;
+  onToggleMic?: () => void;
+  subscribeMicNoteOn?: (listener: (midi: number, velocity: number) => void) => () => void;
+  onTempoScaleChange?: (nextPct: number) => void;
+  onFocusModeChange?: (focused: boolean) => void;
+  onOpenControls?: () => void;
+  onAnnounce: (text: string) => void;
+  onComplete: (result: PlaythroughResult) => void;
+}): ReactNode {
+  const ctrl = usePlaythroughController({
+    passage,
+    bpm,
+    autoFocusOnPlay,
+    practiceMode,
+    handMode,
+    tempoScalePct,
+    autoTempoRamp,
+    loopLeadIn,
+    accompanimentVolume,
+    loopRange,
+    micStatus,
+    ...(subscribeMicNoteOn ? { subscribeMicNoteOn } : {}),
+    ...(onTempoScaleChange ? { onTempoScaleChange } : {}),
+    ...(onFocusModeChange ? { onFocusModeChange } : {}),
+    onAnnounce,
+    onComplete,
+  });
+
+  const targetMidis = getActiveSlotTargetMidis(ctrl.session, ctrl.activeMeasure);
+  const awaitedSlot = practiceMode === "wait" ? getAwaitedBeatSlot(ctrl.session) : null;
   const accuracyLabel =
-    session.attempts > 0
-      ? `${Math.round((session.hits / session.attempts) * 100)}% (${session.hits}/${session.attempts})`
+    ctrl.session.attempts > 0
+      ? `${Math.round((ctrl.session.hits / ctrl.session.attempts) * 100)}% (${ctrl.session.hits}/${ctrl.session.attempts})`
       : "Ready";
 
   return (
     <div className="flex flex-col gap-3">
       <PlayThroughTransportBar
         bpm={bpm}
-        isCountIn={isCountIn}
-        activeMeasure={activeMeasure}
+        isCountIn={ctrl.isCountIn}
+        activeMeasure={ctrl.activeMeasure}
         totalMeasures={passage.measures.length}
         accuracyLabel={accuracyLabel}
-        playing={playing}
+        playing={ctrl.playing}
         focusMode={focusMode}
-        onTogglePlay={togglePlay}
-        onFinish={() => finishPlayThrough(sessionRef.current)}
+        practiceMode={practiceMode}
+        handMode={handMode}
+        loopRange={loopRange}
+        tempoScalePct={tempoScalePct}
+        autoTempoRamp={autoTempoRamp}
+        lastTiming={ctrl.lastTiming}
+        micStatus={micStatus}
+        micLevel={micLevel}
+        onTogglePlay={ctrl.togglePlay}
+        onFinish={ctrl.finishCurrent}
+        {...(onToggleMic ? { onToggleMic } : {})}
         {...(onOpenControls ? { onOpenControls } : {})}
         {...(onFocusModeChange ? { onExitFocus: () => onFocusModeChange(false) } : {})}
       />
@@ -860,32 +1375,38 @@ function PlayThroughStepView({
         keySignature={passage.keySignature}
         timeSignature={passage.timeSignature}
         measures={passage.measures}
-        mode={lookAheadMasking ? "look-ahead" : "standard"}
-        activeMeasure={activeMeasure}
-        activeBeat={activeBeat}
-        playing={playing}
+        mode={practiceMode === "flow" && lookAheadMasking ? "look-ahead" : "standard"}
+        activeMeasure={ctrl.activeMeasure}
+        activeBeat={ctrl.activeBeat}
+        playing={ctrl.playing && practiceMode === "flow"}
         getClock={getTransportClock}
-        countInBars={1}
-        finalePulseKey={finalePulseKey}
+        countInBars={resolveCountInBars(loopRange, loopLeadIn)}
+        finalePulseKey={ctrl.finalePulseKey}
         showIntervalShapes={showIntervalsOverlay}
         showRomanNumerals={showRomanNumerals}
-        onSelectMeasure={setActiveMeasure}
+        notationScaffold={notationScaffold}
+        handMode={handMode}
+        {...(awaitedSlot
+          ? { awaitedBeat: { barNumber: awaitedSlot.barNumber, beatStart: awaitedSlot.beatStart } }
+          : {})}
+        {...(loopRange ? { loopRange } : {})}
+        onSelectMeasure={ctrl.setActiveMeasure}
       />
 
       <TactileKeyboard
         startOctave={3}
-        octaveShift={octaveShift}
-        onOctaveShiftChange={setOctaveShift}
-        pressedNotes={pressedNotes}
+        octaveShift={ctrl.octaveShift}
+        onOctaveShiftChange={ctrl.setOctaveShift}
+        pressedNotes={ctrl.pressedNotes}
         targetNotes={[...targetMidis]}
-        correctNotes={correctNotes}
-        wrongNotes={wrongNotes}
+        correctNotes={ctrl.correctNotes}
+        wrongNotes={ctrl.wrongNotes}
         blindVeil={blindKeyboard}
         showQwertyHints={showQwertyHints}
-        qwertyBaseOctave={Math.max(1, Math.min(5, 4 + octaveShift))}
+        qwertyBaseOctave={Math.max(1, Math.min(5, 4 + ctrl.octaveShift))}
         enableWebMidi
-        onNoteOn={handleNoteOn}
-        onNoteOff={handleNoteOff}
+        onNoteOn={ctrl.handleNoteOn}
+        onNoteOff={ctrl.handleNoteOff}
       />
     </div>
   );
@@ -901,6 +1422,10 @@ function WeakestBarStepView({
   slowBpm,
   blindKeyboard,
   showQwertyHints,
+  handMode,
+  notationScaffold,
+  micStatus,
+  subscribeMicNoteOn,
   onAnnounce,
   onContinue,
 }: {
@@ -909,6 +1434,10 @@ function WeakestBarStepView({
   slowBpm: number;
   blindKeyboard: boolean;
   showQwertyHints: boolean;
+  handMode: HandPracticeMode;
+  notationScaffold: NotationScaffold;
+  micStatus: MicListenerStatus;
+  subscribeMicNoteOn?: (listener: (midi: number, velocity: number) => void) => () => void;
   onAnnounce: (text: string) => void;
   onContinue: () => void;
 }): ReactNode {
@@ -920,7 +1449,7 @@ function WeakestBarStepView({
   const [octaveShift, setOctaveShift] = useState(0);
   const [tracker, setTracker] = useState<CleanPassTracker>(() =>
     targetMeasure
-      ? createCleanPassTracker(targetMeasure)
+      ? createCleanPassTracker(targetMeasure, handMode)
       : {
           measureNumber: weakestBarNumber,
           slots: [],
@@ -931,14 +1460,20 @@ function WeakestBarStepView({
         },
   );
   const trackerRef = useRef(tracker);
+  const micListening = micStatus === "listening";
 
   useEffect(() => {
     trackerRef.current = tracker;
   }, [tracker]);
 
-  function handleNoteOn(midi: number, velocity: number): void {
-    playPianoNote({ midi, velocity });
+  function handleNoteOn(midi: number, velocity: number, fromMic = false): void {
+    if (!fromMic && !micListening) {
+      playPianoNote({ midi, velocity });
+    }
     setPressedNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
+    if (fromMic) {
+      setTimeout(() => setPressedNotes(removeMidiNote(midi)), 220);
+    }
     const outcome = recordCleanPassNote(trackerRef.current, midi);
     trackerRef.current = outcome.tracker;
     setTracker(outcome.tracker);
@@ -963,6 +1498,20 @@ function WeakestBarStepView({
     releasePianoNote(midi);
     setPressedNotes((prev) => prev.filter((n) => n !== midi));
   }
+
+  const micNoteHandlerRef = useRef<(midi: number, velocity: number) => void>(() => undefined);
+  useEffect(() => {
+    micNoteHandlerRef.current = (midi, velocity) => {
+      handleNoteOn(midi, velocity, true);
+    };
+  });
+
+  useEffect(() => {
+    if (!subscribeMicNoteOn) return;
+    return subscribeMicNoteOn((midi, velocity) => {
+      micNoteHandlerRef.current(midi, velocity);
+    });
+  }, [subscribeMicNoteOn]);
 
   useMusicInputMap({
     enabled: true,
@@ -1014,6 +1563,8 @@ function WeakestBarStepView({
           showIntervalShapes
           showRomanNumerals
           showFingerings
+          notationScaffold={notationScaffold}
+          handMode={handMode}
         />
       ) : null}
 
@@ -1231,9 +1782,22 @@ export const SightReadingRitual = defineComponent(
     showQwertyHints,
     autoFocusOnPlay,
     focusMode,
+    practiceMode,
+    handMode,
+    notationScaffold,
+    tempoScalePct,
+    autoTempoRamp,
+    loopLeadIn,
+    accompanimentVolume,
+    loopRange,
+    micStatus,
+    micLevel,
     bestTake,
     onFocusModeChange,
     onOpenControls,
+    onToggleMic,
+    subscribeMicNoteOn,
+    onTempoScaleChange,
     onStepChange,
     onRate,
     onNextPassage,
@@ -1241,7 +1805,10 @@ export const SightReadingRitual = defineComponent(
     const [lastResult, setLastResult] = useState<PlaythroughResult | null>(null);
     const [liveAnnouncement, setLiveAnnouncement] = useState("");
     const weakestBar = lastResult?.weakestBarNumber ?? passage.previewNotes.hardestBarNumber;
-    const effectiveBpm = Math.min(220, Math.max(36, passage.tempoBpm + bpmOffset));
+    const effectiveBpm = Math.min(
+      220,
+      Math.max(30, Math.round((passage.tempoBpm + bpmOffset) * (tempoScalePct / 100))),
+    );
     const slowBpm = Math.max(36, Math.round(effectiveBpm * 0.75));
 
     const nextPassageProps = onNextPassage ? { onNextPassage } : {};
@@ -1249,6 +1816,12 @@ export const SightReadingRitual = defineComponent(
     const focusCallbacks = {
       ...(onFocusModeChange ? { onFocusModeChange } : {}),
       ...(onOpenControls ? { onOpenControls } : {}),
+    };
+    const micSubProps = subscribeMicNoteOn ? { subscribeMicNoteOn } : {};
+    const micAndTempoCallbacks = {
+      ...(onToggleMic ? { onToggleMic } : {}),
+      ...micSubProps,
+      ...(onTempoScaleChange ? { onTempoScaleChange } : {}),
     };
 
     return (
@@ -1286,6 +1859,8 @@ export const SightReadingRitual = defineComponent(
             passage={passage}
             showIntervalsOverlay={showIntervalsOverlay}
             showRomanNumerals={showRomanNumerals}
+            notationScaffold={notationScaffold}
+            handMode={handMode}
             onAnnounce={setLiveAnnouncement}
             onContinue={() => onStepChange("rhythm-isolate")}
           />
@@ -1314,23 +1889,38 @@ export const SightReadingRitual = defineComponent(
             showQwertyHints={showQwertyHints}
             autoFocusOnPlay={autoFocusOnPlay}
             focusMode={focusMode}
+            practiceMode={practiceMode}
+            handMode={handMode}
+            notationScaffold={notationScaffold}
+            tempoScalePct={tempoScalePct}
+            autoTempoRamp={autoTempoRamp}
+            loopLeadIn={loopLeadIn}
+            accompanimentVolume={accompanimentVolume}
+            loopRange={loopRange}
+            micStatus={micStatus}
+            micLevel={micLevel}
             onAnnounce={setLiveAnnouncement}
             onComplete={(res) => {
               setLastResult(res);
               onStepChange("review-weakest-bar");
             }}
             {...focusCallbacks}
+            {...micAndTempoCallbacks}
           />
         ) : null}
 
         {step === "review-weakest-bar" ? (
           <WeakestBarStepView
-            key={`${passage.id}-bar-${weakestBar}`}
+            key={`${passage.id}-bar-${weakestBar}-${handMode}`}
             passage={passage}
             weakestBarNumber={weakestBar}
             slowBpm={slowBpm}
             blindKeyboard={blindKeyboard}
             showQwertyHints={showQwertyHints}
+            handMode={handMode}
+            notationScaffold={notationScaffold}
+            micStatus={micStatus}
+            {...micSubProps}
             onAnnounce={setLiveAnnouncement}
             onContinue={() => onStepChange("fsrs-rate")}
           />

@@ -50,6 +50,22 @@ export const Step3LookAheadPlay: Story = {
   },
 };
 
+export const Step3WaitModeLoopRH: Story = {
+  args: {
+    passage: chopinPassage,
+    step: "look-ahead-play",
+    practiceMode: "wait",
+    handMode: "rh",
+    notationScaffold: "guided-colors",
+    tempoScalePct: 75,
+    autoTempoRamp: true,
+    loopRange: { startBar: 1, endBar: 2 },
+    micStatus: "listening",
+    micLevel: 0.45,
+    onToggleMic: () => undefined,
+  },
+};
+
 export const Step5FsrsRating: Story = {
   args: {
     passage: chopinPassage,

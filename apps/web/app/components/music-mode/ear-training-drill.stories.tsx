@@ -33,5 +33,8 @@ export const TactileBlindFrame: Story = {
     exerciseKind: "tactile-blind-frame",
     difficulty: 2,
     lastFlowReason: "Difficulty eased to Level 2 to keep you in the 80–85% flow zone.",
+    micStatus: "listening",
+    micLevel: 0.35,
+    onToggleMic: () => undefined,
   },
 };

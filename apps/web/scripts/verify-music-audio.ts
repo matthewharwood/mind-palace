@@ -420,9 +420,10 @@ function verifyMicPitchDetection(): void {
       }),
     );
     const detected = detectActiveMidis(mono, DEFAULT_SAMPLE_RATE).map((n) => n.midi);
+    const detectedSet = new Set(detected);
     for (const midi of pair) {
       assertCheck(
-        detected.includes(midi),
+        detectedSet.has(midi),
         `Mic interval ${name}: missing ${midiToNoteName(midi)} in [${detected.join(",")}]`,
       );
     }
@@ -446,9 +447,10 @@ function verifyMicPitchDetection(): void {
     const detected = detectActiveMidis(mono, DEFAULT_SAMPLE_RATE, {
       maxPolyphony: Math.max(4, chord.notes.length),
     }).map((n) => n.midi);
+    const detectedSet = new Set(detected);
     for (const midi of chord.notes) {
       assertCheck(
-        detected.includes(midi),
+        detectedSet.has(midi),
         `Mic chord ${chord.name}: missing ${midiToNoteName(midi)} in [${detected.join(",")}]`,
       );
     }

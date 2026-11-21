@@ -413,3 +413,22 @@ export const FlatKeyNocturne: Story = {
     showIntervalShapes: true,
   },
 };
+
+export const GuidedWaitModeLoopRH: Story = {
+  args: {
+    ...ChopinPreludeInEMinor.args,
+    mode: "standard",
+    notationScaffold: "guided-colors",
+    handMode: "rh",
+    awaitedBeat: { barNumber: 2, beatStart: 2 },
+    loopRange: { startBar: 2, endBar: 3 },
+  },
+};
+
+export const PureUrtextParchment: Story = {
+  args: {
+    ...ChopinPreludeInEMinor.args,
+    mode: "standard",
+    notationScaffold: "pure-urtext",
+  },
+};

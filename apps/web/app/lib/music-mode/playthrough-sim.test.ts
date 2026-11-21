@@ -2,10 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import {
   advancePlaythroughPosition,
+  computeNextAutoTempoScale,
   createCleanPassTracker,
   createPlaythroughSession,
+  extractAccompanimentEvents,
   finalizePlaythrough,
   getActiveSlotTargetMidis,
+  getAwaitedBeatSlot,
   pickBestRecitalTake,
   recordCleanPassNote,
   recordPlaythroughNote,
@@ -156,6 +159,145 @@ describe("EarTrainingDrill high-tier chord distractor selection", () => {
       expect(options).toHaveLength(4);
       expect(new Set(options).size).toBe(4);
       expect(options).toContain(target.label);
+    }
+  });
+});
+
+describe("Music Mode v3: Wait Mode, Hands-Separate, A-B Loop, Auto-Tempo Ramp & Timing", () => {
+  test("Wait Mode holds slotCursor without auto-skip and finishes cleanly after last slot", () => {
+    const passage = getFirstPassage();
+    let session = createPlaythroughSession(passage, passage.tempoBpm, { practiceMode: "wait" });
+    expect(session.practiceMode).toBe("wait");
+    expect(getAwaitedBeatSlot(session)?.slotIndex).toBe(0);
+
+    // Advancing clock far ahead must NOT auto-skip or auto-finish in Wait Mode
+    const held = advancePlaythroughPosition(session, passage.measures.length + 2, 3);
+    expect(held.autoFinished).toBe(false);
+    expect(held.session.slotCursor).toBe(0);
+
+    // Complete every slot strictly in order
+    for (const slot of session.slots) {
+      for (const midi of slot.midis) {
+        const outcome = recordPlaythroughNote(session, midi, slot.barNumber, slot.beatStart);
+        expect(outcome.hit).toBe(true);
+        expect(outcome.timing).toBeNull();
+        session = outcome.session;
+      }
+    }
+
+    expect(session.finished).toBe(true);
+    expect(getAwaitedBeatSlot(session)).toBeNull();
+  });
+
+  test("Hands-Separate filters scored slots and exposes inactive-hand accompaniment events", () => {
+    const passage =
+      SCORE_LIBRARY.find((p) =>
+        p.measures.some(
+          (m) =>
+            m.events.some((e) => e.staff === "treble" && !e.isRest) &&
+            m.events.some((e) => e.staff === "bass" && !e.isRest),
+        ),
+      ) ?? getFirstPassage();
+
+    const rhSession = createPlaythroughSession(passage, passage.tempoBpm, { handMode: "rh" });
+    const lhSession = createPlaythroughSession(passage, passage.tempoBpm, { handMode: "lh" });
+    const bothSession = createPlaythroughSession(passage, passage.tempoBpm, { handMode: "both" });
+
+    expect(rhSession.slots.length).toBeGreaterThan(0);
+    expect(lhSession.slots.length).toBeGreaterThan(0);
+    expect(bothSession.slots.length).toBeGreaterThanOrEqual(rhSession.slots.length);
+
+    const measureWithBoth = passage.measures.find(
+      (m) =>
+        m.events.some((e) => e.staff === "treble" && !e.isRest) &&
+        m.events.some((e) => e.staff === "bass" && !e.isRest),
+    );
+    expect(measureWithBoth).toBeDefined();
+    if (measureWithBoth) {
+      expect(extractAccompanimentEvents(measureWithBoth, "both")).toHaveLength(0);
+      expect(extractAccompanimentEvents(measureWithBoth, "rh").length).toBeGreaterThan(0);
+      expect(extractAccompanimentEvents(measureWithBoth, "lh").length).toBeGreaterThan(0);
+    }
+  });
+
+  test("A-B loopRange scopes slots to [startBar..endBar] and triggers autoFinished after endBar", () => {
+    const passage = SCORE_LIBRARY.find((p) => p.measures.length >= 4) ?? getFirstPassage();
+    const session = createPlaythroughSession(passage, passage.tempoBpm, {
+      loopRange: { startBar: 2, endBar: 3 },
+    });
+
+    expect(session.loopRange).toEqual({ startBar: 2, endBar: 3 });
+    expect(session.slots.length).toBeGreaterThan(0);
+    expect(session.slots.every((s) => s.barNumber >= 2 && s.barNumber <= 3)).toBe(true);
+
+    const inside = advancePlaythroughPosition(session, 3, 2);
+    expect(inside.autoFinished).toBe(false);
+
+    const pastEnd = advancePlaythroughPosition(session, 4, 0);
+    expect(pastEnd.autoFinished).toBe(true);
+    expect(pastEnd.session.finished).toBe(true);
+  });
+
+  test("computeNextAutoTempoScale ramps +5% up to 100% on >=90% and eases -5% down to 50% on <70%", () => {
+    expect(computeNextAutoTempoScale(75, 0.92)).toEqual({ nextPct: 80, delta: 5 });
+    expect(computeNextAutoTempoScale(98, 0.95)).toEqual({ nextPct: 100, delta: 2 });
+    expect(computeNextAutoTempoScale(100, 0.99)).toEqual({ nextPct: 100, delta: 0 });
+    expect(computeNextAutoTempoScale(75, 0.65)).toEqual({ nextPct: 70, delta: -5 });
+    expect(computeNextAutoTempoScale(52, 0.4)).toEqual({ nextPct: 50, delta: -2 });
+    expect(computeNextAutoTempoScale(50, 0.3)).toEqual({ nextPct: 50, delta: 0 });
+    expect(computeNextAutoTempoScale(80, 0.82)).toEqual({ nextPct: 80, delta: 0 });
+  });
+
+  test("Flow Mode hits classify timing as early, on-beat, or late", () => {
+    const passage = getFirstPassage();
+    const session = createPlaythroughSession(passage, passage.tempoBpm, { practiceMode: "flow" });
+    const targetSlot = session.slots.find((s) => s.barNumber === 1 && s.beatStart >= 1);
+    const firstSlot = session.slots[0];
+    expect(firstSlot).toBeDefined();
+
+    if (firstSlot) {
+      const firstMidi = firstSlot.midis[0];
+      if (firstMidi !== undefined) {
+        const onBeat = recordPlaythroughNote(
+          session,
+          firstMidi,
+          firstSlot.barNumber,
+          firstSlot.beatStart + 0.05,
+        );
+        expect(onBeat.hit).toBe(true);
+        expect(onBeat.timing).toBe("on-beat");
+
+        const late = recordPlaythroughNote(
+          session,
+          firstMidi,
+          firstSlot.barNumber,
+          firstSlot.beatStart + 0.45,
+        );
+        expect(late.hit).toBe(true);
+        expect(late.timing).toBe("late");
+      }
+    }
+
+    if (targetSlot) {
+      // Advance session to targetSlot and test early hit
+      let cur = session;
+      for (const slot of session.slots) {
+        if (slot.slotIndex === targetSlot.slotIndex) break;
+        for (const m of slot.midis) {
+          cur = recordPlaythroughNote(cur, m, slot.barNumber, slot.beatStart).session;
+        }
+      }
+      const targetMidi = targetSlot.midis[0];
+      if (targetMidi !== undefined) {
+        const early = recordPlaythroughNote(
+          cur,
+          targetMidi,
+          targetSlot.barNumber,
+          Math.max(0, targetSlot.beatStart - 0.4),
+        );
+        expect(early.hit).toBe(true);
+        expect(early.timing).toBe("early");
+      }
     }
   });
 });

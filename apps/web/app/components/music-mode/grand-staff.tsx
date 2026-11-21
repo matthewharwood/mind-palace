@@ -4,6 +4,13 @@ import * as z from "zod";
 
 import type { TransportClockSnapshot } from "~/audio/music-mode";
 import { defineComponent } from "~/lib/define-component";
+import {
+  type HandPracticeMode,
+  HandPracticeModeSchema,
+  MeasureLoopRangeSchema,
+  type NotationScaffold,
+  NotationScaffoldSchema,
+} from "~/lib/music-mode/schemas";
 import { useAnime } from "~/motion/use-anime";
 import {
   BASS_FLAT_STEPS,
@@ -67,6 +74,15 @@ export const GrandStaffPropsSchema = z.object({
   showRomanNumerals: z.boolean().optional(),
   showIntervalShapes: z.boolean().optional(),
   showFingerings: z.boolean().optional(),
+  notationScaffold: NotationScaffoldSchema.optional(),
+  handMode: HandPracticeModeSchema.optional(),
+  awaitedBeat: z
+    .object({
+      barNumber: z.int().min(1),
+      beatStart: z.number().min(0),
+    })
+    .optional(),
+  loopRange: MeasureLoopRangeSchema.optional(),
   onSelectMeasure: z.custom<(measureNumber: number) => void>().optional(),
   onSelectEvent: z.custom<(event: StaffNoteEvent) => void>().optional(),
 });
@@ -141,6 +157,47 @@ function statusStrokeClass(status?: NoteEventStatus): string {
   if (status === "correct") return "stroke-emerald-600 dark:stroke-emerald-400";
   if (status === "wrong") return "stroke-rose-600 dark:stroke-rose-400";
   return "stroke-current";
+}
+
+const FINGER_RING_CLASSES: Readonly<Record<number, string>> = {
+  1: "fill-emerald-500/18 stroke-emerald-600 dark:stroke-emerald-400",
+  2: "fill-amber-500/18 stroke-amber-600 dark:stroke-amber-400",
+  3: "fill-violet-500/18 stroke-violet-600 dark:stroke-violet-400",
+  4: "fill-sky-500/18 stroke-sky-600 dark:stroke-sky-400",
+  5: "fill-rose-500/18 stroke-rose-600 dark:stroke-rose-400",
+};
+
+function resolveFingerRingClass(finger: number | undefined, midi: number): string {
+  const index = finger ?? (midi % 5) + 1;
+  return (
+    FINGER_RING_CLASSES[index] ?? "fill-emerald-500/18 stroke-emerald-600 dark:stroke-emerald-400"
+  );
+}
+
+function isStaffDimmed(staff: Clef, handMode: HandPracticeMode): boolean {
+  if (handMode === "both") return false;
+  return (handMode === "rh" && staff === "bass") || (handMode === "lh" && staff === "treble");
+}
+
+function formatGuidedCueLabel(finger: number | undefined, pitch: Pitch): string {
+  let accSymbol = "";
+  if (pitch.accidental === "#") accSymbol = "♯";
+  else if (pitch.accidental === "b") accSymbol = "♭";
+  const prefix = finger === undefined ? "" : `${finger}·`;
+  return `${prefix}${pitch.letter}${accSymbol}`;
+}
+
+function isAwaitedNote(
+  item: PlacedNoteEvent,
+  awaitedBeat: { barNumber: number; beatStart: number } | undefined,
+  handMode: HandPracticeMode,
+): boolean {
+  if (!awaitedBeat) return false;
+  if (isStaffDimmed(item.event.staff, handMode)) return false;
+  return (
+    item.measureNumber === awaitedBeat.barNumber &&
+    Math.abs(item.event.beatStart - awaitedBeat.beatStart) < 0.08
+  );
 }
 
 function resolveRestCenterY(isRhythmOnly: boolean, staff: Clef): number {
@@ -656,6 +713,165 @@ function NoteOverlays({
   );
 }
 
+function NotePitchHead({
+  eventId,
+  itemX,
+  pt,
+  pIdx,
+  fifths,
+  finger,
+  isRhythmOnly,
+  isUrtext,
+  isGuided,
+  dimmed,
+  isAwaited,
+  isHollow,
+  dotted,
+  showLandmarkCallout,
+  fillCls,
+  strokeCls,
+}: {
+  eventId: string;
+  itemX: number;
+  pt: { pitch: Pitch; step: number; y: number; dx: number };
+  pIdx: number;
+  fifths: number;
+  finger: number | undefined;
+  isRhythmOnly: boolean;
+  isUrtext: boolean;
+  isGuided: boolean;
+  dimmed: boolean;
+  isAwaited: boolean;
+  isHollow: boolean;
+  dotted: boolean;
+  showLandmarkCallout: boolean;
+  fillCls: string;
+  strokeCls: string;
+}): ReactNode {
+  const acc = isRhythmOnly ? null : resolveDisplayedAccidental(pt.pitch, fifths);
+  const nx = itemX + pt.dx;
+  const showLandmarkRing =
+    !isRhythmOnly && !isUrtext && showLandmarkCallout && isLandmarkMidi(pt.pitch.midi);
+
+  return (
+    <g key={`${eventId}-midi-${pt.pitch.midi}`}>
+      {isAwaited && (
+        <circle
+          cx={nx}
+          cy={pt.y}
+          r={11.5}
+          className="fill-amber-400/20 stroke-amber-500 dark:stroke-amber-400"
+          strokeWidth={1.8}
+        />
+      )}
+      {isGuided && !dimmed && (
+        <circle
+          cx={nx}
+          cy={pt.y}
+          r={8.4}
+          className={resolveFingerRingClass(finger, pt.pitch.midi)}
+          strokeWidth={1.5}
+        />
+      )}
+      {showLandmarkRing && (
+        <circle
+          cx={nx}
+          cy={pt.y}
+          r={9.5}
+          className="fill-intelligence-blue/15 stroke-intelligence-blue"
+          strokeWidth={1.4}
+        />
+      )}
+      {acc && <AccidentalGlyph kind={acc} x={itemX - 13 - (pIdx % 2) * 5} y={pt.y} />}
+      <ellipse
+        cx={nx}
+        cy={pt.y}
+        rx={NOTE_RX}
+        ry={NOTE_RY}
+        transform={`rotate(-18 ${nx} ${pt.y})`}
+        className={isHollow ? `fill-[#FAF6EE] dark:fill-[#161311] ${strokeCls}` : fillCls}
+        strokeWidth={isHollow ? 1.8 : 0}
+      />
+      {dotted && <circle cx={nx + NOTE_RX + 4.5} cy={pt.y - 1.5} r={1.7} className={fillCls} />}
+    </g>
+  );
+}
+
+function StaffLedgerLines({
+  eventId,
+  itemX,
+  staff,
+  ledgerSteps,
+}: {
+  eventId: string;
+  itemX: number;
+  staff: Clef;
+  ledgerSteps: readonly number[];
+}): ReactNode {
+  return (
+    <>
+      {ledgerSteps.map((ls) => {
+        const ly = stepToY(ls, staff);
+        return (
+          <line
+            key={`${eventId}-ledger-${ls}`}
+            x1={itemX - 9.5}
+            y1={ly}
+            x2={itemX + 9.5}
+            y2={ly}
+            strokeWidth={1.1}
+            className="stroke-current/70"
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function StaffNoteStemAndCue({
+  item,
+  hasStem,
+  isBeamed,
+  beams,
+  strokeCls,
+  guidedCueLabel,
+  dimmed,
+}: {
+  item: PlacedNoteEvent;
+  hasStem: boolean;
+  isBeamed: boolean;
+  beams: number;
+  strokeCls: string;
+  guidedCueLabel: string | null;
+  dimmed: boolean;
+}): ReactNode {
+  return (
+    <>
+      {hasStem && (
+        <line
+          x1={item.stemX}
+          y1={item.stemStartY}
+          x2={item.stemX}
+          y2={item.stemEndY}
+          strokeWidth={1.35}
+          className={strokeCls}
+        />
+      )}
+      {hasStem && !isBeamed && <NoteFlags item={item} beams={beams} strokeCls={strokeCls} />}
+      {guidedCueLabel && !dimmed && (
+        <text
+          x={item.x}
+          y={item.event.staff === "treble" ? item.minY - 12 : item.maxY + 16}
+          textAnchor="middle"
+          className="fill-midnight-ink font-mono text-[9.5px] font-bold dark:fill-[#F5EFE4]"
+        >
+          {guidedCueLabel}
+        </text>
+      )}
+    </>
+  );
+}
+
 function StaffNoteNode({
   item,
   fifths,
@@ -665,6 +881,9 @@ function StaffNoteNode({
   showFingerings,
   showIntervalShapes,
   showRomanNumerals,
+  notationScaffold,
+  dimmed,
+  isAwaited,
 }: {
   item: PlacedNoteEvent;
   fifths: number;
@@ -674,14 +893,19 @@ function StaffNoteNode({
   showFingerings: boolean;
   showIntervalShapes: boolean;
   showRomanNumerals: boolean;
+  notationScaffold: NotationScaffold;
+  dimmed: boolean;
+  isAwaited: boolean;
 }): ReactNode {
   const { event } = item;
   const fillCls = statusFillClass(event.status);
   const strokeCls = statusStrokeClass(event.status);
+  const isGuided = notationScaffold === "guided-colors" && !isRhythmOnly;
+  const isUrtext = notationScaffold === "pure-urtext";
 
   if (event.isRest || item.pitchPoints.length === 0) {
     return (
-      <g className={fillCls}>
+      <g className={`${fillCls}${dimmed ? " opacity-35" : ""}`}>
         <RestGlyph
           duration={event.duration}
           x={item.x}
@@ -696,77 +920,58 @@ function StaffNoteNode({
   const dotted = isDottedDuration(event.duration);
   const beams = beamCountForDuration(event.duration);
   const ledgerSteps = collectLedgerSteps(item, isRhythmOnly);
+  const primaryPitch = item.pitchPoints[0]?.pitch;
+  const guidedCueLabel =
+    isGuided && primaryPitch ? formatGuidedCueLabel(event.finger, primaryPitch) : null;
 
   return (
-    <g>
-      {ledgerSteps.map((ls) => {
-        const ly = stepToY(ls, event.staff);
-        return (
-          <line
-            key={`${event.id}-ledger-${ls}`}
-            x1={item.x - 9.5}
-            y1={ly}
-            x2={item.x + 9.5}
-            y2={ly}
-            strokeWidth={1.1}
-            className="stroke-current/70"
-          />
-        );
-      })}
+    <g className={dimmed ? "opacity-35" : undefined}>
+      <StaffLedgerLines
+        eventId={event.id}
+        itemX={item.x}
+        staff={event.staff}
+        ledgerSteps={ledgerSteps}
+      />
 
-      {item.pitchPoints.map((pt, pIdx) => {
-        const acc = isRhythmOnly ? null : resolveDisplayedAccidental(pt.pitch, fifths);
-        const nx = item.x + pt.dx;
-        const showLandmarkRing =
-          !isRhythmOnly && showLandmarkCallout && isLandmarkMidi(pt.pitch.midi);
-
-        return (
-          <g key={`${event.id}-midi-${pt.pitch.midi}`}>
-            {showLandmarkRing && (
-              <circle
-                cx={nx}
-                cy={pt.y}
-                r={9.5}
-                className="fill-intelligence-blue/15 stroke-intelligence-blue"
-                strokeWidth={1.4}
-              />
-            )}
-            {acc && <AccidentalGlyph kind={acc} x={item.x - 13 - (pIdx % 2) * 5} y={pt.y} />}
-            <ellipse
-              cx={nx}
-              cy={pt.y}
-              rx={NOTE_RX}
-              ry={NOTE_RY}
-              transform={`rotate(-18 ${nx} ${pt.y})`}
-              className={isHollow ? `fill-[#FAF6EE] dark:fill-[#161311] ${strokeCls}` : fillCls}
-              strokeWidth={isHollow ? 1.8 : 0}
-            />
-            {dotted && (
-              <circle cx={nx + NOTE_RX + 4.5} cy={pt.y - 1.5} r={1.7} className={fillCls} />
-            )}
-          </g>
-        );
-      })}
-
-      {hasStem && (
-        <line
-          x1={item.stemX}
-          y1={item.stemStartY}
-          x2={item.stemX}
-          y2={item.stemEndY}
-          strokeWidth={1.35}
-          className={strokeCls}
+      {item.pitchPoints.map((pt, pIdx) => (
+        <NotePitchHead
+          key={`${event.id}-midi-${pt.pitch.midi}`}
+          eventId={event.id}
+          itemX={item.x}
+          pt={pt}
+          pIdx={pIdx}
+          fifths={fifths}
+          finger={event.finger}
+          isRhythmOnly={isRhythmOnly}
+          isUrtext={isUrtext}
+          isGuided={isGuided}
+          dimmed={dimmed}
+          isAwaited={isAwaited}
+          isHollow={isHollow}
+          dotted={dotted}
+          showLandmarkCallout={showLandmarkCallout}
+          fillCls={fillCls}
+          strokeCls={strokeCls}
         />
-      )}
-      {hasStem && !isBeamed && <NoteFlags item={item} beams={beams} strokeCls={strokeCls} />}
+      ))}
+
+      <StaffNoteStemAndCue
+        item={item}
+        hasStem={hasStem}
+        isBeamed={isBeamed}
+        beams={beams}
+        strokeCls={strokeCls}
+        guidedCueLabel={guidedCueLabel}
+        dimmed={dimmed}
+      />
       <NoteOverlays
         item={item}
         fillCls={fillCls}
         strokeCls={strokeCls}
         isRhythmOnly={isRhythmOnly}
-        showFingerings={showFingerings}
-        showIntervalShapes={showIntervalShapes}
-        showRomanNumerals={showRomanNumerals}
+        showFingerings={!isUrtext && !isGuided && showFingerings}
+        showIntervalShapes={!isUrtext && showIntervalShapes}
+        showRomanNumerals={!isUrtext && showRomanNumerals}
       />
     </g>
   );
@@ -795,6 +1000,10 @@ export const GrandStaff = defineComponent(
     showRomanNumerals = false,
     showIntervalShapes = false,
     showFingerings = false,
+    notationScaffold = "intervals-only",
+    handMode = "both",
+    awaitedBeat,
+    loopRange,
     onSelectMeasure,
   }: GrandStaffProps): ReactNode => {
     const [internalPreviewFocus, setInternalPreviewFocus] = useState<PreviewFocus>("all");
@@ -1055,8 +1264,37 @@ export const GrandStaff = defineComponent(
             {boxes.map((box) => {
               const isNextSpotlight = isLookAhead && nextMeasureNumber === box.measure.number;
               const isHardest = Boolean(box.measure.isHardestBar) && showHardestCallout;
+              const isInLoop =
+                loopRange !== undefined &&
+                box.measure.number >= loopRange.startBar &&
+                box.measure.number <= loopRange.endBar;
+              const isLoopStart =
+                loopRange !== undefined && box.measure.number === loopRange.startBar;
               return (
                 <g key={`bg-${box.measure.number}`}>
+                  {isInLoop && (
+                    <g>
+                      <rect
+                        x={box.startX + 1}
+                        y={isRhythmOnly ? 20 : 22}
+                        width={box.width - 2}
+                        height={svgHeight - 36}
+                        rx={8}
+                        className="fill-amber-500/8 stroke-amber-500/45"
+                        strokeWidth={1.2}
+                      />
+                      {isLoopStart && (
+                        <text
+                          x={box.startX + 8}
+                          y={16}
+                          className="fill-amber-700 font-mono text-[9.5px] font-bold tracking-wide dark:fill-amber-300"
+                        >
+                          LOOP m.{loopRange.startBar}–{loopRange.endBar}
+                        </text>
+                      )}
+                    </g>
+                  )}
+
                   {isNextSpotlight && (
                     <g>
                       <rect
@@ -1172,7 +1410,11 @@ export const GrandStaff = defineComponent(
                       x2={totalWidth - 18}
                       y2={TREBLE_TOP_Y + lineOffset * LINE_SPACING}
                       strokeWidth={0.95}
-                      className="stroke-current/45"
+                      className={
+                        isStaffDimmed("treble", handMode)
+                          ? "stroke-current/20"
+                          : "stroke-current/45"
+                      }
                     />
                     <line
                       x1={LEFT_MARGIN}
@@ -1180,12 +1422,18 @@ export const GrandStaff = defineComponent(
                       x2={totalWidth - 18}
                       y2={BASS_TOP_Y + lineOffset * LINE_SPACING}
                       strokeWidth={0.95}
-                      className="stroke-current/45"
+                      className={
+                        isStaffDimmed("bass", handMode) ? "stroke-current/20" : "stroke-current/45"
+                      }
                     />
                   </g>
                 ))}
-                <TrebleClefGlyph x={CLEF_X + 6} gLineY={stepToY(4, "treble")} />
-                <BassClefGlyph x={CLEF_X + 2} fLineY={stepToY(-4, "bass")} />
+                <g className={isStaffDimmed("treble", handMode) ? "opacity-35" : undefined}>
+                  <TrebleClefGlyph x={CLEF_X + 6} gLineY={stepToY(4, "treble")} />
+                </g>
+                <g className={isStaffDimmed("bass", handMode) ? "opacity-35" : undefined}>
+                  <BassClefGlyph x={CLEF_X + 2} fLineY={stepToY(-4, "bass")} />
+                </g>
               </g>
             )}
 
@@ -1367,15 +1615,18 @@ export const GrandStaff = defineComponent(
                       );
                     })}
 
-                  {showRomanNumerals && box.measure.harmonyLabel && !isRhythmOnly && (
-                    <text
-                      x={box.startX + MEASURE_PAD_LEFT}
-                      y={BASS_BOTTOM_Y + 36}
-                      className="fill-intelligence-blue font-mono text-[11px] font-semibold"
-                    >
-                      {box.measure.harmonyLabel}
-                    </text>
-                  )}
+                  {notationScaffold !== "pure-urtext" &&
+                    showRomanNumerals &&
+                    box.measure.harmonyLabel &&
+                    !isRhythmOnly && (
+                      <text
+                        x={box.startX + MEASURE_PAD_LEFT}
+                        y={BASS_BOTTOM_Y + 36}
+                        className="fill-intelligence-blue font-mono text-[11px] font-semibold"
+                      >
+                        {box.measure.harmonyLabel}
+                      </text>
+                    )}
 
                   {isFinal ? (
                     <g className="stroke-current">
@@ -1414,6 +1665,9 @@ export const GrandStaff = defineComponent(
                 showFingerings={showFingerings}
                 showIntervalShapes={showIntervalShapes}
                 showRomanNumerals={showRomanNumerals}
+                notationScaffold={notationScaffold}
+                dimmed={isStaffDimmed(item.event.staff, handMode)}
+                isAwaited={isAwaitedNote(item, awaitedBeat, handMode)}
               />
             ))}
 
@@ -1427,9 +1681,13 @@ export const GrandStaff = defineComponent(
               const beamY2 = last.stemEndY;
               const dir = first.stemUp ? 1 : -1;
               const hasSixteenth = members.some((m) => m.event.duration === "sixteenth");
+              const beamDimmed = isStaffDimmed(first.event.staff, handMode);
 
               return (
-                <g key={`beam-${groupKey}`} className="fill-current stroke-current">
+                <g
+                  key={`beam-${groupKey}`}
+                  className={`fill-current stroke-current${beamDimmed ? " opacity-35" : ""}`}
+                >
                   {members.map((m) => {
                     const t =
                       last.stemX === first.stemX

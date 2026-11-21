@@ -5,6 +5,8 @@ import {
   Eye,
   EyeOff,
   HelpCircle,
+  Mic,
+  MicOff,
   Music2,
   Shuffle,
   SlidersHorizontal,
@@ -12,11 +14,14 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
 import {
+  createMicPianoListener,
   installAudioUnlockListeners,
+  type MicListenerStatus,
+  type MicPianoListener,
   setAudioPreferences,
   setSustainPedal,
 } from "~/audio/music-mode";
@@ -31,10 +36,14 @@ import {
 import { pickBestRecitalTake } from "~/lib/music-mode/playthrough-sim";
 import {
   type ExerciseKind,
+  type HandPracticeMode,
   type KeySignatureId,
+  type MeasureLoopRange,
   type MusicModeState,
   MusicModeStateSchema,
+  type NotationScaffold,
   type PracticeCadence,
+  type PracticeMode,
   type ScorePassage,
   type ScoreTier,
 } from "~/lib/music-mode/schemas";
@@ -230,12 +239,339 @@ function ScoreLibraryBrowser({
   );
 }
 
+const PRACTICE_MODES: ReadonlyArray<{ id: PracticeMode; label: string }> = [
+  { id: "flow", label: "Flow" },
+  { id: "wait", label: "Wait" },
+];
+
+const HAND_MODES: ReadonlyArray<{ id: HandPracticeMode; label: string }> = [
+  { id: "both", label: "Both" },
+  { id: "rh", label: "RH" },
+  { id: "lh", label: "LH" },
+];
+
+const NOTATION_SCAFFOLDS: ReadonlyArray<{ id: NotationScaffold; label: string }> = [
+  { id: "guided-colors", label: "Guided" },
+  { id: "intervals-only", label: "Intervals" },
+  { id: "pure-urtext", label: "Urtext" },
+];
+
+function SegmentedRow<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: ReadonlyArray<{ id: T; label: string }>;
+  value: T;
+  onChange: (next: T) => void;
+}): ReactNode {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="font-medium text-muted-ash text-[11px] uppercase tracking-wide">
+        {label}
+      </span>
+      <div className="grid grid-flow-col gap-1.5">
+        {options.map((opt) => {
+          const active = opt.id === value;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(opt.id)}
+              className={[
+                "min-h-11 rounded-xl border px-3 py-2 font-medium text-xs transition-colors",
+                active
+                  ? "border-intelligence-blue bg-intelligence-blue text-white"
+                  : "border-black/10 bg-whisper-gray text-midnight-ink hover:bg-light-taupe dark:border-white/10",
+              ].join(" ")}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SpeedAndLoopSection({
+  preferences,
+  totalMeasures,
+  loopRange,
+  onLoopRangeChange,
+  onUpdateState,
+}: {
+  preferences: MusicModeState["preferences"];
+  totalMeasures: number;
+  loopRange: MeasureLoopRange | null;
+  onLoopRangeChange: (range: MeasureLoopRange | null) => void;
+  onUpdateState: (updater: (prev: MusicModeState) => MusicModeState) => void;
+}): ReactNode {
+  const barNumbers = Array.from({ length: Math.max(1, totalMeasures) }, (_, i) => i + 1);
+  const startBar = loopRange?.startBar ?? 1;
+  const endBar = loopRange?.endBar ?? Math.min(2, Math.max(1, totalMeasures));
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-black/8 bg-whisper-gray/60 p-3 text-xs dark:border-white/8">
+      <span className="font-medium text-muted-ash text-[11px] uppercase tracking-wide">
+        Speed &amp; A–B Measure Loop
+      </span>
+
+      <label className="flex flex-col gap-1">
+        <span className="flex items-center justify-between">
+          <span className="font-medium text-midnight-ink">Speed Scale</span>
+          <span className="font-mono text-midnight-ink">{preferences.tempoScalePct}%</span>
+        </span>
+        <input
+          type="range"
+          min={25}
+          max={125}
+          step={5}
+          value={preferences.tempoScalePct}
+          onChange={(e) => {
+            const tempoScalePct = Number(e.target.value);
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, tempoScalePct },
+            }));
+          }}
+          className="h-8 w-full accent-intelligence-blue"
+        />
+      </label>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          aria-pressed={preferences.autoTempoRamp}
+          onClick={() =>
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, autoTempoRamp: !prev.preferences.autoTempoRamp },
+            }))
+          }
+          className={[
+            "min-h-11 rounded-xl border px-2.5 py-2 font-medium text-xs transition-colors",
+            preferences.autoTempoRamp
+              ? "border-emerald-500/40 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+              : "border-black/10 bg-canvas-white text-muted-ash dark:border-white/10",
+          ].join(" ")}
+        >
+          Auto-Ramp (+5%)
+        </button>
+        <button
+          type="button"
+          aria-pressed={preferences.loopLeadIn}
+          onClick={() =>
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, loopLeadIn: !prev.preferences.loopLeadIn },
+            }))
+          }
+          className={[
+            "min-h-11 rounded-xl border px-2.5 py-2 font-medium text-xs transition-colors",
+            preferences.loopLeadIn
+              ? "border-intelligence-blue bg-intelligence-blue/10 text-intelligence-blue"
+              : "border-black/10 bg-canvas-white text-muted-ash dark:border-white/10",
+          ].join(" ")}
+        >
+          Loop Lead-In {preferences.loopLeadIn ? "On" : "Off"}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <label className="flex flex-1 items-center gap-1.5">
+          <span className="text-muted-ash">From</span>
+          <select
+            aria-label="Loop start bar"
+            value={startBar}
+            onChange={(e) => {
+              const nextStart = Number(e.target.value);
+              const nextEnd = Math.max(nextStart, loopRange?.endBar ?? nextStart);
+              onLoopRangeChange({ startBar: nextStart, endBar: nextEnd });
+            }}
+            className="min-h-11 flex-1 rounded-lg border border-black/10 bg-canvas-white px-2 text-midnight-ink text-xs dark:border-white/10"
+          >
+            {barNumbers.map((bar) => (
+              <option key={`start-${bar}`} value={bar}>
+                Bar {bar}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-1 items-center gap-1.5">
+          <span className="text-muted-ash">To</span>
+          <select
+            aria-label="Loop end bar"
+            value={endBar}
+            onChange={(e) => {
+              const nextEnd = Number(e.target.value);
+              const nextStart = Math.min(loopRange?.startBar ?? 1, nextEnd);
+              onLoopRangeChange({ startBar: nextStart, endBar: nextEnd });
+            }}
+            className="min-h-11 flex-1 rounded-lg border border-black/10 bg-canvas-white px-2 text-midnight-ink text-xs dark:border-white/10"
+          >
+            {barNumbers.map((bar) => (
+              <option key={`end-${bar}`} value={bar}>
+                Bar {bar}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => onLoopRangeChange(loopRange ? null : { startBar, endBar })}
+          className="min-h-11 rounded-lg border border-black/10 bg-canvas-white px-3 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+        >
+          {loopRange ? "Clear" : "Set Loop"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function resolveStudioMicButtonTone(micListening: boolean, micDenied: boolean): string {
+  if (micListening) {
+    return "border-emerald-500/45 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300";
+  }
+  if (micDenied) {
+    return "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+  }
+  return "border-black/10 bg-canvas-white text-midnight-ink hover:bg-light-taupe dark:border-white/10";
+}
+
+function MicAndMixerSection({
+  preferences,
+  micStatus,
+  micLevel,
+  micNoiseFloorRms,
+  micCalibrating,
+  onToggleMic,
+  onCalibrateMic,
+  onUpdateState,
+}: {
+  preferences: MusicModeState["preferences"];
+  micStatus: MicListenerStatus;
+  micLevel: number;
+  micNoiseFloorRms: number | null;
+  micCalibrating: boolean;
+  onToggleMic: () => void;
+  onCalibrateMic: () => void;
+  onUpdateState: (updater: (prev: MusicModeState) => MusicModeState) => void;
+}): ReactNode {
+  const micListening = micStatus === "listening";
+  const micDenied = micStatus === "denied" || micStatus === "error";
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-xl border border-black/8 bg-whisper-gray/60 p-3 text-xs dark:border-white/8">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-muted-ash text-[11px] uppercase tracking-wide">
+          Acoustic Mic &amp; Mixer
+        </span>
+        <span className="font-mono text-[10px] text-muted-ash uppercase">{micStatus}</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          aria-pressed={micListening}
+          onClick={onToggleMic}
+          className={[
+            "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium text-xs transition-colors",
+            resolveStudioMicButtonTone(micListening, micDenied),
+          ].join(" ")}
+        >
+          {micDenied ? (
+            <MicOff className="size-3.5" aria-hidden="true" />
+          ) : (
+            <Mic className="size-3.5" aria-hidden="true" />
+          )}
+          {micListening ? "Mic Listening" : "Arm Piano Mic"}
+        </button>
+        <button
+          type="button"
+          disabled={micCalibrating}
+          onClick={onCalibrateMic}
+          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-black/10 bg-canvas-white px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe disabled:opacity-50 dark:border-white/10"
+        >
+          {micCalibrating ? "Calibrating…" : "Calibrate Room"}
+        </button>
+      </div>
+
+      {micListening ? (
+        <div className="flex items-center gap-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-[width] duration-75"
+              style={{ width: `${Math.round(Math.min(1, micLevel) * 100)}%` }}
+            />
+          </div>
+          {micNoiseFloorRms !== null ? (
+            <span className="font-mono text-[10px] text-muted-ash">
+              Floor {(micNoiseFloorRms * 1000).toFixed(1)}m
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      <label className="flex flex-col gap-1">
+        <span className="flex items-center justify-between">
+          <span className="font-medium text-midnight-ink">Accompaniment Volume</span>
+          <span className="font-mono text-midnight-ink">
+            {Math.round(preferences.accompanimentVolume * 100)}%
+          </span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={Math.round(preferences.accompanimentVolume * 100)}
+          onChange={(e) => {
+            const accompanimentVolume = Number(e.target.value) / 100;
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, accompanimentVolume },
+            }));
+          }}
+          className="h-8 w-full accent-intelligence-blue"
+        />
+      </label>
+
+      <p className="text-[11px] text-muted-ash leading-4">
+        Headphone tip: use headphones when Acoustic Mic is armed so speakers never trigger false
+        notes (app echo is auto-muted while listening).
+      </p>
+    </div>
+  );
+}
+
 function StudioControlsPopover({
   state,
+  totalMeasures,
+  loopRange,
+  micStatus,
+  micLevel,
+  micNoiseFloorRms,
+  micCalibrating,
+  onLoopRangeChange,
+  onToggleMic,
+  onCalibrateMic,
   onUpdateState,
   onClose,
 }: {
   state: MusicModeState;
+  totalMeasures: number;
+  loopRange: MeasureLoopRange | null;
+  micStatus: MicListenerStatus;
+  micLevel: number;
+  micNoiseFloorRms: number | null;
+  micCalibrating: boolean;
+  onLoopRangeChange: (range: MeasureLoopRange | null) => void;
+  onToggleMic: () => void;
+  onCalibrateMic: () => void;
   onUpdateState: (updater: (prev: MusicModeState) => MusicModeState) => void;
   onClose: () => void;
 }): ReactNode {
@@ -334,7 +670,7 @@ function StudioControlsPopover({
       <dialog
         open
         aria-label="Studio Controls"
-        className="relative z-10 m-0 flex w-full max-w-md flex-col gap-3.5 rounded-2xl border border-black/10 bg-canvas-white p-4 text-midnight-ink shadow-card dark:border-white/10"
+        className="relative z-10 m-0 flex max-h-[88vh] w-full max-w-md flex-col gap-3.5 overflow-y-auto rounded-2xl border border-black/10 bg-canvas-white p-4 text-midnight-ink shadow-card dark:border-white/10"
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -352,6 +688,61 @@ function StudioControlsPopover({
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>
+
+        <SegmentedRow
+          label="Practice Mode"
+          options={PRACTICE_MODES}
+          value={preferences.practiceMode}
+          onChange={(practiceMode) =>
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, practiceMode },
+            }))
+          }
+        />
+
+        <SegmentedRow
+          label="Hands"
+          options={HAND_MODES}
+          value={preferences.handMode}
+          onChange={(handMode) =>
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, handMode },
+            }))
+          }
+        />
+
+        <SegmentedRow
+          label="Notation Scaffold"
+          options={NOTATION_SCAFFOLDS}
+          value={preferences.notationScaffold}
+          onChange={(notationScaffold) =>
+            onUpdateState((prev) => ({
+              ...prev,
+              preferences: { ...prev.preferences, notationScaffold },
+            }))
+          }
+        />
+
+        <SpeedAndLoopSection
+          preferences={preferences}
+          totalMeasures={totalMeasures}
+          loopRange={loopRange}
+          onLoopRangeChange={onLoopRangeChange}
+          onUpdateState={onUpdateState}
+        />
+
+        <MicAndMixerSection
+          preferences={preferences}
+          micStatus={micStatus}
+          micLevel={micLevel}
+          micNoiseFloorRms={micNoiseFloorRms}
+          micCalibrating={micCalibrating}
+          onToggleMic={onToggleMic}
+          onCalibrateMic={onCalibrateMic}
+          onUpdateState={onUpdateState}
+        />
 
         <label className="flex flex-col gap-1.5 rounded-xl border border-black/8 bg-whisper-gray/60 p-3 text-xs dark:border-white/8">
           <span className="flex items-center justify-between">
@@ -468,6 +859,99 @@ export const MusicModeStudio = defineComponent(
     const [controlsOpen, setControlsOpen] = useState(false);
     const [coachOpen, setCoachOpen] = useState(false);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    const [loopRange, setLoopRange] = useState<MeasureLoopRange | null>(null);
+    const [micStatus, setMicStatus] = useState<MicListenerStatus>("idle");
+    const [micLevel, setMicLevel] = useState(0);
+    const [micNoiseFloorRms, setMicNoiseFloorRms] = useState<number | null>(null);
+    const [micCalibrating, setMicCalibrating] = useState(false);
+
+    const micListenerRef = useRef<MicPianoListener | null>(null);
+    const micSubscribersRef = useRef<Set<(midi: number, velocity: number) => void>>(new Set());
+    const lastLevelUpdateRef = useRef(0);
+
+    function getOrCreateMicListener(): MicPianoListener {
+      if (micListenerRef.current) return micListenerRef.current;
+      const listener = createMicPianoListener();
+      listener.onStatusChange((status) => {
+        setMicStatus(status);
+        if (status !== "listening") {
+          setMicLevel(0);
+        }
+      });
+      listener.onPitchFrame((frame) => {
+        const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+        if (now - lastLevelUpdateRef.current >= 90) {
+          lastLevelUpdateRef.current = now;
+          setMicLevel(frame.level);
+        }
+      });
+      listener.onNoteOn((event) => {
+        const velocity = Math.min(1, Math.max(0.35, event.rms * 6));
+        for (const subscriber of micSubscribersRef.current) {
+          subscriber(event.midi, velocity);
+        }
+      });
+      micListenerRef.current = listener;
+      return listener;
+    }
+
+    function subscribeMicNoteOn(listener: (midi: number, velocity: number) => void): () => void {
+      micSubscribersRef.current.add(listener);
+      return () => {
+        micSubscribersRef.current.delete(listener);
+      };
+    }
+
+    function handleToggleMic(): void {
+      const listener = getOrCreateMicListener();
+      const status = listener.getStatus();
+      if (status === "listening" || status === "requesting") {
+        listener.stop();
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: { ...prev.preferences, micEnabled: false },
+        }));
+        return;
+      }
+      onUpdateState((prev) => ({
+        ...prev,
+        preferences: { ...prev.preferences, micEnabled: true },
+      }));
+      void listener.start().then((nextStatus) => {
+        if (nextStatus !== "listening") {
+          onUpdateState((prev) => ({
+            ...prev,
+            preferences: { ...prev.preferences, micEnabled: false },
+          }));
+        }
+      });
+    }
+
+    function handleCalibrateMic(): void {
+      const listener = getOrCreateMicListener();
+      setMicCalibrating(true);
+      void (async () => {
+        try {
+          if (listener.getStatus() !== "listening") {
+            const started = await listener.start();
+            if (started !== "listening") return;
+          }
+          const estimate = await listener.calibrateNoiseFloor(600);
+          if (estimate) {
+            setMicNoiseFloorRms(estimate.noiseFloorRms);
+          }
+        } finally {
+          setMicCalibrating(false);
+        }
+      })();
+    }
+
+    useEffect(() => {
+      return () => {
+        micListenerRef.current?.stop();
+        micListenerRef.current = null;
+      };
+    }, []);
 
     useEffect(() => {
       return installAudioUnlockListeners();
@@ -672,9 +1156,27 @@ export const MusicModeStudio = defineComponent(
               showQwertyHints={state.preferences.showQwertyHints}
               autoFocusOnPlay={state.preferences.autoFocusOnPlay}
               focusMode={focusMode}
+              practiceMode={state.preferences.practiceMode}
+              handMode={state.preferences.handMode}
+              notationScaffold={state.preferences.notationScaffold}
+              tempoScalePct={state.preferences.tempoScalePct}
+              autoTempoRamp={state.preferences.autoTempoRamp}
+              loopLeadIn={state.preferences.loopLeadIn}
+              accompanimentVolume={state.preferences.accompanimentVolume}
+              loopRange={loopRange}
+              micStatus={micStatus}
+              micLevel={micLevel}
               {...bestTakeProps}
               onFocusModeChange={setFocusMode}
               onOpenControls={() => setControlsOpen(true)}
+              onToggleMic={handleToggleMic}
+              subscribeMicNoteOn={subscribeMicNoteOn}
+              onTempoScaleChange={(tempoScalePct) =>
+                onUpdateState((prev) => ({
+                  ...prev,
+                  preferences: { ...prev.preferences, tempoScalePct },
+                }))
+              }
               onStepChange={(nextStep) => {
                 if (nextStep !== "look-ahead-play" && nextStep !== "rhythm-isolate") {
                   setFocusMode(false);
@@ -687,7 +1189,10 @@ export const MusicModeStudio = defineComponent(
                 const candidates = pool.length > 0 ? pool : SCORE_LIBRARY;
                 const idx = candidates.findIndex((p) => p.id === activePassage.id);
                 const next = candidates[(idx + 1) % candidates.length];
-                if (next) setActivePassage(next);
+                if (next) {
+                  setActivePassage(next);
+                  setLoopRange(null);
+                }
               }}
             />
           ) : null}
@@ -698,6 +1203,10 @@ export const MusicModeStudio = defineComponent(
               difficulty={state.adaptiveDifficulty}
               blindKeyboard={state.preferences.blindKeyboard}
               showQwertyHints={state.preferences.showQwertyHints}
+              micStatus={micStatus}
+              micLevel={micLevel}
+              onToggleMic={handleToggleMic}
+              subscribeMicNoteOn={subscribeMicNoteOn}
               {...flowReasonProps}
               onExerciseKindChange={setDrillKind}
               onDrillResult={handleDrillResult}
@@ -710,6 +1219,7 @@ export const MusicModeStudio = defineComponent(
               difficulty={state.adaptiveDifficulty}
               onSelectPassage={(passage) => {
                 setActivePassage(passage);
+                setLoopRange(null);
                 onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
                 setView("ritual");
               }}
@@ -722,6 +1232,7 @@ export const MusicModeStudio = defineComponent(
                 });
                 setProceduralSeed((prev) => prev + 1);
                 setActivePassage(fresh);
+                setLoopRange(null);
                 onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
                 setView("ritual");
               }}
@@ -780,6 +1291,15 @@ export const MusicModeStudio = defineComponent(
         {controlsOpen ? (
           <StudioControlsPopover
             state={state}
+            totalMeasures={activePassage.measures.length}
+            loopRange={loopRange}
+            micStatus={micStatus}
+            micLevel={micLevel}
+            micNoiseFloorRms={micNoiseFloorRms}
+            micCalibrating={micCalibrating}
+            onLoopRangeChange={setLoopRange}
+            onToggleMic={handleToggleMic}
+            onCalibrateMic={handleCalibrateMic}
             onUpdateState={onUpdateState}
             onClose={() => setControlsOpen(false)}
           />
