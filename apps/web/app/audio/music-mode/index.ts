@@ -39,6 +39,33 @@ export {
   getTimeSignatureSpec,
   synthesizeMetronomeClickPCM,
 } from "./metronome-dsp";
+export {
+  createMicPianoListener,
+  type DetectedNote,
+  DetectedNoteSchema,
+  detectActiveMidis,
+  detectSinglePianoNote,
+  estimateNoiseFloor,
+  MIC_MAX_MIDI,
+  MIC_MIN_MIDI,
+  type MicDetectionConfig,
+  type MicDetectionConfigInput,
+  MicDetectionConfigSchema,
+  type MicListenerStatus,
+  MicListenerStatusSchema,
+  type MicNoteOnEvent,
+  MicNoteOnEventSchema,
+  type MicNoteOnListener,
+  MicNoteTracker,
+  MicPianoListener,
+  type MicPitchFrame,
+  type MicPitchFrameListener,
+  MicPitchFrameSchema,
+  type MicStatusListener,
+  type NoiseFloorEstimate,
+  NoiseFloorEstimateSchema,
+  rmsToVuLevel,
+} from "./mic-listener";
 export { synthesizePianoChordPCM, synthesizePianoNotePCM } from "./piano-dsp";
 export {
   AudioPreferencesSchema,
