@@ -23,6 +23,8 @@ import {
 import type { WritableAtom } from "jotai";
 
 import { atomWithIDB } from "~/lib/atom-with-idb";
+import { createInitialMusicModeState } from "~/lib/music-mode/curriculum";
+import { MusicModeStateSchema } from "~/lib/music-mode/schemas";
 
 import { getDB } from "./db";
 import {
@@ -32,6 +34,7 @@ import {
   persistAvaShapesSession,
   persistAvaSymbolsSession,
   persistCurriculumProgress,
+  persistMusicModeSession,
   persistProgress,
   persistSettings,
   persistVectorDungeonSession,
@@ -197,3 +200,19 @@ export function getAvaLearningSessionAtom(id: AvaCollectionId): AvaLearningAtom 
   }
   return cached;
 }
+
+export const musicModeSessionAtom = atomWithIDB(
+  MusicModeStateSchema,
+  (snapshot) => snapshot.musicModeSession,
+  persistMusicModeSession,
+  createInitialMusicModeState(),
+  {
+    subscribe: (onChange) =>
+      subscribeRemoteWrites((message) => {
+        if (message.store === "musicModeSession" && message.key === "music-mode") {
+          onChange();
+        }
+      }),
+    read: async () => (await getDB()).get("musicModeSessions", "music-mode"),
+  },
+);

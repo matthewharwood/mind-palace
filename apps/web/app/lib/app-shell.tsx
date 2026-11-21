@@ -120,6 +120,26 @@ function AppsIcon(): ReactNode {
   );
 }
 
+function MusicIcon(): ReactNode {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+      />
+    </svg>
+  );
+}
+
 function SettingsIcon(): ReactNode {
   return (
     <svg
@@ -185,6 +205,7 @@ type Crumb =
   | { kind: "home"; label: string; current: boolean }
   | { kind: "apps"; label: string; current: boolean }
   | { kind: "app"; label: string; current: boolean }
+  | { kind: "music-mode"; label: string; current: boolean }
   | { kind: "ava-app"; label: string; current: boolean }
   | { kind: "ava-words-app"; label: string; current: boolean }
   | { kind: "progress"; label: string; current: boolean }
@@ -215,6 +236,13 @@ function CrumbLink(crumb: Crumb): ReactNode {
   if (crumb.kind === "app") {
     return (
       <Link to="/apps/vector-dungeon" className={linkClass}>
+        {crumb.label}
+      </Link>
+    );
+  }
+  if (crumb.kind === "music-mode") {
+    return (
+      <Link to="/apps/music-mode" className={linkClass}>
         {crumb.label}
       </Link>
     );
@@ -271,6 +299,8 @@ function buildCrumbs(segments: string[]): Crumb[] {
     crumbs.push({ kind: "apps", label: "Kid apps", current: segments.length === 1 });
     if (segments[1] === "vector-dungeon") {
       crumbs.push({ kind: "app", label: "Vector Dungeon", current: true });
+    } else if (segments[1] === "music-mode") {
+      crumbs.push({ kind: "music-mode", label: "Music Mode", current: true });
     } else if (segments[1] === "ava-shapes") {
       crumbs.push({ kind: "ava-app", label: "Ava's Shape Sounds", current: true });
     } else if (segments[1] === "ava-first-words") {
@@ -337,6 +367,7 @@ function RailNav({
   activeGoalId,
   onGoals,
   onApps,
+  onMusicMode,
   onProgress,
   onSettings,
   onNavigate,
@@ -346,6 +377,7 @@ function RailNav({
   activeGoalId: string | undefined;
   onGoals: boolean;
   onApps: boolean;
+  onMusicMode: boolean;
   onProgress: boolean;
   onSettings: boolean;
   onNavigate?: () => void;
@@ -424,6 +456,18 @@ function RailNav({
           {!collapsed && <span className="truncate">Kid apps</span>}
         </Link>
         <Link
+          to="/apps/music-mode"
+          onClick={onNavigate}
+          aria-current={onMusicMode ? "page" : undefined}
+          title={collapsed ? "Music Mode" : undefined}
+          className={navItemClass(onMusicMode, collapsed)}
+        >
+          <span className={onMusicMode ? "shrink-0 text-intelligence-blue" : "shrink-0"}>
+            <MusicIcon />
+          </span>
+          {!collapsed && <span className="truncate">Music Mode</span>}
+        </Link>
+        <Link
           to="/progress"
           onClick={onNavigate}
           aria-current={onProgress ? "page" : undefined}
@@ -464,7 +508,8 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
     activeGoalId = getGoalForCurriculum(segments[1])?.id;
   }
   const onGoals = segments[0] === "goals";
-  const onApps = segments[0] === "apps";
+  const onMusicMode = segments[0] === "apps" && segments[1] === "music-mode";
+  const onApps = segments[0] === "apps" && !onMusicMode;
   const onProgress = segments[0] === "progress";
   const onSettings = segments[0] === "settings";
   const [askOpen, setAskOpen] = useState(false);
@@ -495,6 +540,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
             activeGoalId={activeGoalId}
             onGoals={onGoals}
             onApps={onApps}
+            onMusicMode={onMusicMode}
             onProgress={onProgress}
             onSettings={onSettings}
           />
@@ -575,6 +621,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactNode {
               activeGoalId={activeGoalId}
               onGoals={onGoals}
               onApps={onApps}
+              onMusicMode={onMusicMode}
               onProgress={onProgress}
               onSettings={onSettings}
               onNavigate={() => setMobileNavOpen(false)}

@@ -11,6 +11,8 @@ import type {
 } from "@mind-palace/schemas";
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 
+import type { MusicModeState } from "~/lib/music-mode/schemas";
+
 export interface AppDB extends DBSchema {
   progress: { key: string; value: Progress };
   settings: { key: string; value: Settings };
@@ -21,13 +23,14 @@ export interface AppDB extends DBSchema {
   avaSymbolSessions: { key: string; value: AvaSymbolsSession };
   avaShapeSessions: { key: string; value: AvaShapesSession };
   avaFirstWordSessions: { key: string; value: AvaFirstWordsSession };
+  musicModeSessions: { key: string; value: MusicModeState };
 }
 
 // Namespaced by repo scope + app name (the package.json `name`). IndexedDB is
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
 export const DB_NAME = "@mind-palace/web";
-export const DB_VERSION = 10;
+export const DB_VERSION = 11;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
@@ -79,6 +82,9 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 10) {
         db.createObjectStore("avaLearningSessions", { keyPath: "id" });
+      }
+      if (oldVersion < 11) {
+        db.createObjectStore("musicModeSessions", { keyPath: "id" });
       }
     },
     blocked() {
