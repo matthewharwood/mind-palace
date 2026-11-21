@@ -1,8 +1,19 @@
-import { CheckCircle2, Ear, Hand, RefreshCw, Sparkles, Volume2, XCircle } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import {
+  CheckCircle2,
+  Ear,
+  Hand,
+  Mic,
+  MicOff,
+  RefreshCw,
+  Sparkles,
+  Volume2,
+  XCircle,
+} from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
 import {
+  MicListenerStatusSchema,
   playMusicSfx,
   playPianoChord,
   playPianoInterval,
@@ -10,6 +21,7 @@ import {
   releasePianoNote,
 } from "~/audio/music-mode";
 import { defineComponent } from "~/lib/define-component";
+import { selectChordDistractors } from "~/lib/music-mode/playthrough-sim";
 import {
   type ChordQuality,
   type ExerciseKind,
@@ -30,6 +42,8 @@ import {
 } from "~/lib/music-mode/theory";
 import { GrandStaff } from "./grand-staff";
 import { TactileKeyboard } from "./tactile-keyboard";
+import { midiToNoteName } from "./types";
+import { useMusicInputMap } from "./use-music-input-map";
 
 export const DrillResultSchema = z.object({
   exerciseKind: ExerciseKindSchema,
@@ -44,7 +58,14 @@ export const EarTrainingDrillPropsSchema = z.object({
   exerciseKind: ExerciseKindSchema,
   difficulty: z.int().min(1).max(10).default(1),
   blindKeyboard: z.boolean().default(true),
+  showQwertyHints: z.boolean().default(false),
   lastFlowReason: z.string().optional(),
+  micStatus: MicListenerStatusSchema.default("idle"),
+  micLevel: z.number().min(0).max(1).default(0),
+  onToggleMic: z.custom<() => void>().optional(),
+  subscribeMicNoteOn: z
+    .custom<(listener: (midi: number, velocity: number) => void) => () => void>()
+    .optional(),
   onExerciseKindChange: z.custom<(kind: ExerciseKind) => void>(),
   onDrillResult: z.custom<(result: DrillResult) => void>(),
 });
@@ -216,6 +237,9 @@ function buildDrillPrompt(kind: ExerciseKind, difficulty: number, seed: number):
     const chosen = pool[seed % pool.length] ?? CHORD_BANK[0];
     const chord = buildChord(rootPitch, chosen?.quality ?? "major", 0);
     const notes = chord.pitches.map((p) => p.midi);
+    const options = chosen
+      ? selectChordDistractors(pool, chosen, 4)
+      : pool.slice(0, 4).map((c) => c.label);
     return {
       promptKey: `${kind}:${chosen?.quality ?? "major"}:${rootMidi}`,
       title: kind === "shape-chunk" ? "Visual Chord Shape Chunk" : "Ear Chord Quality",
@@ -225,7 +249,7 @@ function buildDrillPrompt(kind: ExerciseKind, difficulty: number, seed: number):
           : "Listen to the harmonic color and identify the chord quality.",
       answerLabel: chosen?.label ?? "Major triad",
       explanation: `${chord.symbol} — ${chosen?.hint ?? ""}`,
-      options: pool.slice(0, 4).map((c) => c.label),
+      options,
       notes,
       staffMeasure: buildStaffMeasureFromPitches(chord.pitches, true),
       staffKey: cMajor,
@@ -261,10 +285,10 @@ function buildDrillPrompt(kind: ExerciseKind, difficulty: number, seed: number):
     return {
       promptKey: `tactile-blind-frame:${anchorName}`,
       title: "Tactile Blind Hand-Frame",
-      subtitle: `Find the ${anchorName} 5-finger frame by feeling the black-key clusters without peeking.`,
+      subtitle: `Find and play the ${anchorName} anchor key on the keyboard by feeling the black-key clusters.`,
       answerLabel: `${anchorName} frame`,
       explanation: frame.blindNavigationCue,
-      options: anchors.slice(0, 4).map((a) => `${a} frame`),
+      options: anchors.map((a) => `${a} frame`),
       notes: framePitches.map((p) => p.midi),
       showStaff: false,
       showKeyboard: true,
@@ -283,8 +307,7 @@ function buildDrillPrompt(kind: ExerciseKind, difficulty: number, seed: number):
     return {
       promptKey: `ear-dictation:${seed % contours.length}`,
       title: "Melodic Ear Dictation",
-      subtitle:
-        "Listen to the 3-note contour, play it back on the keyboard, then identify its shape.",
+      subtitle: "Listen to the 3-note contour, then play all 3 notes back on the keyboard.",
       answerLabel: chosen?.label ?? "Arpeggio Triad (C–E–G)",
       explanation: "Hear relative intervals (steps vs. skips) rather than isolated pitch names.",
       options: contours.map((c) => c.label),
@@ -364,6 +387,16 @@ function resolveDrillRating(correct: boolean, elapsedMs: number): FSRSRating {
   return elapsedMs < 2500 ? "easy" : "good";
 }
 
+function removeMidiFromPressed(midi: number): (prev: number[]) => number[] {
+  return (prev) => prev.filter((n) => n !== midi);
+}
+
+function resolveEarMicDotClass(micListening: boolean, micStatus: string): string {
+  if (micListening) return "bg-emerald-500";
+  if (micStatus === "denied" || micStatus === "error") return "bg-rose-500";
+  return "bg-black/20 dark:bg-white/20";
+}
+
 function resolveOptionTone(answered: boolean, isRightAnswer: boolean, isPicked: boolean): string {
   if (!answered) {
     return "border-black/10 bg-whisper-gray/70 text-midnight-ink hover:border-intelligence-blue/50 hover:bg-whisper-gray dark:border-white/10";
@@ -383,7 +416,12 @@ export const EarTrainingDrill = defineComponent(
     exerciseKind,
     difficulty,
     blindKeyboard,
+    showQwertyHints,
     lastFlowReason,
+    micStatus,
+    micLevel,
+    onToggleMic,
+    subscribeMicNoteOn,
     onExerciseKindChange,
     onDrillResult,
   }): ReactNode => {
@@ -391,17 +429,25 @@ export const EarTrainingDrill = defineComponent(
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [startedAtMs, setStartedAtMs] = useState<number>(() => Date.now());
     const [pressedNotes, setPressedNotes] = useState<number[]>([]);
+    const [playedSequence, setPlayedSequence] = useState<Array<{ id: number; midi: number }>>([]);
+    const [octaveShift, setOctaveShift] = useState(0);
+    const [liveAnnouncement, setLiveAnnouncement] = useState("");
 
     const prompt = buildDrillPrompt(exerciseKind, difficulty, seed);
     const answered = selectedOption !== null;
     const isCorrect = selectedOption === prompt.answerLabel;
+    const isKeyboardAnswerMode =
+      exerciseKind === "ear-dictation" || exerciseKind === "tactile-blind-frame";
+    const micListening = micStatus === "listening";
 
-    function handleAnswer(option: string): void {
+    function submitResult(correct: boolean, label: string): void {
       if (answered) return;
       const elapsed = Math.max(0, Date.now() - startedAtMs);
-      const correct = option === prompt.answerLabel;
-      setSelectedOption(option);
+      setSelectedOption(label);
       playMusicSfx(correct ? "correctInterval" : "gentleMiss");
+      setLiveAnnouncement(
+        correct ? `Correct: ${prompt.answerLabel}` : `Missed. Answer: ${prompt.answerLabel}`,
+      );
       const rating = resolveDrillRating(correct, elapsed);
       onDrillResult({
         exerciseKind,
@@ -412,14 +458,84 @@ export const EarTrainingDrill = defineComponent(
       });
     }
 
+    function handleAnswer(option: string): void {
+      submitResult(option === prompt.answerLabel, option);
+    }
+
+    function handleKeyboardNoteOn(midi: number, velocity: number, fromMic = false): void {
+      if (!fromMic && !micListening) {
+        playPianoNote({ midi, velocity });
+      }
+      setPressedNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
+      if (fromMic) {
+        setTimeout(() => {
+          setPressedNotes(removeMidiFromPressed(midi));
+        }, 220);
+      }
+      if (answered || !isKeyboardAnswerMode) return;
+
+      if (exerciseKind === "tactile-blind-frame") {
+        const anchorMidi = prompt.notes[0] ?? 60;
+        const matched = midi === anchorMidi;
+        setPlayedSequence([{ id: Date.now(), midi }]);
+        submitResult(matched, matched ? prompt.answerLabel : `Played ${midiToNoteName(midi)}`);
+        return;
+      }
+
+      // ear-dictation: capture 3-note contour on the keyboard and grade live
+      const nextSeq = [...playedSequence, { id: Date.now() + playedSequence.length, midi }];
+      setPlayedSequence(nextSeq);
+      if (nextSeq.length >= prompt.notes.length) {
+        const exact = prompt.notes.every((expected, idx) => nextSeq[idx]?.midi === expected);
+        const playedLabel = nextSeq.map((n) => midiToNoteName(n.midi)).join("–");
+        submitResult(exact, exact ? prompt.answerLabel : `Played ${playedLabel}`);
+      } else {
+        setLiveAnnouncement(`Recorded note ${nextSeq.length} of ${prompt.notes.length}`);
+      }
+    }
+
+    const micNoteHandlerRef = useRef<(midi: number, velocity: number) => void>(() => undefined);
+    useEffect(() => {
+      micNoteHandlerRef.current = (midi, velocity) => {
+        handleKeyboardNoteOn(midi, velocity, true);
+      };
+    });
+
+    useEffect(() => {
+      if (!subscribeMicNoteOn) return;
+      return subscribeMicNoteOn((midi, velocity) => {
+        micNoteHandlerRef.current(midi, velocity);
+      });
+    }, [subscribeMicNoteOn]);
+
+    function handleKeyboardNoteOff(midi: number): void {
+      releasePianoNote(midi);
+      setPressedNotes((prev) => prev.filter((n) => n !== midi));
+    }
+
+    useMusicInputMap({
+      enabled: prompt.showKeyboard,
+      baseOctave: Math.max(1, Math.min(5, 4 + octaveShift)),
+      mode: "piano",
+      onNoteOn: handleKeyboardNoteOn,
+      onNoteOff: handleKeyboardNoteOff,
+      onOctaveShift: (delta) => setOctaveShift((prev) => Math.max(-2, Math.min(2, prev + delta))),
+    });
+
     function nextCard(): void {
       setSeed((prev) => prev + 1);
       setSelectedOption(null);
+      setPlayedSequence([]);
       setStartedAtMs(Date.now());
+      setLiveAnnouncement("");
     }
 
     return (
       <section className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-canvas-white p-4 shadow-card sm:p-5 dark:border-white/10">
+        <output aria-live="polite" className="sr-only">
+          {liveAnnouncement}
+        </output>
+
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {exerciseKind === "tactile-blind-frame" ? (
@@ -444,13 +560,15 @@ export const EarTrainingDrill = defineComponent(
               <button
                 key={tab.kind}
                 type="button"
+                aria-pressed={active}
                 onClick={() => {
                   onExerciseKindChange(tab.kind);
                   setSelectedOption(null);
+                  setPlayedSequence([]);
                   setStartedAtMs(Date.now());
                 }}
                 className={[
-                  "rounded-lg border px-2.5 py-1 font-medium text-xs transition-colors",
+                  "min-h-11 rounded-lg border px-3 py-1.5 font-medium text-xs transition-colors",
                   active
                     ? "border-intelligence-blue bg-intelligence-blue text-white"
                     : "border-black/10 bg-whisper-gray text-muted-ash hover:text-midnight-ink dark:border-white/10",
@@ -473,7 +591,7 @@ export const EarTrainingDrill = defineComponent(
           <button
             type="button"
             onClick={() => playPromptAudio(prompt, false)}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-intelligence-blue px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-intelligence-blue/90"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-intelligence-blue px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-intelligence-blue/90"
           >
             <Volume2 className="size-4" />
             Play Prompt
@@ -481,14 +599,44 @@ export const EarTrainingDrill = defineComponent(
           <button
             type="button"
             onClick={() => playPromptAudio(prompt, true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-whisper-gray px-3.5 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-black/10 bg-whisper-gray px-3.5 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
           >
             Slow Arpeggiate
           </button>
+          {onToggleMic ? (
+            <button
+              type="button"
+              aria-label={micListening ? "Disable acoustic mic" : "Enable acoustic mic"}
+              aria-pressed={micListening}
+              onClick={onToggleMic}
+              className={[
+                "relative inline-flex min-h-11 items-center gap-1.5 rounded-xl border px-3 py-2 font-medium text-xs transition-colors",
+                micListening
+                  ? "border-emerald-500/40 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                  : "border-black/10 bg-whisper-gray text-midnight-ink hover:bg-light-taupe dark:border-white/10",
+              ].join(" ")}
+            >
+              {micStatus === "denied" || micStatus === "error" ? (
+                <MicOff className="size-3.5 text-rose-600" aria-hidden="true" />
+              ) : (
+                <Mic className="size-3.5" aria-hidden="true" />
+              )}
+              <span>{micListening ? "Mic On" : "Mic"}</span>
+              <span
+                aria-hidden="true"
+                className={`size-2 rounded-full ${resolveEarMicDotClass(micListening, micStatus)}`}
+                style={
+                  micListening
+                    ? { transform: `scale(${(0.85 + micLevel * 0.65).toFixed(2)})` }
+                    : undefined
+                }
+              />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={nextCard}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-xl border border-black/10 bg-canvas-white px-3 py-2 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
+            className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-black/10 bg-canvas-white px-3 py-2 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
           >
             <RefreshCw className="size-3.5" />
             Next Prompt
@@ -497,6 +645,7 @@ export const EarTrainingDrill = defineComponent(
 
         {prompt.showStaff && prompt.staffMeasure && prompt.staffKey ? (
           <GrandStaff
+            hideHeader
             keySignature={prompt.staffKey}
             timeSignature={{ numerator: 4, denominator: 4 }}
             measures={[prompt.staffMeasure]}
@@ -506,42 +655,74 @@ export const EarTrainingDrill = defineComponent(
         ) : null}
 
         {prompt.showKeyboard ? (
-          <TactileKeyboard
-            startOctave={3}
-            octaves={2}
-            pressedNotes={pressedNotes}
-            targetNotes={answered ? [...prompt.notes] : []}
-            blindVeil={blindKeyboard}
-            enableWebMidi
-            onNoteOn={(midi, velocity) => {
-              playPianoNote({ midi, velocity });
-              setPressedNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
-            }}
-            onNoteOff={(midi) => {
-              releasePianoNote(midi);
-              setPressedNotes((prev) => prev.filter((n) => n !== midi));
-            }}
-          />
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-black/8 bg-whisper-gray/70 px-3 py-2 text-xs dark:border-white/8">
+              <span className="font-medium text-midnight-ink">
+                {exerciseKind === "ear-dictation"
+                  ? `Play back ${prompt.notes.length} notes (${playedSequence.length}/${prompt.notes.length})`
+                  : "Play the anchor key on the keyboard"}
+              </span>
+              {playedSequence.length > 0 ? (
+                <div className="flex items-center gap-1 font-mono text-[11px]">
+                  {playedSequence.map((entry) => (
+                    <span
+                      key={entry.id}
+                      className="rounded-md bg-canvas-white px-2 py-0.5 text-midnight-ink"
+                    >
+                      {midiToNoteName(entry.midi)}
+                    </span>
+                  ))}
+                  {!answered && (
+                    <button
+                      type="button"
+                      onClick={() => setPlayedSequence([])}
+                      className="ml-1 min-h-11 rounded-md px-2 text-muted-ash underline hover:text-midnight-ink"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              ) : null}
+            </div>
+            <TactileKeyboard
+              startOctave={3}
+              octaves={2}
+              octaveShift={octaveShift}
+              onOctaveShiftChange={setOctaveShift}
+              pressedNotes={pressedNotes}
+              targetNotes={answered ? [...prompt.notes] : []}
+              correctNotes={answered && isCorrect ? [...prompt.notes] : []}
+              wrongNotes={answered && !isCorrect ? playedSequence.map((e) => e.midi) : []}
+              blindVeil={blindKeyboard}
+              showQwertyHints={showQwertyHints}
+              qwertyBaseOctave={Math.max(1, Math.min(5, 4 + octaveShift))}
+              enableWebMidi
+              onNoteOn={handleKeyboardNoteOn}
+              onNoteOff={handleKeyboardNoteOff}
+            />
+          </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2">
-          {prompt.options.map((option) => {
-            const isPicked = selectedOption === option;
-            const isRightAnswer = option === prompt.answerLabel;
-            const optionTone = resolveOptionTone(answered, isRightAnswer, isPicked);
+        {!isKeyboardAnswerMode ? (
+          <div className="grid grid-cols-2 gap-2">
+            {prompt.options.map((option) => {
+              const isPicked = selectedOption === option;
+              const isRightAnswer = option === prompt.answerLabel;
+              const optionTone = resolveOptionTone(answered, isRightAnswer, isPicked);
 
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => handleAnswer(option)}
-                className={`rounded-xl border px-3.5 py-3 text-left font-medium text-sm transition-colors ${optionTone}`}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleAnswer(option)}
+                  className={`min-h-11 rounded-xl border px-3.5 py-3 text-left font-medium text-sm transition-colors ${optionTone}`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         {answered ? (
           <div
@@ -568,7 +749,7 @@ export const EarTrainingDrill = defineComponent(
             <button
               type="button"
               onClick={nextCard}
-              className="rounded-lg bg-midnight-ink px-3 py-1.5 font-medium text-canvas-white text-xs transition-opacity hover:opacity-90"
+              className="min-h-11 rounded-lg bg-midnight-ink px-4 py-2 font-medium text-canvas-white text-xs transition-opacity hover:opacity-90"
             >
               Continue →
             </button>

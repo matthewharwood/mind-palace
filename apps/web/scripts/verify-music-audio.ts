@@ -4,7 +4,13 @@ import {
   computeFFT,
   computeRMS,
   DEFAULT_SAMPLE_RATE,
+  detectActiveMidis,
+  detectSinglePianoNote,
+  estimateNoiseFloor,
   findSpectralPeakNear,
+  MIC_MAX_MIDI,
+  MIC_MIN_MIDI,
+  MicNoteTracker,
   midiToFrequency,
   midiToNoteName,
   mixToMono,
@@ -358,11 +364,162 @@ function verifySfx(): void {
   );
 }
 
+function verifyMicPitchDetection(): void {
+  logLine("\n=== 6. Acoustic Piano Mic Pitch & Chord Detection (C2..C7) ===");
+
+  let singleMatched = 0;
+  let polySingleClean = 0;
+  const totalKeys = MIC_MAX_MIDI - MIC_MIN_MIDI + 1;
+
+  for (let midi = MIC_MIN_MIDI; midi <= MIC_MAX_MIDI; midi += 1) {
+    const mono = mixToMono(
+      synthesizePianoNotePCM({
+        midi,
+        velocity: 0.78,
+        durationSeconds: 0.45,
+        sampleRate: DEFAULT_SAMPLE_RATE,
+      }),
+    );
+
+    const single = detectSinglePianoNote(mono, DEFAULT_SAMPLE_RATE);
+    const label = `${midiToNoteName(midi)} (MIDI ${midi})`;
+    const detectedDesc = single ? `${single.noteName}(${single.midi})` : "null";
+    assertCheck(
+      single !== null && single.midi === midi,
+      `Mic single-note failed for ${label}: detected=${detectedDesc}`,
+    );
+    if (single !== null && single.midi === midi) {
+      singleMatched += 1;
+    }
+
+    const active = detectActiveMidis(mono, DEFAULT_SAMPLE_RATE);
+    const midis = active.map((n) => n.midi);
+    assertCheck(
+      midis.length === 1 && midis[0] === midi,
+      `Mic poly single-note ghost for ${label}: detected=[${midis.join(",")}]`,
+    );
+    if (midis.length === 1 && midis[0] === midi) {
+      polySingleClean += 1;
+    }
+  }
+
+  const intervals: ReadonlyArray<readonly [string, readonly [number, number]]> = [
+    ["m2", [60, 61]],
+    ["M3", [60, 64]],
+    ["P5", [60, 67]],
+    ["P8", [60, 72]],
+    ["LH+RH", [48, 64]],
+  ];
+  for (const [name, pair] of intervals) {
+    const mono = mixToMono(
+      synthesizePianoChordPCM({
+        notes: [...pair],
+        velocity: 0.8,
+        durationSeconds: 0.5,
+        sampleRate: DEFAULT_SAMPLE_RATE,
+      }),
+    );
+    const detected = detectActiveMidis(mono, DEFAULT_SAMPLE_RATE).map((n) => n.midi);
+    const detectedSet = new Set(detected);
+    for (const midi of pair) {
+      assertCheck(
+        detectedSet.has(midi),
+        `Mic interval ${name}: missing ${midiToNoteName(midi)} in [${detected.join(",")}]`,
+      );
+    }
+  }
+
+  const chords: ReadonlyArray<{ readonly name: string; readonly notes: readonly number[] }> = [
+    { name: "C Major", notes: [60, 64, 67] },
+    { name: "A Minor", notes: [57, 60, 64] },
+    { name: "G Major", notes: [55, 59, 62] },
+    { name: "Chopin Eb", notes: [51, 58, 63, 67] },
+  ];
+  for (const chord of chords) {
+    const mono = mixToMono(
+      synthesizePianoChordPCM({
+        notes: [...chord.notes],
+        velocity: 0.8,
+        durationSeconds: 0.5,
+        sampleRate: DEFAULT_SAMPLE_RATE,
+      }),
+    );
+    const detected = detectActiveMidis(mono, DEFAULT_SAMPLE_RATE, {
+      maxPolyphony: Math.max(4, chord.notes.length),
+    }).map((n) => n.midi);
+    const detectedSet = new Set(detected);
+    for (const midi of chord.notes) {
+      assertCheck(
+        detectedSet.has(midi),
+        `Mic chord ${chord.name}: missing ${midiToNoteName(midi)} in [${detected.join(",")}]`,
+      );
+    }
+  }
+
+  // Sustained piano note hysteresis: must fire exactly 1 noteOn over 1.4s ring-out
+  const tracker = new MicNoteTracker({ minHoldFrames: 2, retriggerCooldownMs: 140 });
+  const sustainedNote = mixToMono(
+    synthesizePianoNotePCM({
+      midi: 60,
+      velocity: 0.82,
+      durationSeconds: 1.4,
+      sustainPedal: true,
+      sampleRate: DEFAULT_SAMPLE_RATE,
+    }),
+  );
+  const triggeredMidis: number[] = [];
+  for (let offset = 0; offset + 8192 <= sustainedNote.length; offset += 1024) {
+    const slice = sustainedNote.subarray(offset, offset + 8192);
+    const { noteOns } = tracker.processFrame(
+      slice,
+      DEFAULT_SAMPLE_RATE,
+      (offset / DEFAULT_SAMPLE_RATE) * 1000,
+    );
+    for (const ev of noteOns) {
+      triggeredMidis.push(ev.midi);
+    }
+  }
+  assertCheck(
+    triggeredMidis.length === 1 && triggeredMidis[0] === 60,
+    `Mic sustain hysteresis failed: expected [60], got [${triggeredMidis.join(",")}]`,
+  );
+
+  // Silence & broadband noise negative tests (0 false triggers)
+  const silence = new Float32Array(8192);
+  const noise = new Float32Array(8192);
+  let seed = 1337;
+  for (let i = 0; i < noise.length; i += 1) {
+    seed = (seed * 1_664_525 + 1_013_904_223) >>> 0;
+    noise[i] = ((seed / 4_294_967_296) * 2 - 1) * 0.12;
+  }
+  const noiseEstimate = estimateNoiseFloor([silence, noise]);
+  assertCheck(noiseEstimate.frameCount === 2, "Mic noise floor calibration failed");
+  assertCheck(
+    detectActiveMidis(silence, DEFAULT_SAMPLE_RATE).length === 0,
+    "Mic silence produced false trigger",
+  );
+  assertCheck(
+    detectActiveMidis(noise, DEFAULT_SAMPLE_RATE).length === 0,
+    "Mic broadband noise produced false trigger",
+  );
+
+  logLine(
+    `  Single keys (C2..C7): YIN=${singleMatched}/${totalKeys} exact | Poly-clean=${polySingleClean}/${totalKeys} (0 ghost overtones)`,
+  );
+  logLine(
+    "  Polyphonic: 5 intervals (m2..P8 + LH/RH) + 4 chords (C Maj, A Min, G Maj, Chopin Eb) verified",
+  );
+  logLine(
+    "  Hysteresis & Negative Tests: 1.4s sustain = 1 noteOn, silence/noise = 0 false triggers",
+  );
+}
+
 verifyAll88PianoKeys();
 verifyDynamicsAndDamper();
 verifyIntervalsAndChords();
 verifyMetronome();
 verifySfx();
+verifyMicPitchDetection();
 
 if (failures.length > 0) {
   logError(`\nFAILED with ${failures.length} audio verification error(s):`);

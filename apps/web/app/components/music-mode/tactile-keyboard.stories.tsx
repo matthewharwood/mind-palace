@@ -48,6 +48,7 @@ export const NoPeekingVeilActive: Story = {
     showNoteLabels: false,
     emphasizeBlackClusters: true,
     blindVeil: true,
+    showVeilToggle: true,
     targetNotes: [60, 64, 67],
     handFrames: [{ hand: "RH", rootMidi: 60, label: "Feel C–G" }],
   },

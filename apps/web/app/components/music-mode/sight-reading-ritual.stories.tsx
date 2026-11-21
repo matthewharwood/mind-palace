@@ -22,6 +22,9 @@ const meta: Meta<typeof SightReadingRitual> = {
     lookAheadMasking: true,
     showIntervalsOverlay: true,
     showRomanNumerals: false,
+    showQwertyHints: false,
+    autoFocusOnPlay: true,
+    focusMode: false,
     onStepChange: () => undefined,
     onRate: () => undefined,
   },
@@ -44,6 +47,22 @@ export const Step3LookAheadPlay: Story = {
     passage: chopinPassage,
     step: "look-ahead-play",
     showRomanNumerals: true,
+  },
+};
+
+export const Step3WaitModeLoopRH: Story = {
+  args: {
+    passage: chopinPassage,
+    step: "look-ahead-play",
+    practiceMode: "wait",
+    handMode: "rh",
+    notationScaffold: "guided-colors",
+    tempoScalePct: 75,
+    autoTempoRamp: true,
+    loopRange: { startBar: 1, endBar: 2 },
+    micStatus: "listening",
+    micLevel: 0.45,
+    onToggleMic: () => undefined,
   },
 };
 

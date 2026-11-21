@@ -19,8 +19,10 @@ export {
   mixToMono,
 } from "./dsp-core";
 export {
+  computeTransportClockAtTime,
   createMusicMetronome,
   getSustainPedal,
+  getTransportClock,
   type MusicMetronomeController,
   playMusicSfx,
   playPianoChord,
@@ -37,6 +39,33 @@ export {
   getTimeSignatureSpec,
   synthesizeMetronomeClickPCM,
 } from "./metronome-dsp";
+export {
+  createMicPianoListener,
+  type DetectedNote,
+  DetectedNoteSchema,
+  detectActiveMidis,
+  detectSinglePianoNote,
+  estimateNoiseFloor,
+  MIC_MAX_MIDI,
+  MIC_MIN_MIDI,
+  type MicDetectionConfig,
+  type MicDetectionConfigInput,
+  MicDetectionConfigSchema,
+  type MicListenerStatus,
+  MicListenerStatusSchema,
+  type MicNoteOnEvent,
+  MicNoteOnEventSchema,
+  type MicNoteOnListener,
+  MicNoteTracker,
+  MicPianoListener,
+  type MicPitchFrame,
+  type MicPitchFrameListener,
+  MicPitchFrameSchema,
+  type MicStatusListener,
+  type NoiseFloorEstimate,
+  NoiseFloorEstimateSchema,
+  rmsToVuLevel,
+} from "./mic-listener";
 export { synthesizePianoChordPCM, synthesizePianoNotePCM } from "./piano-dsp";
 export {
   AudioPreferencesSchema,
@@ -46,5 +75,7 @@ export {
   PIANO_MAX_MIDI,
   PIANO_MIN_MIDI,
   type TimeSignature,
+  type TransportClockSnapshot,
+  TransportClockSnapshotSchema,
 } from "./schemas";
 export { synthesizeSfxPCM } from "./sfx-dsp";

@@ -8,6 +8,7 @@ import {
 import {
   computeBarSchedule,
   getBarDurationSeconds,
+  getTimeSignatureSpec,
   synthesizeMetronomeClickPCM,
 } from "./metronome-dsp";
 import { synthesizePianoNotePCM } from "./piano-dsp";
@@ -23,6 +24,7 @@ import {
   type MusicSfxKind,
   type RhythmHitAccuracy,
   SfxRenderOptionsSchema,
+  type TransportClockSnapshot,
 } from "./schemas";
 import { synthesizeSfxPCM } from "./sfx-dsp";
 
@@ -287,6 +289,78 @@ export interface MusicMetronomeController {
   readonly updateConfig: (next: Partial<MetronomeConfigInput>) => MetronomeConfig;
   readonly getConfig: () => MetronomeConfig;
   readonly isRunning: () => boolean;
+  readonly getClock: () => TransportClockSnapshot;
+}
+
+interface TransportAnchor {
+  running: boolean;
+  originTime: number;
+  config: MetronomeConfig;
+}
+
+const DEFAULT_TRANSPORT_CONFIG = MetronomeConfigSchema.parse({});
+let activeTransport: TransportAnchor = {
+  running: false,
+  originTime: 0,
+  config: DEFAULT_TRANSPORT_CONFIG,
+};
+
+/**
+ * Pure deterministic transport clock computation from Web Audio timestamps.
+ * Returns 0-based `bar` and `beatFloat` in `[0, beatsPerBar)`.
+ */
+export function computeTransportClockAtTime(
+  nowSeconds: number,
+  originSeconds: number,
+  configInput: MetronomeConfigInput,
+  running = true,
+): TransportClockSnapshot {
+  const config = MetronomeConfigSchema.parse(configInput);
+  const spec = getTimeSignatureSpec(config.timeSignature);
+  const beatsPerBar = spec.mainBeats;
+  if (!running) {
+    return {
+      running: false,
+      bar: 0,
+      beatFloat: 0,
+      isCountIn: config.countInBars > 0,
+      bpm: config.bpm,
+      beatsPerBar,
+      audioTime: Math.max(0, nowSeconds),
+    };
+  }
+
+  const barDuration = getBarDurationSeconds(config.bpm, config.timeSignature);
+  const elapsed = Math.max(0, nowSeconds - originSeconds);
+  const totalBars = barDuration > 0 ? elapsed / barDuration : 0;
+  const bar = Math.floor(totalBars);
+  const fractionOfBar = totalBars - bar;
+  const beatFloat = Math.min(beatsPerBar - 1e-6, Math.max(0, fractionOfBar * beatsPerBar));
+
+  return {
+    running: true,
+    bar,
+    beatFloat,
+    isCountIn: bar < config.countInBars,
+    bpm: config.bpm,
+    beatsPerBar,
+    audioTime: Math.max(0, nowSeconds),
+  };
+}
+
+/**
+ * Sample-accurate global transport clock backed by `audioContext.currentTime`.
+ * Safe to call in SSR / non-browser contexts (returns idle snapshot).
+ */
+export function getTransportClock(): TransportClockSnapshot {
+  const graph = getMusicAudioGraph();
+  const now = graph ? graph.context.currentTime : 0;
+  return computeTransportClockAtTime(
+    now,
+    activeTransport.originTime,
+    activeTransport.config,
+    activeTransport.running && graph !== null,
+  );
 }
 
 /**
@@ -301,6 +375,7 @@ export function createMusicMetronome(
   let running = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let currentBar = 0;
+  let originStartTime = 0;
   let nextBarStartTime = 0;
   let nextPulseIndex = 0;
   let barPulses = computeBarSchedule(config);
@@ -325,7 +400,7 @@ export function createMusicMetronome(
     if (onTick) {
       const event: MetronomeTickEvent = {
         bar,
-        beat: pulse.beatIndex + 1,
+        beat: pulse.beatIndex,
         isCountIn: bar < config.countInBars,
         isAccent: pulse.isAccent,
         voice: pulse.voice,
@@ -367,6 +442,9 @@ export function createMusicMetronome(
       clearInterval(timerId);
       timerId = null;
     }
+    if (activeTransport.running) {
+      activeTransport = { ...activeTransport, running: false };
+    }
   };
 
   const start = () => {
@@ -381,7 +459,9 @@ export function createMusicMetronome(
     currentBar = 0;
     nextPulseIndex = 0;
     barPulses = computeBarSchedule(config);
-    nextBarStartTime = graph.context.currentTime + 0.04;
+    originStartTime = graph.context.currentTime + 0.04;
+    nextBarStartTime = originStartTime;
+    activeTransport = { running: true, originTime: originStartTime, config };
     schedulerLoop();
     timerId = setInterval(schedulerLoop, lookaheadMs);
   };
@@ -392,7 +472,16 @@ export function createMusicMetronome(
     if (nextPulseIndex >= barPulses.length) {
       nextPulseIndex = 0;
     }
+    if (running) {
+      activeTransport = { ...activeTransport, config };
+    }
     return config;
+  };
+
+  const getClock = (): TransportClockSnapshot => {
+    const graph = getMusicAudioGraph();
+    const now = graph ? graph.context.currentTime : 0;
+    return computeTransportClockAtTime(now, originStartTime, config, running && graph !== null);
   };
 
   return {
@@ -401,6 +490,7 @@ export function createMusicMetronome(
     updateConfig,
     getConfig: () => config,
     isRunning: () => running,
+    getClock,
   };
 }
 

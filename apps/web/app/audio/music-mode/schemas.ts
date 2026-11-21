@@ -70,7 +70,8 @@ export type MetronomeScheduledPulse = z.infer<typeof MetronomeScheduledPulseSche
 
 export const MetronomeTickEventSchema = z.object({
   bar: z.number().int().min(0),
-  beat: z.number().int().min(1),
+  /** 0-based beat index within the bar (0 = beat 1 downbeat). */
+  beat: z.number().int().min(0),
   isCountIn: z.boolean(),
   isAccent: z.boolean(),
   voice: MetronomeVoiceKindSchema,
@@ -78,6 +79,19 @@ export const MetronomeTickEventSchema = z.object({
   scheduledTime: z.number().min(0),
 });
 export type MetronomeTickEvent = z.infer<typeof MetronomeTickEventSchema>;
+
+export const TransportClockSnapshotSchema = z.object({
+  running: z.boolean(),
+  /** 0-based bar index (count-in bars are 0..countInBars-1; musical bars start at countInBars). */
+  bar: z.number().int().min(0),
+  /** 0-based floating-point beat position within the current bar [0, beatsPerBar). */
+  beatFloat: z.number().min(0),
+  isCountIn: z.boolean(),
+  bpm: z.number().min(30).max(240),
+  beatsPerBar: z.number().int().min(1),
+  audioTime: z.number().min(0),
+});
+export type TransportClockSnapshot = z.infer<typeof TransportClockSnapshotSchema>;
 
 export const MusicSfxKindSchema = z.enum([
   "correctInterval",

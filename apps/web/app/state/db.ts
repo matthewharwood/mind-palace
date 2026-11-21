@@ -30,7 +30,7 @@ export interface AppDB extends DBSchema {
 // keyed by origin, so a bare "web" would collide whenever two mind-palace apps
 // are served from the same origin (e.g. localhost:5173 across repos/apps).
 export const DB_NAME = "@mind-palace/web";
-export const DB_VERSION = 11;
+export const DB_VERSION = 13;
 
 let dbPromise: Promise<IDBPDatabase<AppDB>> | undefined;
 let closed = false;
@@ -85,6 +85,16 @@ export function getDB(): Promise<IDBPDatabase<AppDB>> {
       }
       if (oldVersion < 11) {
         db.createObjectStore("musicModeSessions", { keyPath: "id" });
+      }
+      if (oldVersion < 12) {
+        // Music Mode v2 additive fields (cadence, bestTakes, autoFocusOnPlay,
+        // showQwertyHints) hydrate with Zod defaults on read; existing records
+        // in `musicModeSessions` are preserved without destructive reset.
+      }
+      if (oldVersion < 13) {
+        // Music Mode v3 additive preference fields (practiceMode, handMode,
+        // notationScaffold, tempoScalePct, autoTempoRamp, loopLeadIn,
+        // accompanimentVolume, micEnabled) hydrate with Zod defaults on read.
       }
     },
     blocked() {

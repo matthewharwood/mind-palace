@@ -6,6 +6,7 @@ import {
   computeBarSchedule,
   computeFFT,
   computeRMS,
+  computeTransportClockAtTime,
   createMusicMetronome,
   DEFAULT_SAMPLE_RATE,
   findSpectralPeakNear,
@@ -15,6 +16,7 @@ import {
   getBarDurationSeconds,
   getSustainPedal,
   getTimeSignatureSpec,
+  getTransportClock,
   installAudioUnlockListeners,
   isReducedMotionPreferred,
   MetronomeConfigSchema,
@@ -38,6 +40,7 @@ import {
   synthesizePianoNotePCM,
   synthesizeSfxPCM,
   type TimeSignature,
+  TransportClockSnapshotSchema,
   unlockMusicAudio,
 } from "./index";
 
@@ -322,9 +325,37 @@ describe("Web Audio engine SSR / non-browser safety & preferences", () => {
       MetronomeConfigSchema.parse({ bpm: 92, timeSignature: "3/4" }),
     );
     expect(metro.isRunning()).toBe(false);
+    expect(TransportClockSnapshotSchema.parse(metro.getClock()).running).toBe(false);
+    expect(TransportClockSnapshotSchema.parse(getTransportClock()).running).toBe(false);
     metro.start();
     metro.updateConfig({ polyrhythm: "3:4" });
     expect(metro.getConfig().polyrhythm).toBe("3:4");
     metro.stop();
+  });
+
+  test("computes 0-based transport clock bars, beatFloat, and count-in alignment", () => {
+    const cfg = { bpm: 120, timeSignature: "4/4" as const, countInBars: 1 };
+    // At 120 BPM in 4/4: 1 beat = 0.5s, 1 bar = 2.0s.
+    const countInBeat0 = computeTransportClockAtTime(10.0, 10.0, cfg, true);
+    expect(countInBeat0.bar).toBe(0);
+    expect(countInBeat0.beatFloat).toBeCloseTo(0, 5);
+    expect(countInBeat0.isCountIn).toBe(true);
+
+    const countInBeat2Half = computeTransportClockAtTime(11.25, 10.0, cfg, true);
+    expect(countInBeat2Half.bar).toBe(0);
+    expect(countInBeat2Half.beatFloat).toBeCloseTo(2.5, 5);
+    expect(countInBeat2Half.isCountIn).toBe(true);
+
+    // Musical bar 1 starts at bar === 1 (2.0s after origin), beatFloat === 0
+    const musicalBar1Downbeat = computeTransportClockAtTime(12.0, 10.0, cfg, true);
+    expect(musicalBar1Downbeat.bar).toBe(1);
+    expect(musicalBar1Downbeat.beatFloat).toBeCloseTo(0, 5);
+    expect(musicalBar1Downbeat.isCountIn).toBe(false);
+
+    // Musical bar 2 beat 3 (0-based beatFloat === 2.0) at 15.0s
+    const musicalBar2Beat3 = computeTransportClockAtTime(15.0, 10.0, cfg, true);
+    expect(musicalBar2Beat3.bar).toBe(2);
+    expect(musicalBar2Beat3.beatFloat).toBeCloseTo(2, 5);
+    expect(musicalBar2Beat3.isCountIn).toBe(false);
   });
 });

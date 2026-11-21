@@ -24,6 +24,7 @@ import { CORE_24_KEY_IDS, getKeySignature, INTERVALS, LANDMARK_NOTES } from "./t
 export interface RitualStepSpec {
   step: SightReadingStep;
   order: 1 | 2 | 3 | 4 | 5;
+  shortLabel: string;
   title: string;
   durationHint: string;
   instruction: string;
@@ -33,6 +34,7 @@ export const FIVE_STEP_RITUAL: readonly RitualStepSpec[] = [
   {
     step: "preview-30s",
     order: 1,
+    shortLabel: "Scan",
     title: "30-Second Page Preview",
     durationHint: "30 sec",
     instruction:
@@ -41,6 +43,7 @@ export const FIVE_STEP_RITUAL: readonly RitualStepSpec[] = [
   {
     step: "rhythm-isolate",
     order: 2,
+    shortLabel: "Rhythm",
     title: "Isolate Rhythm First",
     durationHint: "60 sec",
     instruction:
@@ -49,6 +52,7 @@ export const FIVE_STEP_RITUAL: readonly RitualStepSpec[] = [
   {
     step: "look-ahead-play",
     order: 3,
+    shortLabel: "Play",
     title: "Look-Ahead Play-Through",
     durationHint: "2–3 min",
     instruction:
@@ -57,6 +61,7 @@ export const FIVE_STEP_RITUAL: readonly RitualStepSpec[] = [
   {
     step: "review-weakest-bar",
     order: 4,
+    shortLabel: "Fix Bar",
     title: "Review Weakest Bar Once",
     durationHint: "60 sec",
     instruction:
@@ -65,10 +70,11 @@ export const FIVE_STEP_RITUAL: readonly RitualStepSpec[] = [
   {
     step: "fsrs-rate",
     order: 5,
-    title: "FSRS Retrieval Log",
-    durationHint: "10 sec",
+    shortLabel: "Recital",
+    title: "Recital Playback & FSRS Log",
+    durationHint: "15 sec",
     instruction:
-      "Rate honest fluency (Again / Hard / Good / Easy) to schedule the next interleaved review and update Adaptive Flow.",
+      "Listen back to your recital take, review your personal best, and confirm or override the suggested FSRS rating.",
   },
 ];
 
