@@ -104,6 +104,7 @@ export function avaShapeAnswer(card: AvaShapeCard): string {
     : `${titleCase(parsed.color)} ${parsed.shape}`;
 }
 
+// fallow-ignore-next-line unused-export
 export function avaShapePrompt(card: AvaShapeCard): string {
   return card.color === COLORLESS ? "What shape is this?" : "What color and shape is this?";
 }

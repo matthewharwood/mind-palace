@@ -127,4 +127,5 @@ export const AvaMedia = defineComponent(
     );
   },
 );
+// fallow-ignore-next-line unused-type
 export type { AvaMediaMode, AvaMediaProps } from "./schema";

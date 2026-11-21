@@ -54,6 +54,7 @@ export const thiserrorSource: Source = {
   ref: "master",
 };
 
+// fallow-ignore-next-line unused-export
 export const iggySource: Source = {
   kind: "github-repo",
   url: "https://github.com/apache/iggy",

@@ -44,6 +44,7 @@ export type HydratedState = {
   musicModeSession: MusicModeState;
 };
 
+// fallow-ignore-next-line unused-type
 export type StoreName = keyof HydratedState;
 
 let resolvedSnapshot: HydratedState | null = null;

@@ -6,5 +6,6 @@ export const AvaStudioSceneSpecSchema = z.object({
   subject: AvaLearningSubjectSchema,
   label: z.string().min(1),
 });
+// fallow-ignore-next-line unused-type
 export type AvaStudioSceneSpec = z.infer<typeof AvaStudioSceneSpecSchema>;
 export const AvaStudioManifestSchema = z.array(AvaStudioSceneSpecSchema);

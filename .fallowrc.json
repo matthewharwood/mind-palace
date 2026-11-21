@@ -4,10 +4,13 @@
     "turbo/generators/templates/**",
     "turbo/generators/config.ts",
     "scripts/resolve-app-filter.ts",
+    "apps/web/scripts/ava-studio/**",
+    "apps/web/app/motion/presets.ts",
     "**/*.gen.ts",
     "tmp/**",
     "apps/test-project/**"
   ],
+  "ignoreBinaries": ["naga"],
   "ignoreDependencies": [
     "@mind-palace/biome-config",
     "@mind-palace/tsconfig",

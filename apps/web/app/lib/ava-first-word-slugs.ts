@@ -104,4 +104,5 @@ export const AVA_FIRST_WORD_SLUGS = [
 ] as const;
 
 export const AvaFirstWordSlugSchema = z.enum(AVA_FIRST_WORD_SLUGS);
+// fallow-ignore-next-line unused-type
 export type AvaFirstWordSlug = z.infer<typeof AvaFirstWordSlugSchema>;
