@@ -133,13 +133,15 @@ export function getActiveSlotTargetMidis(
 ): readonly number[] {
   const current = session.slots[session.slotCursor];
   if (current && current.barNumber === barNumber) {
-    return current.midis.filter((m) => !current.matchedMidis.includes(m));
+    const matched = new Set(current.matchedMidis);
+    return current.midis.filter((m) => !matched.has(m));
   }
   const barPending = session.slots.find(
     (s) => s.barNumber === barNumber && s.matchedMidis.length < s.midis.length,
   );
   if (barPending) {
-    return barPending.midis.filter((m) => !barPending.matchedMidis.includes(m));
+    const matched = new Set(barPending.matchedMidis);
+    return barPending.midis.filter((m) => !matched.has(m));
   }
   return current ? current.midis : [];
 }
@@ -438,9 +440,9 @@ export function recordCleanPassNote(tracker: CleanPassTracker, midi: number): Cl
   const nextCursor = slotDone ? tracker.slotCursor + 1 : tracker.slotCursor;
   const complete = nextCursor >= nextSlots.length;
   const nextSlot = nextSlots[nextCursor];
-  const expectedMidis = nextSlot
-    ? nextSlot.midis.filter((m) => !nextSlot.matchedMidis.includes(m))
-    : [];
+  const nextMatched = nextSlot ? new Set(nextSlot.matchedMidis) : null;
+  const expectedMidis =
+    nextSlot && nextMatched ? nextSlot.midis.filter((m) => !nextMatched.has(m)) : [];
 
   return {
     tracker: {

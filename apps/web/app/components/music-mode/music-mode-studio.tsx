@@ -481,6 +481,19 @@ export const MusicModeStudio = defineComponent(
       setSustainPedal(state.preferences.sustainPedal);
     }, [state.preferences.muted, state.preferences.volume, state.preferences.sustainPedal]);
 
+    useEffect(() => {
+      if (!controlsOpen && !coachOpen && !shortcutsOpen) return;
+      const handleKeyDown = (event: KeyboardEvent): void => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        setControlsOpen(false);
+        setCoachOpen(false);
+        setShortcutsOpen(false);
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [controlsOpen, coachOpen, shortcutsOpen]);
+
     function handleRitualRate(result: RitualRatingResult): void {
       setFocusMode(false);
       onUpdateState((prev) => {
@@ -597,7 +610,7 @@ export const MusicModeStudio = defineComponent(
                 aria-label="Open Studio Controls"
                 aria-expanded={controlsOpen}
                 onClick={() => setControlsOpen(true)}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
               >
                 <SlidersHorizontal className="size-4 text-intelligence-blue" aria-hidden="true" />
                 <span className="hidden sm:inline">Controls</span>
@@ -608,7 +621,7 @@ export const MusicModeStudio = defineComponent(
                 aria-label="Open 30-Day Coach Plan"
                 aria-expanded={coachOpen}
                 onClick={() => setCoachOpen(true)}
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
               >
                 <CalendarDays className="size-4 text-intelligence-blue" aria-hidden="true" />
                 <span className="hidden sm:inline">Plan</span>

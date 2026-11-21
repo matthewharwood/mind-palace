@@ -6,6 +6,7 @@ import { buildSeoLinks, buildSeoMeta } from "~/lib/seo";
 import { musicModeSessionAtom } from "~/state/atoms";
 
 export const Route = createFileRoute("/apps/music-mode")({
+  ssr: false,
   head: () => ({
     meta: buildSeoMeta({
       path: "/apps/music-mode",
