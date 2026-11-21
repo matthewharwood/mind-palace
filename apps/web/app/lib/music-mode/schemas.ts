@@ -563,6 +563,3 @@ export const MusicModeStateSchema = z.object({
   preferences: MusicModePreferencesSchema.default(() => MusicModePreferencesSchema.parse({})),
 });
 export type MusicModeState = z.infer<typeof MusicModeStateSchema>;
-
-/** Alias matching the engine-dev brief name */
-export const MusicModeProgressSchema = MusicModeStateSchema;

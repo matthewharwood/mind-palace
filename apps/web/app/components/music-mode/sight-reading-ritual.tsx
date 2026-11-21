@@ -132,22 +132,22 @@ function PreviewStepView({
   const [timerRunning, setTimerRunning] = useState(false);
   const [previewFocus, setPreviewFocus] = useState<PreviewFocus>("all");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const secondsLeftRef = useRef(30);
 
   useEffect(() => {
     if (!timerRunning) return;
     const id = setInterval(() => {
-      setSecondsLeft((prev) => {
-        const next = prev - 1;
-        if (next <= 3 && next > 0) {
-          playMusicSfx("previewCountdown", { countdownFinal: false });
-        }
-        if (next <= 0) {
-          setTimerRunning(false);
-          playMusicSfx("previewCountdown", { countdownFinal: true });
-          return 0;
-        }
-        return next;
-      });
+      const next = Math.max(0, secondsLeftRef.current - 1);
+      secondsLeftRef.current = next;
+      setSecondsLeft(next);
+      if (next <= 3 && next > 0) {
+        playMusicSfx("previewCountdown", { countdownFinal: false });
+      }
+      if (next === 0) {
+        clearInterval(id);
+        setTimerRunning(false);
+        playMusicSfx("previewCountdown", { countdownFinal: true });
+      }
     }, 1000);
     return () => clearInterval(id);
   }, [timerRunning]);
@@ -190,6 +190,7 @@ function PreviewStepView({
             type="button"
             onClick={() => {
               setTimerRunning(false);
+              secondsLeftRef.current = 30;
               setSecondsLeft(30);
             }}
             className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-canvas-white px-2.5 py-1.5 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
@@ -434,7 +435,7 @@ function PlayThroughStepView({
   const [wrongNotes, setWrongNotes] = useState<number[]>([]);
   const [hitsCount, setHitsCount] = useState(0);
   const [attemptsCount, setAttemptsCount] = useState(0);
-  const [missesByBar, setMissesByBar] = useState<Record<number, number>>({});
+  const missesByBarRef = useRef<Record<number, number>>({});
   const metroRef = useRef<MusicMetronomeController | null>(null);
   const activeMeasureRef = useRef(1);
 
@@ -457,7 +458,7 @@ function PlayThroughStepView({
     setWrongNotes([]);
     setHitsCount(0);
     setAttemptsCount(0);
-    setMissesByBar({});
+    missesByBarRef.current = {};
     let measureCursor = 1;
     const totalMeasures = passage.measures.length;
     const metro = createMusicMetronome(
@@ -492,7 +493,7 @@ function PlayThroughStepView({
     const accuracy = attemptsCount > 0 ? hitsCount / attemptsCount : 0.85;
     let weakest = passage.previewNotes.hardestBarNumber;
     let maxMisses = 0;
-    for (const [barStr, count] of Object.entries(missesByBar)) {
+    for (const [barStr, count] of Object.entries(missesByBarRef.current)) {
       if (count > maxMisses) {
         maxMisses = count;
         weakest = Number(barStr);
@@ -578,7 +579,7 @@ function PlayThroughStepView({
           } else {
             playMusicSfx("gentleMiss");
             setWrongNotes((prev) => (prev.includes(midi) ? prev : [...prev, midi]));
-            setMissesByBar((prev) => ({ ...prev, [bar]: (prev[bar] ?? 0) + 1 }));
+            missesByBarRef.current[bar] = (missesByBarRef.current[bar] ?? 0) + 1;
           }
         }}
         onNoteOff={(midi) => {
@@ -772,7 +773,8 @@ export const SightReadingRitual = defineComponent(
     onNextPassage,
   }): ReactNode => {
     const [lastAccuracy, setLastAccuracy] = useState(0.86);
-    const [weakestBar, setWeakestBar] = useState(passage.previewNotes.hardestBarNumber);
+    const [weakestBarOverride, setWeakestBarOverride] = useState<number | null>(null);
+    const weakestBar = weakestBarOverride ?? passage.previewNotes.hardestBarNumber;
     const effectiveBpm = Math.min(220, Math.max(36, passage.tempoBpm + bpmOffset));
     const slowBpm = Math.max(36, Math.round(effectiveBpm * 0.75));
     const activeSpec = FIVE_STEP_RITUAL.find((s) => s.step === step) ?? FIVE_STEP_RITUAL[0];
@@ -852,7 +854,7 @@ export const SightReadingRitual = defineComponent(
             showRomanNumerals={showRomanNumerals}
             onComplete={(acc, bar) => {
               setLastAccuracy(acc);
-              setWeakestBar(bar);
+              setWeakestBarOverride(bar);
               onStepChange("review-weakest-bar");
             }}
           />

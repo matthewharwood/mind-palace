@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock, Flame, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
 import { playMusicSfx } from "~/audio/music-mode";
@@ -82,24 +82,20 @@ function SprintPomodoroCard({
   const targetSeconds = sprint.focusMinutes * 60;
   const [secondsLeft, setSecondsLeft] = useState(targetSeconds);
   const [running, setRunning] = useState(false);
-
-  useEffect(() => {
-    setSecondsLeft(sprint.focusMinutes * 60);
-    setRunning(false);
-  }, [sprint.focusMinutes]);
+  const secondsLeftRef = useRef(targetSeconds);
 
   useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          setRunning(false);
-          playMusicSfx("streakMilestone");
-          onCompleteSprint(day, sprint.index, sprint.focusMinutes);
-          return 0;
-        }
-        return prev - 1;
-      });
+      const next = Math.max(0, secondsLeftRef.current - 1);
+      secondsLeftRef.current = next;
+      setSecondsLeft(next);
+      if (next === 0) {
+        clearInterval(id);
+        setRunning(false);
+        playMusicSfx("streakMilestone");
+        onCompleteSprint(day, sprint.index, sprint.focusMinutes);
+      }
     }, 1000);
     return () => clearInterval(id);
   }, [running, day, sprint.index, sprint.focusMinutes, onCompleteSprint]);
@@ -131,6 +127,7 @@ function SprintPomodoroCard({
           type="button"
           onClick={() => {
             setRunning(false);
+            secondsLeftRef.current = targetSeconds;
             setSecondsLeft(targetSeconds);
           }}
           className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-canvas-white px-2.5 py-1.5 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
