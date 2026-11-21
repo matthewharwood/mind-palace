@@ -18,6 +18,7 @@ import { Route as AppsIndexRouteImport } from './routes/apps.index'
 import { Route as GoalGoalIdRouteImport } from './routes/goal.$goalId'
 import { Route as CurriculumCurriculumIdRouteImport } from './routes/curriculum.$curriculumId'
 import { Route as AppsVectorDungeonRouteImport } from './routes/apps.vector-dungeon'
+import { Route as AppsMusicModeRouteImport } from './routes/apps.music-mode'
 import { Route as AppsAvaTwoWordsRouteImport } from './routes/apps.ava-two-words'
 import { Route as AppsAvaShapesRouteImport } from './routes/apps.ava-shapes'
 import { Route as AppsAvaPositionsRouteImport } from './routes/apps.ava-positions'
@@ -75,6 +76,11 @@ const CurriculumCurriculumIdRoute = CurriculumCurriculumIdRouteImport.update({
 const AppsVectorDungeonRoute = AppsVectorDungeonRouteImport.update({
   id: '/vector-dungeon',
   path: '/vector-dungeon',
+  getParentRoute: () => AppsRoute,
+} as any)
+const AppsMusicModeRoute = AppsMusicModeRouteImport.update({
+  id: '/music-mode',
+  path: '/music-mode',
   getParentRoute: () => AppsRoute,
 } as any)
 const AppsAvaTwoWordsRoute = AppsAvaTwoWordsRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
+  '/apps/music-mode': typeof AppsMusicModeRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
+  '/apps/music-mode': typeof AppsMusicModeRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/goal/$goalId': typeof GoalGoalIdRoute
   '/apps': typeof AppsIndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/apps/ava-positions': typeof AppsAvaPositionsRoute
   '/apps/ava-shapes': typeof AppsAvaShapesRoute
   '/apps/ava-two-words': typeof AppsAvaTwoWordsRoute
+  '/apps/music-mode': typeof AppsMusicModeRoute
   '/apps/vector-dungeon': typeof AppsVectorDungeonRoute
   '/curriculum/$curriculumId': typeof CurriculumCurriculumIdRouteWithChildren
   '/goal/$goalId': typeof GoalGoalIdRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/apps/ava-positions'
     | '/apps/ava-shapes'
     | '/apps/ava-two-words'
+    | '/apps/music-mode'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/apps/ava-positions'
     | '/apps/ava-shapes'
     | '/apps/ava-two-words'
+    | '/apps/music-mode'
     | '/apps/vector-dungeon'
     | '/goal/$goalId'
     | '/apps'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/apps/ava-positions'
     | '/apps/ava-shapes'
     | '/apps/ava-two-words'
+    | '/apps/music-mode'
     | '/apps/vector-dungeon'
     | '/curriculum/$curriculumId'
     | '/goal/$goalId'
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       path: '/vector-dungeon'
       fullPath: '/apps/vector-dungeon'
       preLoaderRoute: typeof AppsVectorDungeonRouteImport
+      parentRoute: typeof AppsRoute
+    }
+    '/apps/music-mode': {
+      id: '/apps/music-mode'
+      path: '/music-mode'
+      fullPath: '/apps/music-mode'
+      preLoaderRoute: typeof AppsMusicModeRouteImport
       parentRoute: typeof AppsRoute
     }
     '/apps/ava-two-words': {
@@ -469,6 +488,7 @@ interface AppsRouteChildren {
   AppsAvaPositionsRoute: typeof AppsAvaPositionsRoute
   AppsAvaShapesRoute: typeof AppsAvaShapesRoute
   AppsAvaTwoWordsRoute: typeof AppsAvaTwoWordsRoute
+  AppsMusicModeRoute: typeof AppsMusicModeRoute
   AppsVectorDungeonRoute: typeof AppsVectorDungeonRoute
   AppsIndexRoute: typeof AppsIndexRoute
   AppsVectorDungeonPrintRoute: typeof AppsVectorDungeonPrintRoute
@@ -484,6 +504,7 @@ const AppsRouteChildren: AppsRouteChildren = {
   AppsAvaPositionsRoute: AppsAvaPositionsRoute,
   AppsAvaShapesRoute: AppsAvaShapesRoute,
   AppsAvaTwoWordsRoute: AppsAvaTwoWordsRoute,
+  AppsMusicModeRoute: AppsMusicModeRoute,
   AppsVectorDungeonRoute: AppsVectorDungeonRoute,
   AppsIndexRoute: AppsIndexRoute,
   AppsVectorDungeonPrintRoute: AppsVectorDungeonPrintRoute,

@@ -42,7 +42,6 @@ export const LandmarkIdSchema = z.enum([
   "treble-c5",
   "treble-c6",
 ]);
-export type LandmarkId = z.infer<typeof LandmarkIdSchema>;
 
 export const LandmarkNoteSchema = z.object({
   id: LandmarkIdSchema,
@@ -99,7 +98,6 @@ export type Interval = z.infer<typeof IntervalSchema>;
 // ---------------------------------------------------------------------------
 
 export const KeyModeSchema = z.enum(["major", "minor"]);
-export type KeyMode = z.infer<typeof KeyModeSchema>;
 
 export const KeySignatureIdSchema = z.enum([
   "C-major",
@@ -338,7 +336,6 @@ export const HandFrameAnnotationSchema = z.object({
   rh: z.string().optional(),
   lh: z.string().optional(),
 });
-export type HandFrameAnnotation = z.infer<typeof HandFrameAnnotationSchema>;
 
 export const MeasureSchema = z.object({
   number: z.number().int().min(1),
@@ -366,7 +363,6 @@ export const PreviewNotesSchema = z.object({
   landmarkSummary: z.string().min(1),
   keyCue: z.string().min(1),
 });
-export type PreviewNotes = z.infer<typeof PreviewNotesSchema>;
 
 export const ScorePassageSchema = z.object({
   id: z.string().min(1),
@@ -448,7 +444,6 @@ export const FlowMetricSampleSchema = z.object({
 export type FlowMetricSample = z.infer<typeof FlowMetricSampleSchema>;
 
 export const FlowAdjustmentSchema = z.enum(["none", "dropped", "promoted"]);
-export type FlowAdjustment = z.infer<typeof FlowAdjustmentSchema>;
 
 export const AdaptiveFlowStateSchema = z.object({
   currentDifficulty: z.number().int().min(1).max(10),
@@ -550,7 +545,6 @@ export const MusicModePreferencesSchema = z.object({
     .string()
     .default("I read intervals and shapes ahead of my hands, one bar at a time."),
 });
-export type MusicModePreferences = z.infer<typeof MusicModePreferencesSchema>;
 
 export const MusicModeStateSchema = z.object({
   id: z.literal("music-mode"),
@@ -572,4 +566,3 @@ export type MusicModeState = z.infer<typeof MusicModeStateSchema>;
 
 /** Alias matching the engine-dev brief name */
 export const MusicModeProgressSchema = MusicModeStateSchema;
-export type MusicModeProgress = z.infer<typeof MusicModeProgressSchema>;

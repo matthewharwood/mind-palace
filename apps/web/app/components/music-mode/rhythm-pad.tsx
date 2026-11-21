@@ -12,7 +12,6 @@ import {
 } from "./types";
 
 export const RhythmPadModeSchema = z.enum(["single", "split-hands"]);
-export type RhythmPadMode = z.infer<typeof RhythmPadModeSchema>;
 
 export const RhythmPadPropsSchema = z.object({
   mode: RhythmPadModeSchema.optional(),

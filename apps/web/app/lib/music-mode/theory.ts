@@ -505,12 +505,6 @@ export function getKeySignature(id: KeySignatureId): KeySignature {
   return KEY_SIGNATURES[id];
 }
 
-export function getKeysByTier(maxTier: number): KeySignature[] {
-  return CORE_24_KEY_IDS.map((id) => KEY_SIGNATURES[id]).filter(
-    (key) => (key.tier ?? 1) <= maxTier,
-  );
-}
-
 function shiftAccidental(acc: Accidental, delta: number): Accidental {
   const next = ACCIDENTAL_TO_OFFSET[acc] + delta;
   const resolved = OFFSET_TO_ACCIDENTAL[next];

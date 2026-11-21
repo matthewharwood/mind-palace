@@ -15,14 +15,14 @@ import {
   isHollowDuration,
   isLandmarkMidi,
   KeySignatureSchema,
-  type Measure,
-  MeasureSchema,
-  type NoteEvent,
   type NoteEventStatus,
   type Pitch,
   type PitchAccidental,
   type PitchLetter,
-  pitchToDiatonicStep,
+  pitchToStaffStep,
+  type StaffMeasure,
+  StaffMeasureSchema,
+  type StaffNoteEvent,
   TimeSignatureSchema,
   TREBLE_FLAT_STEPS,
   TREBLE_SHARP_STEPS,
@@ -34,7 +34,6 @@ export const GrandStaffModeSchema = z.enum([
   "preview-30s",
   "rhythm-only",
 ]);
-export type GrandStaffMode = z.infer<typeof GrandStaffModeSchema>;
 
 export const PreviewFocusSchema = z.enum(["all", "key", "time", "landmarks", "hardest-bar"]);
 export type PreviewFocus = z.infer<typeof PreviewFocusSchema>;
@@ -44,7 +43,7 @@ export const GrandStaffPropsSchema = z.object({
   composer: z.string().min(1).optional(),
   keySignature: KeySignatureSchema,
   timeSignature: TimeSignatureSchema,
-  measures: z.array(MeasureSchema).min(1),
+  measures: z.array(StaffMeasureSchema).min(1),
   mode: GrandStaffModeSchema.optional(),
   /** 1-indexed active measure number for playhead & Look-Ahead Mode. */
   activeMeasure: z.int().min(1).optional(),
@@ -59,7 +58,7 @@ export const GrandStaffPropsSchema = z.object({
   showIntervalShapes: z.boolean().optional(),
   showFingerings: z.boolean().optional(),
   onSelectMeasure: z.custom<(measureNumber: number) => void>().optional(),
-  onSelectEvent: z.custom<(event: NoteEvent) => void>().optional(),
+  onSelectEvent: z.custom<(event: StaffNoteEvent) => void>().optional(),
 });
 export type GrandStaffProps = z.infer<typeof GrandStaffPropsSchema>;
 
@@ -142,8 +141,8 @@ function resolveRestCenterY(isRhythmOnly: boolean, staff: Clef): number {
 }
 
 function resolveStemDirection(
-  event: NoteEvent,
-  measure: Measure,
+  event: StaffNoteEvent,
+  measure: StaffMeasure,
   avgStep: number,
   middleStep: number,
 ): boolean {
@@ -273,7 +272,7 @@ function RestGlyph({
   x,
   centerY,
 }: {
-  duration: NoteEvent["duration"];
+  duration: StaffNoteEvent["duration"];
   x: number;
   centerY: number;
 }): ReactNode {
@@ -323,7 +322,7 @@ function RestGlyph({
 
 // ── Layout Computation ────────────────────────────────────────────────────────
 interface PlacedNoteEvent {
-  event: NoteEvent;
+  event: StaffNoteEvent;
   measureNumber: number;
   x: number;
   stemUp: boolean;
@@ -336,13 +335,17 @@ interface PlacedNoteEvent {
 }
 
 interface MeasureBox {
-  measure: Measure;
+  measure: StaffMeasure;
   startX: number;
   endX: number;
   width: number;
 }
 
-function placeRhythmEvent(event: NoteEvent, measureNumber: number, x: number): PlacedNoteEvent {
+function placeRhythmEvent(
+  event: StaffNoteEvent,
+  measureNumber: number,
+  x: number,
+): PlacedNoteEvent {
   const y = event.staff === "treble" ? RHYTHM_RH_Y : RHYTHM_LH_Y;
   const stemUp = event.staff === "treble";
   const stemX = stemUp ? x + NOTE_RX - 0.8 : x - NOTE_RX + 0.8;
@@ -366,14 +369,18 @@ function placeRhythmEvent(event: NoteEvent, measureNumber: number, x: number): P
   };
 }
 
-function placeGrandStaffEvent(event: NoteEvent, measure: Measure, x: number): PlacedNoteEvent {
+function placeGrandStaffEvent(
+  event: StaffNoteEvent,
+  measure: StaffMeasure,
+  x: number,
+): PlacedNoteEvent {
   const sortedPitches = [...event.pitches].sort(
-    (a, b) => pitchToDiatonicStep(a) - pitchToDiatonicStep(b),
+    (a, b) => pitchToStaffStep(a) - pitchToStaffStep(b),
   );
   const middleStep = event.staff === "treble" ? 6 : -6;
   const avgStep =
     sortedPitches.length > 0
-      ? sortedPitches.reduce((acc, p) => acc + pitchToDiatonicStep(p), 0) / sortedPitches.length
+      ? sortedPitches.reduce((acc, p) => acc + pitchToStaffStep(p), 0) / sortedPitches.length
       : middleStep;
   const stemUp = resolveStemDirection(event, measure, avgStep, middleStep);
 
@@ -381,7 +388,7 @@ function placeGrandStaffEvent(event: NoteEvent, measure: Measure, x: number): Pl
   let prevStep: number | null = null;
   let prevShifted = false;
   for (const pitch of sortedPitches) {
-    const step = pitchToDiatonicStep(pitch);
+    const step = pitchToStaffStep(pitch);
     const y = stepToY(step, event.staff);
     const isSecondCollision: boolean = prevStep !== null && step - prevStep === 1 && !prevShifted;
     const dx = resolveSecondDisplacement(isSecondCollision, stemUp);
@@ -412,7 +419,7 @@ function placeGrandStaffEvent(event: NoteEvent, measure: Measure, x: number): Pl
 }
 
 function computeMeasureLayout(
-  measures: Measure[],
+  measures: StaffMeasure[],
   beatsPerMeasure: number,
   keySignatureWidth: number,
   isRhythmOnly: boolean,

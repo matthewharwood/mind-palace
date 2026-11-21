@@ -11,14 +11,12 @@ export const HandFrameOverlaySchema = z.object({
   rootMidi: z.int().min(21).max(101),
   label: z.string().min(1).optional(),
 });
-export type HandFrameOverlay = z.infer<typeof HandFrameOverlaySchema>;
 
 export const IntervalBracketSchema = z.object({
   fromMidi: z.int().min(21).max(108),
   toMidi: z.int().min(21).max(108),
   label: z.string().min(1),
 });
-export type IntervalBracket = z.infer<typeof IntervalBracketSchema>;
 
 export const TactileKeyboardPropsSchema = z.object({
   /** Starting C octave (e.g. 3 for C3, 4 for C4). Defaults to 3. */

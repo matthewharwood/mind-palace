@@ -135,10 +135,34 @@ export const AvaWorld = defineComponent(
           ))}
         </ul>
       </div>
+      <Link
+        to="/apps/music-mode"
+        className="group flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-intelligence-blue/25 bg-canvas-white px-5 py-4 shadow-card transition-colors hover:border-intelligence-blue/50"
+      >
+        <div className="min-w-0">
+          <span className="font-mono text-[10px] text-intelligence-blue uppercase tracking-[.16em]">
+            Featured Studio · 30 Days × 4 Hours
+          </span>
+          <h2 className="mt-1 font-semibold text-lg text-midnight-ink">
+            Music Mode — Chopin Sight-Reading &amp; Ear Training
+          </h2>
+          <p className="mt-0.5 text-muted-ash text-xs">
+            Concert grand Web Audio synth, look-ahead grand staff, tactile blind keyboard, 2:3/3:4
+            polyrhythms, and FSRS spaced repetition.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-intelligence-blue px-4 py-2 font-medium text-white text-xs">
+          Open Music Mode
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </span>
+      </Link>
       <footer className="flex flex-wrap gap-4 border-[#e8e5d6] border-t pt-5 text-[#64745f] text-xs">
         <span>More family play:</span>
         <Link to="/apps/vector-dungeon" className="underline underline-offset-4">
           Vector Dungeon
+        </Link>
+        <Link to="/apps/music-mode" className="underline underline-offset-4">
+          Music Mode
         </Link>
       </footer>
     </section>

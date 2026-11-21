@@ -1,56 +1,38 @@
 import * as z from "zod";
+import {
+  AccidentalSchema,
+  ArticulationSchema,
+  type Clef,
+  ClefSchema,
+  DynamicMarkingSchema,
+  HandFrameAnnotationSchema,
+  type KeySignature,
+  KeySignatureSchema,
+  type NoteDuration,
+  NoteDurationSchema,
+  PedalMarkingSchema,
+  type Pitch,
+  type PitchLetter,
+  PitchSchema,
+  PolyrhythmRatioSchema,
+  TimeSignatureSchema,
+} from "~/lib/music-mode/schemas";
 
-export const PitchLetterSchema = z.enum(["C", "D", "E", "F", "G", "A", "B"]);
-export type PitchLetter = z.infer<typeof PitchLetterSchema>;
+import { isBlackKeyMidi } from "~/lib/music-mode/theory";
 
-export const PitchAccidentalSchema = z.enum(["bb", "b", "", "#", "##"]);
+export type { Clef, KeySignature, NoteDuration, Pitch, PitchLetter };
+export { isBlackKeyMidi, KeySignatureSchema, PolyrhythmRatioSchema, TimeSignatureSchema };
+
+export const PitchAccidentalSchema = AccidentalSchema;
 export type PitchAccidental = z.infer<typeof PitchAccidentalSchema>;
 
-export const PitchSchema = z.object({
-  letter: PitchLetterSchema,
-  accidental: PitchAccidentalSchema,
-  octave: z.int().min(0).max(8),
-  midi: z.int().min(21).max(108),
-});
-export type Pitch = z.infer<typeof PitchSchema>;
-
-export const NoteDurationSchema = z.enum([
-  "whole",
-  "dotted-half",
-  "half",
-  "dotted-quarter",
-  "quarter",
-  "dotted-eighth",
-  "eighth",
-  "sixteenth",
-  "triplet-eighth",
-  "triplet-quarter",
-]);
-export type NoteDuration = z.infer<typeof NoteDurationSchema>;
-
-export const ClefSchema = z.enum(["treble", "bass"]);
-export type Clef = z.infer<typeof ClefSchema>;
-
-export const ArticulationSchema = z.enum([
-  "none",
-  "staccato",
-  "tenuto",
-  "accent",
-  "fermata",
-  "arpeggio",
-]);
-export type Articulation = z.infer<typeof ArticulationSchema>;
-
-export const DynamicMarkSchema = z.enum(["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff", "sfz"]);
-export type DynamicMark = z.infer<typeof DynamicMarkSchema>;
-
-export const PedalMarkSchema = z.enum(["down", "up", "change"]);
-export type PedalMark = z.infer<typeof PedalMarkSchema>;
+export const DynamicMarkSchema = DynamicMarkingSchema;
+export const PedalMarkSchema = PedalMarkingSchema;
 
 export const NoteEventStatusSchema = z.enum(["idle", "active", "correct", "wrong"]);
 export type NoteEventStatus = z.infer<typeof NoteEventStatusSchema>;
 
-export const NoteEventSchema = z.object({
+export const StaffNoteEventSchema = z.object({
   id: z.string().min(1),
   pitches: z.array(PitchSchema),
   beatStart: z.number().min(0),
@@ -63,49 +45,26 @@ export const NoteEventSchema = z.object({
   articulation: ArticulationSchema.optional(),
   dynamic: DynamicMarkSchema.optional(),
   finger: z.int().min(1).max(5).optional(),
-  intervalLabel: z.string().min(1).optional(),
-  romanNumeral: z.string().min(1).optional(),
+  intervalLabel: z.string().optional(),
+  romanNumeral: z.string().optional(),
   pedal: PedalMarkSchema.optional(),
   beamGroup: z.string().min(1).optional(),
   status: NoteEventStatusSchema.optional(),
 });
-export type NoteEvent = z.infer<typeof NoteEventSchema>;
+export type StaffNoteEvent = z.infer<typeof StaffNoteEventSchema>;
 
-export const HandFrameSchema = z.object({
-  rh: z.string().min(1).optional(),
-  lh: z.string().min(1).optional(),
-});
-export type HandFrame = z.infer<typeof HandFrameSchema>;
+export const HandFrameSchema = HandFrameAnnotationSchema;
 
-export const MeasureSchema = z.object({
+export const StaffMeasureSchema = z.object({
   number: z.int().min(1),
-  events: z.array(NoteEventSchema),
-  harmonyLabel: z.string().min(1).optional(),
+  events: z.array(StaffNoteEventSchema),
+  harmonyLabel: z.string().optional(),
   isHardestBar: z.boolean().optional(),
-  landmarkNote: z.string().min(1).optional(),
+  landmarkNote: z.string().optional(),
   handFrame: HandFrameSchema.optional(),
-  rehearsalMark: z.string().min(1).optional(),
+  rehearsalMark: z.string().optional(),
 });
-export type Measure = z.infer<typeof MeasureSchema>;
-
-export const KeySignatureSchema = z.object({
-  id: z.string().min(1),
-  tonic: z.string().min(1),
-  mode: z.enum(["major", "minor"]),
-  fifths: z.int().min(-7).max(7),
-  label: z.string().min(1),
-  relativeId: z.string().min(1),
-});
-export type KeySignature = z.infer<typeof KeySignatureSchema>;
-
-export const TimeSignatureSchema = z.object({
-  numerator: z.int().min(1).max(12),
-  denominator: z.union([z.literal(2), z.literal(4), z.literal(8), z.literal(16)]),
-});
-export type TimeSignature = z.infer<typeof TimeSignatureSchema>;
-
-export const PolyrhythmRatioSchema = z.enum(["none", "2:3", "3:4"]);
-export type PolyrhythmRatio = z.infer<typeof PolyrhythmRatioSchema>;
+export type StaffMeasure = z.infer<typeof StaffMeasureSchema>;
 
 export const TimingRatingSchema = z.enum([
   "on-beat",
@@ -273,7 +232,6 @@ const LETTER_STEPS: Record<PitchLetter, number> = {
   B: 6,
 };
 
-const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10]);
 const SHARP_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"] as const;
 const FLAT_NAMES = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"] as const;
 
@@ -282,12 +240,8 @@ const FLAT_NAMES = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A"
  * Treble lines: E4=2, G4=4, B4=6, D5=8, F5=10.
  * Bass lines: G2=-10, B2=-8, D3=-6, F3=-4, A3=-2.
  */
-export function pitchToDiatonicStep(pitch: Pick<Pitch, "letter" | "octave">): number {
+export function pitchToStaffStep(pitch: Pick<Pitch, "letter" | "octave">): number {
   return (pitch.octave - 4) * 7 + LETTER_STEPS[pitch.letter];
-}
-
-export function isBlackKeyMidi(midi: number): boolean {
-  return BLACK_PITCH_CLASSES.has(((midi % 12) + 12) % 12);
 }
 
 export function midiToNoteName(midi: number, preferFlats = false): string {

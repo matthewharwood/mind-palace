@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { GrandStaff } from "./grand-staff";
-import { ALL_24_KEY_SIGNATURES, type KeySignature, type Measure, makePitch } from "./types";
+import { ALL_24_KEY_SIGNATURES, type KeySignature, makePitch, type StaffMeasure } from "./types";
 
 const C_MAJOR_FALLBACK: KeySignature = {
   id: "C-major",
@@ -15,7 +15,7 @@ const C_MAJOR_FALLBACK: KeySignature = {
 const E_MINOR = ALL_24_KEY_SIGNATURES.find((k) => k.id === "E-minor") ?? C_MAJOR_FALLBACK;
 const EB_MAJOR = ALL_24_KEY_SIGNATURES.find((k) => k.id === "Eb-major") ?? C_MAJOR_FALLBACK;
 
-const CHOPIN_EM_MEASURES: Measure[] = [
+const CHOPIN_EM_MEASURES: StaffMeasure[] = [
   {
     number: 1,
     rehearsalMark: "A",
@@ -255,7 +255,7 @@ const CHOPIN_EM_MEASURES: Measure[] = [
   },
 ];
 
-const EB_NOCTURNE_MEASURES: Measure[] = [
+const EB_NOCTURNE_MEASURES: StaffMeasure[] = [
   {
     number: 1,
     harmonyLabel: "I (E♭)",

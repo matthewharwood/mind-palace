@@ -9,7 +9,7 @@ import {
   isLandmarkMidi,
   makePitch,
   midiToNoteName,
-  pitchToDiatonicStep,
+  pitchToStaffStep,
 } from "./types";
 
 describe("music-mode notation helpers", () => {
@@ -28,11 +28,11 @@ describe("music-mode notation helpers", () => {
   });
 
   test("maps pitches to diatonic staff steps with Middle C4 = 0", () => {
-    expect(pitchToDiatonicStep(makePitch("C", 4))).toBe(0);
-    expect(pitchToDiatonicStep(makePitch("E", 4))).toBe(2); // Treble bottom line
-    expect(pitchToDiatonicStep(makePitch("F", 5))).toBe(10); // Treble top line
-    expect(pitchToDiatonicStep(makePitch("A", 3))).toBe(-2); // Bass top line
-    expect(pitchToDiatonicStep(makePitch("G", 2))).toBe(-10); // Bass bottom line
+    expect(pitchToStaffStep(makePitch("C", 4))).toBe(0);
+    expect(pitchToStaffStep(makePitch("E", 4))).toBe(2); // Treble bottom line
+    expect(pitchToStaffStep(makePitch("F", 5))).toBe(10); // Treble top line
+    expect(pitchToStaffStep(makePitch("A", 3))).toBe(-2); // Bass top line
+    expect(pitchToStaffStep(makePitch("G", 2))).toBe(-10); // Bass bottom line
   });
 
   test("computes ledger line steps accurately for treble and bass clefs", () => {

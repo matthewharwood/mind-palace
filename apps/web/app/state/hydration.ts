@@ -26,6 +26,8 @@ import {
   VectorDungeonSessionSchema,
 } from "@mind-palace/schemas";
 
+import { createInitialMusicModeState } from "~/lib/music-mode/curriculum";
+import { type MusicModeState, MusicModeStateSchema } from "~/lib/music-mode/schemas";
 import { getDB } from "./db";
 
 export type HydratedState = {
@@ -39,6 +41,7 @@ export type HydratedState = {
   avaNumbersSession: AvaSymbolsSession;
   avaLettersSession: AvaSymbolsSession;
   avaFirstWordsSession: AvaFirstWordsSession;
+  musicModeSession: MusicModeState;
 };
 
 export type StoreName = keyof HydratedState;
@@ -65,6 +68,7 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
       avaNumbersSession: AVA_NUMBERS_SESSION_DEFAULT,
       avaLettersSession: AVA_LETTERS_SESSION_DEFAULT,
       avaFirstWordsSession: AVA_FIRST_WORDS_SESSION_DEFAULT,
+      musicModeSession: createInitialMusicModeState(),
     };
     resolvedSnapshot = empty;
     return empty;
@@ -81,6 +85,7 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     rawAvaNumbersSession,
     rawAvaLettersSession,
     rawAvaFirstWordsSession,
+    rawMusicModeSession,
   ] = await Promise.all([
     db.getAll("progress"),
     db.get("settings", "settings"),
@@ -92,6 +97,7 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
     db.get("avaSymbolSessions", "ava-numbers"),
     db.get("avaSymbolSessions", "ava-letters"),
     db.get("avaFirstWordSessions", "ava-first-words"),
+    db.get("musicModeSessions", "music-mode"),
   ]);
   const progress = new Map<string, Progress>();
   for (const raw of rawProgress) {
@@ -114,6 +120,12 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
   const avaFirstWordsSession = AvaFirstWordsSessionSchema.parse(
     rawAvaFirstWordsSession ?? AVA_FIRST_WORDS_SESSION_DEFAULT,
   );
+  const parsedMusicMode = rawMusicModeSession
+    ? MusicModeStateSchema.safeParse(rawMusicModeSession)
+    : null;
+  const musicModeSession = parsedMusicMode?.success
+    ? parsedMusicMode.data
+    : createInitialMusicModeState();
   const snapshot: HydratedState = {
     progress,
     settings,
@@ -134,6 +146,7 @@ export const idbHydrationPromise: Promise<HydratedState> = (async () => {
       rawAvaLettersSession ?? AVA_LETTERS_SESSION_DEFAULT,
     ),
     avaFirstWordsSession,
+    musicModeSession,
   };
   resolvedSnapshot = snapshot;
   return snapshot;

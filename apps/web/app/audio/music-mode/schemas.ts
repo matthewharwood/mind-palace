@@ -5,7 +5,6 @@ export const PIANO_MIN_MIDI = 21; // A0 (27.5 Hz)
 export const PIANO_MAX_MIDI = 108; // C8 (4186.01 Hz)
 
 export const MidiNoteSchema = z.number().int().min(PIANO_MIN_MIDI).max(PIANO_MAX_MIDI);
-export type MidiNote = z.infer<typeof MidiNoteSchema>;
 
 export const AudioPreferencesSchema = z.object({
   muted: z.boolean().default(false),
@@ -26,7 +25,6 @@ export const PianoNoteOptionsSchema = z.object({
   sustainPedal: z.boolean().default(false),
   sampleRate: z.number().int().min(16_000).max(96_000).default(DEFAULT_SAMPLE_RATE),
 });
-export type PianoNoteOptions = z.infer<typeof PianoNoteOptionsSchema>;
 export type PianoNoteOptionsInput = z.input<typeof PianoNoteOptionsSchema>;
 
 export const PianoChordOptionsSchema = z.object({
@@ -38,7 +36,6 @@ export const PianoChordOptionsSchema = z.object({
   arpeggiateMs: z.number().min(0).max(250).default(0),
   sampleRate: z.number().int().min(16_000).max(96_000).default(DEFAULT_SAMPLE_RATE),
 });
-export type PianoChordOptions = z.infer<typeof PianoChordOptionsSchema>;
 export type PianoChordOptionsInput = z.input<typeof PianoChordOptionsSchema>;
 
 export const IntervalPlaybackModeSchema = z.enum(["harmonic", "melodic"]);
@@ -48,7 +45,6 @@ export const TimeSignatureSchema = z.enum(["2/4", "3/4", "4/4", "6/8", "9/8", "1
 export type TimeSignature = z.infer<typeof TimeSignatureSchema>;
 
 export const PolyrhythmSchema = z.enum(["none", "2:3", "3:4", "4:3"]);
-export type Polyrhythm = z.infer<typeof PolyrhythmSchema>;
 
 export const MetronomeVoiceKindSchema = z.enum(["accent", "beat", "subdivision", "cross"]);
 export type MetronomeVoiceKind = z.infer<typeof MetronomeVoiceKindSchema>;

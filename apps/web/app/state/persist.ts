@@ -11,6 +11,7 @@ import type {
 } from "@mind-palace/schemas";
 import * as z from "zod";
 
+import type { MusicModeState } from "~/lib/music-mode/schemas";
 import { getDB } from "./db";
 
 const DEBOUNCE_MS = 150;
@@ -107,6 +108,14 @@ export function persistAvaSymbolsSession(value: AvaSymbolsSession): void {
   });
 }
 
+export function persistMusicModeSession(value: MusicModeState): void {
+  schedule(`musicModeSession:${value.id}`, async () => {
+    const db = await getDB();
+    await db.put("musicModeSessions", value);
+    channel?.postMessage({ store: "musicModeSession", key: value.id });
+  });
+}
+
 export const RemoteWriteMessageSchema = z.object({
   store: z.enum([
     "progress",
@@ -119,6 +128,7 @@ export const RemoteWriteMessageSchema = z.object({
     "avaNumbersSession",
     "avaLettersSession",
     "avaFirstWordsSession",
+    "musicModeSession",
   ]),
   key: z.string().min(1),
 });

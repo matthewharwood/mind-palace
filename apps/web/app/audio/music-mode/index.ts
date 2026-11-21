@@ -1,13 +1,8 @@
 export {
   analyzeBuffer,
   computeFFT,
-  computePeak,
   computeRMS,
-  computeSpectralCentroidHz,
-  detectPitchHz,
   findSpectralPeakNear,
-  frequencyErrorCents,
-  hasNonFiniteSamples,
 } from "./analysis";
 export {
   getAudioPreferences,
@@ -22,15 +17,11 @@ export {
   midiToNoteName,
   midiToPan,
   mixToMono,
-  type StereoBuffer,
 } from "./dsp-core";
 export {
   createMusicMetronome,
   getSustainPedal,
   type MusicMetronomeController,
-  type PlayMusicSfxOptions,
-  type PlayPianoChordParams,
-  type PlayPianoNoteParams,
   playMusicSfx,
   playPianoChord,
   playPianoInterval,
@@ -48,32 +39,12 @@ export {
 } from "./metronome-dsp";
 export { synthesizePianoChordPCM, synthesizePianoNotePCM } from "./piano-dsp";
 export {
-  type AudioAnalysisResult,
-  type AudioPreferences,
-  type AudioPreferencesInput,
   AudioPreferencesSchema,
   DEFAULT_SAMPLE_RATE,
-  type IntervalPlaybackMode,
-  type MetronomeConfig,
-  type MetronomeConfigInput,
   MetronomeConfigSchema,
-  type MetronomeScheduledPulse,
-  type MetronomeTickEvent,
-  type MetronomeVoiceKind,
-  type MidiNote,
   MidiNoteSchema,
-  type MusicSfxKind,
   PIANO_MAX_MIDI,
   PIANO_MIN_MIDI,
-  type PianoChordOptions,
-  type PianoChordOptionsInput,
-  type PianoNoteOptions,
-  type PianoNoteOptionsInput,
-  type Polyrhythm,
-  PolyrhythmSchema,
-  type RhythmHitAccuracy,
-  type SfxRenderOptions,
   type TimeSignature,
-  TimeSignatureSchema,
 } from "./schemas";
 export { synthesizeSfxPCM } from "./sfx-dsp";
