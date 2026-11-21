@@ -19,8 +19,10 @@ export {
   mixToMono,
 } from "./dsp-core";
 export {
+  computeTransportClockAtTime,
   createMusicMetronome,
   getSustainPedal,
+  getTransportClock,
   type MusicMetronomeController,
   playMusicSfx,
   playPianoChord,
@@ -46,5 +48,7 @@ export {
   PIANO_MAX_MIDI,
   PIANO_MIN_MIDI,
   type TimeSignature,
+  type TransportClockSnapshot,
+  TransportClockSnapshotSchema,
 } from "./schemas";
 export { synthesizeSfxPCM } from "./sfx-dsp";

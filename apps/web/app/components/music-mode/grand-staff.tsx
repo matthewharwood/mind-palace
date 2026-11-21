@@ -1,14 +1,15 @@
-import { Eye, EyeOff, Music2, Sparkles } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { Music2 } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
+import type { TransportClockSnapshot } from "~/audio/music-mode";
 import { defineComponent } from "~/lib/define-component";
+import { useAnime } from "~/motion/use-anime";
 import {
   BASS_FLAT_STEPS,
   BASS_SHARP_STEPS,
   beamCountForDuration,
   type Clef,
-  formatKeySignatureAccidentals,
   getLedgerLineSteps,
   hasStemDuration,
   isDottedDuration,
@@ -41,6 +42,7 @@ export type PreviewFocus = z.infer<typeof PreviewFocusSchema>;
 export const GrandStaffPropsSchema = z.object({
   title: z.string().min(1).optional(),
   composer: z.string().min(1).optional(),
+  hideHeader: z.boolean().optional(),
   keySignature: KeySignatureSchema,
   timeSignature: TimeSignatureSchema,
   measures: z.array(StaffMeasureSchema).min(1),
@@ -49,6 +51,14 @@ export const GrandStaffPropsSchema = z.object({
   activeMeasure: z.int().min(1).optional(),
   /** 0-indexed beat within activeMeasure for the playhead cursor. */
   activeBeat: z.number().min(0).optional(),
+  /** When true + getClock provided, drives SVG playhead via rAF with zero per-frame React renders. */
+  playing: z.boolean().optional(),
+  getClock: z.custom<() => TransportClockSnapshot>().optional(),
+  countInBars: z.int().min(0).max(4).optional(),
+  /** Increment to trigger the Tonic Cadence Breath amber sweep. */
+  cadencePulseKey: z.int().min(0).optional(),
+  /** Increment to trigger the Unbroken Pass Finale gold shimmer. */
+  finalePulseKey: z.int().min(0).optional(),
   /** Opacity (0..0.95) of the look-ahead mask over the current measure. */
   lookAheadMaskOpacity: z.number().min(0).max(0.95).optional(),
   /** Active spotlight focus during 30-Second Preview Mode. */
@@ -728,7 +738,7 @@ function StaffNoteNode({
               rx={NOTE_RX}
               ry={NOTE_RY}
               transform={`rotate(-18 ${nx} ${pt.y})`}
-              className={isHollow ? `fill-canvas-white ${strokeCls}` : fillCls}
+              className={isHollow ? `fill-[#FAF6EE] dark:fill-[#161311] ${strokeCls}` : fillCls}
               strokeWidth={isHollow ? 1.8 : 0}
             />
             {dotted && (
@@ -767,12 +777,18 @@ export const GrandStaff = defineComponent(
   ({
     title,
     composer,
+    hideHeader = false,
     keySignature,
     timeSignature,
     measures,
     mode = "standard",
     activeMeasure,
     activeBeat = 0,
+    playing = false,
+    getClock,
+    countInBars = 1,
+    cadencePulseKey = 0,
+    finalePulseKey = 0,
     lookAheadMaskOpacity = 0.72,
     previewFocus: controlledPreviewFocus,
     onPreviewFocusChange,
@@ -782,7 +798,10 @@ export const GrandStaff = defineComponent(
     onSelectMeasure,
   }: GrandStaffProps): ReactNode => {
     const [internalPreviewFocus, setInternalPreviewFocus] = useState<PreviewFocus>("all");
-    const [localVeilEnabled, setLocalVeilEnabled] = useState(true);
+    const playheadRef = useRef<SVGGElement | null>(null);
+    const curtainRef = useRef<SVGRectElement | null>(null);
+    const cadenceSweepRef = useRef<SVGRectElement | null>(null);
+    const finaleShimmerRef = useRef<SVGRectElement | null>(null);
 
     const previewFocus = controlledPreviewFocus ?? internalPreviewFocus;
     const setPreviewFocus = (next: PreviewFocus): void => {
@@ -821,12 +840,102 @@ export const GrandStaff = defineComponent(
       activeMeasure !== undefined
         ? boxes.find((b) => b.measure.number === activeMeasure)
         : undefined;
-    const playheadX = activeBox
+    const staticPlayheadX = activeBox
       ? activeBox.startX +
         MEASURE_PAD_LEFT +
         Math.min(activeBeat / Math.max(beatsPerMeasure, 1), 0.96) *
           (activeBox.width - MEASURE_PAD_LEFT - MEASURE_PAD_RIGHT)
       : null;
+
+    // Smooth 60fps SVG playhead driven by AudioContext transport clock (zero React re-renders).
+    // Snaps cleanly per beat under `prefers-reduced-motion: reduce`.
+    const boxesRef = useRef(boxes);
+    const getClockRef = useRef(getClock);
+    useEffect(() => {
+      boxesRef.current = boxes;
+      getClockRef.current = getClock;
+    }, [boxes, getClock]);
+
+    useEffect(() => {
+      const node = playheadRef.current;
+      if (!node) return;
+      if (!playing || !getClockRef.current) {
+        node.setAttribute("transform", "translate(0, 0)");
+        return;
+      }
+
+      const reducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let rafId = 0;
+
+      const tickFrame = (): void => {
+        const clockFn = getClockRef.current;
+        const el = playheadRef.current;
+        if (!clockFn || !el) return;
+        const snap = clockFn();
+        if (snap.running && !snap.isCountIn) {
+          const measureNum = snap.bar - countInBars + 1;
+          const targetBox = boxesRef.current.find((b) => b.measure.number === measureNum);
+          if (targetBox && staticPlayheadX !== null) {
+            const beatPos = reducedMotion ? Math.floor(snap.beatFloat) : snap.beatFloat;
+            const ratio = Math.min(beatPos / Math.max(snap.beatsPerBar, 1), 0.96);
+            const liveX =
+              targetBox.startX +
+              MEASURE_PAD_LEFT +
+              ratio * (targetBox.width - MEASURE_PAD_LEFT - MEASURE_PAD_RIGHT);
+            el.setAttribute("transform", `translate(${(liveX - staticPlayheadX).toFixed(2)}, 0)`);
+          }
+        }
+        rafId = requestAnimationFrame(tickFrame);
+      };
+
+      rafId = requestAnimationFrame(tickFrame);
+      return () => {
+        cancelAnimationFrame(rafId);
+        node.setAttribute("transform", "translate(0, 0)");
+      };
+    }, [playing, countInBars, staticPlayheadX]);
+
+    // Signature Moment 1: Tonic Cadence Breath (warm amber parchment sweep on I-V-I)
+    useAnime(
+      cadenceSweepRef,
+      cadencePulseKey > 0
+        ? {
+            opacity: [0, 0.28, 0],
+            translateX: [-totalWidth * 0.25, totalWidth * 0.15],
+            duration: 1850,
+            ease: "inOutSine",
+          }
+        : { opacity: 0, duration: 1 },
+      [cadencePulseKey],
+    );
+
+    // Signature Moment 2: Look-Ahead Curtain (soft parchment glide when measure advances)
+    useAnime(
+      curtainRef,
+      isLookAhead && activeBox
+        ? {
+            opacity: [0.18, lookAheadMaskOpacity],
+            duration: 280,
+            ease: "outQuad",
+          }
+        : { opacity: 0, duration: 1 },
+      [isLookAhead, activeMeasure, lookAheadMaskOpacity],
+    );
+
+    // Signature Moment 3: Unbroken Pass Finale (warm gold shimmer across the engraved folio)
+    useAnime(
+      finaleShimmerRef,
+      finalePulseKey > 0
+        ? {
+            opacity: [0, 0.34, 0.14, 0],
+            duration: 1500,
+            ease: "outCubic",
+          }
+        : { opacity: 0, duration: 1 },
+      [finalePulseKey],
+    );
 
     const nextMeasureNumber = activeMeasure !== undefined ? activeMeasure + 1 : undefined;
 
@@ -840,98 +949,65 @@ export const GrandStaff = defineComponent(
     return (
       <section
         aria-label={title ? `Grand staff score: ${title}` : "Grand staff notation"}
-        className="w-full rounded-card border border-black/10 bg-canvas-white p-3 shadow-card sm:p-4 dark:border-white/10"
+        className="w-full rounded-card border border-[#E5DEC9] bg-[#FAF6EE] p-3 shadow-card sm:p-4 dark:border-[#2C2621] dark:bg-[#161311]"
       >
-        {/* Header Bar: Title + Pedagogical Mode Controls */}
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              {title && (
-                <h3 className="truncate text-sm font-semibold text-midnight-ink sm:text-base">
-                  {title}
-                </h3>
-              )}
-              <span className="inline-flex items-center gap-1 rounded-full bg-light-taupe px-2 py-0.5 font-mono text-[11px] font-medium text-surface-charcoal">
-                {keySignature.label}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-light-taupe px-2 py-0.5 font-mono text-[11px] font-medium text-muted-ash">
-                {timeSignature.numerator}/{timeSignature.denominator}
-              </span>
-            </div>
-            {composer && <p className="mt-0.5 text-xs text-muted-ash">{composer}</p>}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            {isLookAhead && (
-              <button
-                type="button"
-                onClick={() => setLocalVeilEnabled((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-intelligence-blue/30 bg-intelligence-blue/10 px-2.5 py-1 text-xs font-medium text-intelligence-blue transition-colors hover:bg-intelligence-blue/15"
-                aria-pressed={localVeilEnabled}
-              >
-                {localVeilEnabled ? (
-                  <EyeOff className="size-3.5" aria-hidden="true" />
-                ) : (
-                  <Eye className="size-3.5" aria-hidden="true" />
+        {/* Single Engraved Folio Header (hidden when parent owns header to avoid duplication) */}
+        {!hideHeader && (title || isPreview || isRhythmOnly) && (
+          <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-baseline gap-2">
+                {title && (
+                  <h3 className="truncate font-display text-lg font-normal text-midnight-ink sm:text-xl dark:text-[#F5EFE4]">
+                    {title}
+                  </h3>
                 )}
-                <span>{localVeilEnabled ? "Look-Ahead Veil On" : "Veil Paused"}</span>
-              </button>
-            )}
-
-            {isRhythmOnly && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
-                <Music2 className="size-3.5" aria-hidden="true" />
-                Rhythm Isolation
-              </span>
-            )}
-
-            {isPreview && (
-              <div
-                role="tablist"
-                aria-label="30-Second Preview highlights"
-                className="flex flex-wrap items-center gap-1"
-              >
-                {PREVIEW_TABS.map((tab) => {
-                  const selected = previewFocus === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      onClick={() => setPreviewFocus(tab.id)}
-                      className={
-                        selected
-                          ? "rounded-full bg-intelligence-blue px-2.5 py-1 text-xs font-medium text-white transition-colors"
-                          : "rounded-full bg-light-taupe px-2.5 py-1 text-xs font-medium text-muted-ash transition-colors hover:text-midnight-ink"
-                      }
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
+                {composer && (
+                  <span className="truncate text-xs text-muted-ash dark:text-[#A99F91]">
+                    {composer}
+                  </span>
+                )}
+                <span className="inline-flex items-center rounded-full bg-black/[0.06] px-2 py-0.5 font-mono text-[11px] font-medium text-surface-charcoal dark:bg-white/[0.08] dark:text-[#D9D0C3]">
+                  {keySignature.label} · {timeSignature.numerator}/{timeSignature.denominator}
+                </span>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* 30-Second Preview Banner */}
-        {isPreview && (
-          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-amber-500/25 bg-amber-500/8 px-3 py-2 text-xs text-surface-charcoal">
-            <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-300">
-              <Sparkles className="size-3.5" aria-hidden="true" />
-              30-Second Page Preview
-            </span>
-            <span>
-              <strong>Key:</strong> {keySignature.label} (
-              {formatKeySignatureAccidentals(keySignature.fifths)})
-            </span>
-            <span>
-              <strong>Meter:</strong> {timeSignature.numerator}/{timeSignature.denominator}
-            </span>
-            <span>
-              <strong>Scan:</strong> Landmarks &amp; Hardest Bar before touching keys
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {isRhythmOnly && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-800 dark:text-amber-300">
+                  <Music2 className="size-3.5" aria-hidden="true" />
+                  Rhythm Isolation
+                </span>
+              )}
+
+              {isPreview && (
+                <div
+                  role="tablist"
+                  aria-label="30-Second Preview highlights"
+                  className="flex flex-wrap items-center gap-1"
+                >
+                  {PREVIEW_TABS.map((tab) => {
+                    const selected = previewFocus === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => setPreviewFocus(tab.id)}
+                        className={
+                          selected
+                            ? "min-h-11 rounded-full bg-intelligence-blue px-3 py-1.5 text-xs font-medium text-white transition-colors"
+                            : "min-h-11 rounded-full bg-black/[0.06] px-3 py-1.5 text-xs font-medium text-muted-ash transition-colors hover:text-midnight-ink dark:bg-white/[0.08] dark:text-[#B8AEA0] dark:hover:text-[#F5EFE4]"
+                        }
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -939,10 +1015,42 @@ export const GrandStaff = defineComponent(
         <div className="w-full overflow-x-auto pb-1" style={{ touchAction: "pan-x" }}>
           <svg
             viewBox={`0 0 ${totalWidth} ${svgHeight}`}
-            className="h-auto w-full min-w-[340px] select-none text-midnight-ink"
-            role="img"
+            className="h-auto w-full min-w-[340px] select-none text-[#1A1714] dark:text-[#F2ECE1]"
             aria-label={`${keySignature.label}, ${timeSignature.numerator}/${timeSignature.denominator}, ${measures.length} measures`}
           >
+            {/* Signature Moment Overlays: Tonic Cadence Breath & Unbroken Pass Finale */}
+            <defs>
+              <linearGradient id="tonicCadenceAmber" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#D97706" stopOpacity="0" />
+                <stop offset="50%" stopColor="#D97706" stopOpacity="0.85" />
+                <stop offset="100%" stopColor="#D97706" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="unbrokenGoldFinale" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.95" />
+                <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
+            <rect
+              ref={cadenceSweepRef}
+              x={0}
+              y={0}
+              width={totalWidth}
+              height={svgHeight}
+              rx={8}
+              fill="url(#tonicCadenceAmber)"
+              style={{ opacity: 0, pointerEvents: "none" }}
+            />
+            <rect
+              ref={finaleShimmerRef}
+              x={0}
+              y={0}
+              width={totalWidth}
+              height={svgHeight}
+              rx={8}
+              fill="url(#unbrokenGoldFinale)"
+              style={{ opacity: 0, pointerEvents: "none" }}
+            />
             {/* 1. Measure Background Spotlights */}
             {boxes.map((box) => {
               const isNextSpotlight = isLookAhead && nextMeasureNumber === box.measure.number;
@@ -1382,60 +1490,66 @@ export const GrandStaff = defineComponent(
                 });
               })}
 
-            {/* 9. Look-Ahead Mask Veil over CURRENT Bar */}
-            {isLookAhead && localVeilEnabled && activeBox && (
+            {/* 9. Look-Ahead Curtain over CURRENT Bar (warm Urtext parchment) */}
+            {isLookAhead && activeBox && (
               <rect
+                ref={curtainRef}
                 x={activeBox.startX + 1}
                 y={isRhythmOnly ? 20 : 24}
                 width={activeBox.width - 2}
                 height={svgHeight - 36}
                 rx={8}
-                className="fill-canvas-white transition-opacity duration-200"
-                style={{ opacity: lookAheadMaskOpacity }}
+                className="fill-[#FAF6EE] dark:fill-[#161311]"
+                style={{ opacity: lookAheadMaskOpacity, pointerEvents: "none" }}
               />
             )}
 
-            {/* 10. Real-Time Playhead Cursor */}
-            {playheadX !== null && (
-              <g>
+            {/* 10. Real-Time Playhead Cursor (rAF-driven when playing) */}
+            {staticPlayheadX !== null && (
+              <g ref={playheadRef}>
                 <line
-                  x1={playheadX}
+                  x1={staticPlayheadX}
                   y1={isRhythmOnly ? 20 : 28}
-                  x2={playheadX}
+                  x2={staticPlayheadX}
                   y2={isRhythmOnly ? RHYTHM_LH_Y + 22 : BASS_BOTTOM_Y + 14}
                   strokeWidth={2.2}
                   className="stroke-intelligence-blue"
                 />
                 <circle
-                  cx={playheadX}
+                  cx={staticPlayheadX}
                   cy={isRhythmOnly ? 20 : 28}
                   r={3.5}
                   className="fill-intelligence-blue"
                 />
               </g>
             )}
+
+            {/* 11. Directly Clickable Measure Hit Areas (replaces cut Bar 1-4 pill row) */}
+            {onSelectMeasure &&
+              boxes.map((box) => (
+                <a
+                  key={`hit-m-${box.measure.number}`}
+                  href={`#measure-${box.measure.number}`}
+                  aria-label={`Jump to Bar ${box.measure.number}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectMeasure(box.measure.number);
+                  }}
+                >
+                  <rect
+                    x={box.startX}
+                    y={isRhythmOnly ? 16 : 22}
+                    width={box.width}
+                    height={svgHeight - 30}
+                    fill="transparent"
+                    className="cursor-pointer"
+                  >
+                    <title>Jump to Bar {box.measure.number}</title>
+                  </rect>
+                </a>
+              ))}
           </svg>
         </div>
-
-        {/* Accessible Measure Jump Strip (when onSelectMeasure is provided) */}
-        {onSelectMeasure && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {measures.map((m) => (
-              <button
-                key={`jump-m-${m.number}`}
-                type="button"
-                onClick={() => onSelectMeasure(m.number)}
-                className={
-                  activeMeasure === m.number
-                    ? "rounded-full bg-intelligence-blue px-2.5 py-0.5 font-mono text-[11px] font-semibold text-white"
-                    : "rounded-full bg-light-taupe px-2.5 py-0.5 font-mono text-[11px] font-medium text-muted-ash hover:text-midnight-ink"
-                }
-              >
-                Bar {m.number}
-              </button>
-            ))}
-          </div>
-        )}
       </section>
     );
   },

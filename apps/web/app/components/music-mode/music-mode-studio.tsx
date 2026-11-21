@@ -4,11 +4,13 @@ import {
   Ear,
   Eye,
   EyeOff,
+  HelpCircle,
   Music2,
   Shuffle,
   SlidersHorizontal,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import * as z from "zod";
@@ -26,11 +28,13 @@ import {
   recordFlowAttempt,
   scheduleFSRSCard,
 } from "~/lib/music-mode/fsrs";
+import { pickBestRecitalTake } from "~/lib/music-mode/playthrough-sim";
 import {
   type ExerciseKind,
   type KeySignatureId,
   type MusicModeState,
   MusicModeStateSchema,
+  type PracticeCadence,
   type ScorePassage,
   type ScoreTier,
 } from "~/lib/music-mode/schemas";
@@ -44,13 +48,14 @@ import { CORE_24_KEY_IDS, getKeySignature } from "~/lib/music-mode/theory";
 import { DayRoadmapDrawer } from "./day-roadmap-drawer";
 import { type DrillResult, EarTrainingDrill } from "./ear-training-drill";
 import { type RitualRatingResult, SightReadingRitual } from "./sight-reading-ritual";
+import { QWERTY_SHORTCUT_LEGEND } from "./use-music-input-map";
 
 export const MusicModeStudioPropsSchema = z.object({
   state: MusicModeStateSchema,
   onUpdateState: z.custom<(updater: (prev: MusicModeState) => MusicModeState) => void>(),
 });
 
-type StudioView = "ritual" | "drills" | "library" | "roadmap";
+type StudioView = "ritual" | "drills" | "library";
 
 const TIER_FILTERS: ReadonlyArray<{ id: ScoreTier | "all"; label: string }> = [
   { id: "all", label: "All Scores" },
@@ -149,7 +154,7 @@ function ScoreLibraryBrowser({
             aria-label="Procedural key signature"
             value={selectedKey}
             onChange={(e) => setSelectedKey(e.target.value as KeySignatureId)}
-            className="rounded-lg border border-black/10 bg-whisper-gray px-2.5 py-1.5 text-midnight-ink text-xs dark:border-white/10"
+            className="min-h-11 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 text-midnight-ink text-xs dark:border-white/10"
           >
             {CORE_24_KEY_IDS.map((keyId) => (
               <option key={keyId} value={keyId}>
@@ -160,9 +165,9 @@ function ScoreLibraryBrowser({
           <button
             type="button"
             onClick={() => onGenerateProcedural(selectedKey)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-intelligence-blue px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-intelligence-blue/90"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-intelligence-blue px-3.5 py-2 font-medium text-white text-xs transition-colors hover:bg-intelligence-blue/90"
           >
-            <Shuffle className="size-3.5" />
+            <Shuffle className="size-3.5" aria-hidden="true" />
             Generate Fresh Passage (Lv.{difficulty})
           </button>
         </div>
@@ -173,9 +178,10 @@ function ScoreLibraryBrowser({
           <button
             key={item.id}
             type="button"
+            aria-pressed={tier === item.id}
             onClick={() => setTier(item.id)}
             className={[
-              "rounded-lg border px-2.5 py-1 font-medium text-xs transition-colors",
+              "min-h-11 rounded-lg border px-3 py-1.5 font-medium text-xs transition-colors",
               tier === item.id
                 ? "border-intelligence-blue bg-intelligence-blue text-white"
                 : "border-black/10 bg-whisper-gray text-muted-ash hover:text-midnight-ink dark:border-white/10",
@@ -195,7 +201,7 @@ function ScoreLibraryBrowser({
               type="button"
               onClick={() => onSelectPassage(passage)}
               className={[
-                "flex flex-col items-start gap-1 rounded-xl border p-3.5 text-left transition-colors",
+                "flex min-h-11 flex-col items-start gap-1 rounded-xl border p-3.5 text-left transition-colors",
                 isSelected
                   ? "border-intelligence-blue bg-intelligence-blue/8"
                   : "border-black/10 bg-whisper-gray/60 hover:bg-whisper-gray dark:border-white/10",
@@ -224,129 +230,221 @@ function ScoreLibraryBrowser({
   );
 }
 
-function StudioControlsCard({
+function StudioControlsPopover({
   state,
   onUpdateState,
+  onClose,
 }: {
   state: MusicModeState;
   onUpdateState: (updater: (prev: MusicModeState) => MusicModeState) => void;
+  onClose: () => void;
 }): ReactNode {
   const { preferences } = state;
+
+  const toggles: ReadonlyArray<{
+    id: string;
+    label: string;
+    active: boolean;
+    tone?: "emerald";
+    icon?: ReactNode;
+    onToggle: () => void;
+  }> = [
+    {
+      id: "blind",
+      label: preferences.blindKeyboard ? "Blind Veil On" : "Blind Veil Off",
+      active: preferences.blindKeyboard,
+      icon: preferences.blindKeyboard ? (
+        <EyeOff className="size-3.5" aria-hidden="true" />
+      ) : (
+        <Eye className="size-3.5" aria-hidden="true" />
+      ),
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: { ...prev.preferences, blindKeyboard: !prev.preferences.blindKeyboard },
+        })),
+    },
+    {
+      id: "lookahead",
+      label: `Look-Ahead ${preferences.lookAheadMasking ? "On" : "Off"}`,
+      active: preferences.lookAheadMasking,
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: {
+            ...prev.preferences,
+            lookAheadMasking: !prev.preferences.lookAheadMasking,
+          },
+        })),
+    },
+    {
+      id: "roman",
+      label: `Roman Numerals ${preferences.showRomanNumerals ? "On" : "Off"}`,
+      active: preferences.showRomanNumerals,
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: {
+            ...prev.preferences,
+            showRomanNumerals: !prev.preferences.showRomanNumerals,
+          },
+        })),
+    },
+    {
+      id: "damper",
+      label: `Damper ${preferences.sustainPedal ? "Down" : "Up"}`,
+      active: preferences.sustainPedal,
+      tone: "emerald",
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: { ...prev.preferences, sustainPedal: !prev.preferences.sustainPedal },
+        })),
+    },
+    {
+      id: "autofocus",
+      label: `Auto-Focus ${preferences.autoFocusOnPlay ? "On" : "Off"}`,
+      active: preferences.autoFocusOnPlay,
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: { ...prev.preferences, autoFocusOnPlay: !prev.preferences.autoFocusOnPlay },
+        })),
+    },
+    {
+      id: "qwerty",
+      label: `QWERTY Hints ${preferences.showQwertyHints ? "On" : "Off"}`,
+      active: preferences.showQwertyHints,
+      onToggle: () =>
+        onUpdateState((prev) => ({
+          ...prev,
+          preferences: { ...prev.preferences, showQwertyHints: !prev.preferences.showQwertyHints },
+        })),
+    },
+  ];
+
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-canvas-white p-4 shadow-card dark:border-white/10">
-      <div className="flex items-center gap-2">
-        <SlidersHorizontal className="size-4 text-intelligence-blue" aria-hidden="true" />
-        <h3 className="font-semibold text-midnight-ink text-sm">Studio &amp; Tactile Controls</h3>
-      </div>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/35 p-3 sm:items-center">
+      <button
+        type="button"
+        aria-label="Close Studio Controls"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+      <dialog
+        open
+        aria-label="Studio Controls"
+        className="relative z-10 m-0 flex w-full max-w-md flex-col gap-3.5 rounded-2xl border border-black/10 bg-canvas-white p-4 text-midnight-ink shadow-card dark:border-white/10"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="size-4 text-intelligence-blue" aria-hidden="true" />
+            <h2 className="font-semibold text-midnight-ink text-sm">
+              Studio &amp; Instrument Controls
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="Close controls"
+            onClick={onClose}
+            className="inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-whisper-gray text-midnight-ink transition-colors hover:bg-light-taupe dark:border-white/10"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() =>
-            onUpdateState((prev) => ({
-              ...prev,
-              preferences: { ...prev.preferences, blindKeyboard: !prev.preferences.blindKeyboard },
-            }))
-          }
-          className={[
-            "inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium transition-colors",
-            preferences.blindKeyboard
-              ? "border-intelligence-blue bg-intelligence-blue/10 text-intelligence-blue"
-              : "border-black/10 bg-whisper-gray text-muted-ash dark:border-white/10",
-          ].join(" ")}
-        >
-          {preferences.blindKeyboard ? (
-            <EyeOff className="size-3.5" />
-          ) : (
-            <Eye className="size-3.5" />
-          )}
-          {preferences.blindKeyboard ? "Blind Veil On" : "Labels Visible"}
-        </button>
+        <label className="flex flex-col gap-1.5 rounded-xl border border-black/8 bg-whisper-gray/60 p-3 text-xs dark:border-white/8">
+          <span className="flex items-center justify-between">
+            <span className="font-medium text-midnight-ink">Tempo Offset</span>
+            <span className="font-mono text-midnight-ink">
+              {preferences.metronomeBpmOffset >= 0 ? "+" : ""}
+              {preferences.metronomeBpmOffset} BPM
+            </span>
+          </span>
+          <input
+            type="range"
+            min={-40}
+            max={40}
+            step={4}
+            value={preferences.metronomeBpmOffset}
+            onChange={(e) => {
+              const offset = Number(e.target.value);
+              onUpdateState((prev) => ({
+                ...prev,
+                preferences: { ...prev.preferences, metronomeBpmOffset: offset },
+              }));
+            }}
+            className="h-8 w-full accent-intelligence-blue"
+          />
+        </label>
 
-        <button
-          type="button"
-          onClick={() =>
-            onUpdateState((prev) => ({
-              ...prev,
-              preferences: {
-                ...prev.preferences,
-                lookAheadMasking: !prev.preferences.lookAheadMasking,
-              },
-            }))
-          }
-          className={[
-            "inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium transition-colors",
-            preferences.lookAheadMasking
-              ? "border-intelligence-blue bg-intelligence-blue/10 text-intelligence-blue"
-              : "border-black/10 bg-whisper-gray text-muted-ash dark:border-white/10",
-          ].join(" ")}
-        >
-          Look-Ahead {preferences.lookAheadMasking ? "On" : "Off"}
-        </button>
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {toggles.map((item) => {
+            const activeClass =
+              item.tone === "emerald"
+                ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
+                : "border-intelligence-blue bg-intelligence-blue/10 text-intelligence-blue";
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={item.active}
+                onClick={item.onToggle}
+                className={[
+                  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium transition-colors",
+                  item.active
+                    ? activeClass
+                    : "border-black/10 bg-whisper-gray text-muted-ash dark:border-white/10",
+                ].join(" ")}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </dialog>
+    </div>
+  );
+}
 
-        <button
-          type="button"
-          onClick={() =>
-            onUpdateState((prev) => ({
-              ...prev,
-              preferences: {
-                ...prev.preferences,
-                showRomanNumerals: !prev.preferences.showRomanNumerals,
-              },
-            }))
-          }
-          className={[
-            "inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium transition-colors",
-            preferences.showRomanNumerals
-              ? "border-intelligence-blue bg-intelligence-blue/10 text-intelligence-blue"
-              : "border-black/10 bg-whisper-gray text-muted-ash dark:border-white/10",
-          ].join(" ")}
-        >
-          Roman Numerals {preferences.showRomanNumerals ? "On" : "Off"}
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            onUpdateState((prev) => ({
-              ...prev,
-              preferences: { ...prev.preferences, sustainPedal: !prev.preferences.sustainPedal },
-            }))
-          }
-          className={[
-            "inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-2 font-medium transition-colors",
-            preferences.sustainPedal
-              ? "border-emerald-500/35 bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
-              : "border-black/10 bg-whisper-gray text-muted-ash dark:border-white/10",
-          ].join(" ")}
-        >
-          Damper Pedal {preferences.sustainPedal ? "Down" : "Up"}
-        </button>
-      </div>
-
-      <label className="flex items-center justify-between gap-3 text-xs">
-        <span className="text-muted-ash">Tempo Offset</span>
-        <input
-          type="range"
-          min={-40}
-          max={40}
-          step={4}
-          value={preferences.metronomeBpmOffset}
-          onChange={(e) => {
-            const offset = Number(e.target.value);
-            onUpdateState((prev) => ({
-              ...prev,
-              preferences: { ...prev.preferences, metronomeBpmOffset: offset },
-            }));
-          }}
-          className="flex-1 accent-intelligence-blue"
-        />
-        <span className="w-14 text-right font-mono text-midnight-ink">
-          {preferences.metronomeBpmOffset >= 0 ? "+" : ""}
-          {preferences.metronomeBpmOffset} BPM
-        </span>
-      </label>
-    </section>
+function ShortcutLegendPopover({ onClose }: { onClose: () => void }): ReactNode {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-3">
+      <button
+        type="button"
+        aria-label="Close Keyboard Shortcuts"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+      <dialog
+        open
+        aria-label="Keyboard Shortcuts"
+        className="relative z-10 m-0 flex w-full max-w-md flex-col gap-3 rounded-2xl border border-black/10 bg-canvas-white p-4 text-midnight-ink shadow-card dark:border-white/10"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold text-midnight-ink text-sm">Keyboard &amp; MIDI Shortcuts</h2>
+          <button
+            type="button"
+            aria-label="Close shortcuts"
+            onClick={onClose}
+            className="inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-whisper-gray text-midnight-ink transition-colors hover:bg-light-taupe dark:border-white/10"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="divide-y divide-black/8 text-xs dark:divide-white/8">
+          {QWERTY_SHORTCUT_LEGEND.map((row) => (
+            <div key={row.keys} className="flex items-center justify-between gap-3 py-2">
+              <kbd className="rounded bg-whisper-gray px-2 py-1 font-mono text-[11px] text-midnight-ink">
+                {row.keys}
+              </kbd>
+              <span className="text-right text-muted-ash">{row.action}</span>
+            </div>
+          ))}
+        </div>
+      </dialog>
+    </div>
   );
 }
 
@@ -366,6 +464,10 @@ export const MusicModeStudio = defineComponent(
     });
     const [drillKind, setDrillKind] = useState<ExerciseKind>("ear-interval");
     const [proceduralSeed, setProceduralSeed] = useState(1);
+    const [focusMode, setFocusMode] = useState(false);
+    const [controlsOpen, setControlsOpen] = useState(false);
+    const [coachOpen, setCoachOpen] = useState(false);
+    const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
     useEffect(() => {
       return installAudioUnlockListeners();
@@ -380,6 +482,7 @@ export const MusicModeStudio = defineComponent(
     }, [state.preferences.muted, state.preferences.volume, state.preferences.sustainPedal]);
 
     function handleRitualRate(result: RitualRatingResult): void {
+      setFocusMode(false);
       onUpdateState((prev) => {
         const updated = applyFsrsAndFlowUpdate(prev, {
           cardId: `passage:${activePassage.id}`,
@@ -390,7 +493,16 @@ export const MusicModeStudio = defineComponent(
           accuracy: result.accuracy,
           responseMs: 2200,
         });
-        return { ...updated, ritualStep: "preview-30s" };
+        const bestTakes = result.take
+          ? {
+              ...updated.bestTakes,
+              [activePassage.id]: pickBestRecitalTake(
+                updated.bestTakes[activePassage.id],
+                result.take,
+              ),
+            }
+          : updated.bestTakes;
+        return { ...updated, bestTakes, ritualStep: "preview-30s" };
       });
     }
 
@@ -425,189 +537,277 @@ export const MusicModeStudio = defineComponent(
       });
     }
 
+    function handleUpdateCadence(nextCadence: PracticeCadence): void {
+      onUpdateState((prev) => ({ ...prev, cadence: nextCadence }));
+    }
+
     const navItems: ReadonlyArray<{ id: StudioView; label: string; icon: ReactNode }> = [
-      { id: "ritual", label: "Sight-Read", icon: <Music2 className="size-4" /> },
-      { id: "drills", label: "Ear & Drills", icon: <Ear className="size-4" /> },
-      { id: "library", label: "Library", icon: <BookOpen className="size-4" /> },
-      { id: "roadmap", label: "30-Day Plan", icon: <CalendarDays className="size-4" /> },
+      { id: "ritual", label: "Sight-Read", icon: <Music2 className="size-4" aria-hidden="true" /> },
+      { id: "drills", label: "Drills", icon: <Ear className="size-4" aria-hidden="true" /> },
+      { id: "library", label: "Library", icon: <BookOpen className="size-4" aria-hidden="true" /> },
     ];
 
     const flowReasonProps = state.flowState?.lastAdjustmentReason
       ? { lastFlowReason: state.flowState.lastAdjustmentReason }
       : {};
+    const bestTake = state.bestTakes[activePassage.id];
+    const bestTakeProps = bestTake ? { bestTake } : {};
 
     return (
-      <div className="mx-auto flex min-h-full w-full max-w-[1360px] flex-col gap-4 bg-whisper-gray/40 px-3 pt-3 pb-24 sm:px-6 sm:py-5 lg:pb-8">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-black/10 bg-canvas-white/95 px-4 py-2.5 shadow-card backdrop-blur dark:border-white/10">
-          <div className="flex items-center gap-3">
-            <h1 className="font-display text-midnight-ink text-xl sm:text-2xl">Music Mode</h1>
-            <span className="hidden rounded-full bg-whisper-gray px-2.5 py-0.5 font-mono text-[11px] text-muted-ash sm:inline-flex">
-              Day {state.currentDay}/30 · Sprint {state.activeSprintIndex + 1}/8 · Lv.
-              {state.adaptiveDifficulty} · {Math.round(state.rollingAccuracy * 100)}% Flow
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <div className="hidden items-center gap-1 sm:flex">
-              {navItems.slice(0, 3).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setView(item.id)}
-                  className={[
-                    "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-medium text-xs transition-colors",
-                    view === item.id
-                      ? "bg-intelligence-blue text-white"
-                      : "text-muted-ash hover:bg-whisper-gray hover:text-midnight-ink",
-                  ].join(" ")}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
+      <div
+        className={[
+          "mx-auto flex min-h-full w-full max-w-[1160px] flex-col gap-3 bg-whisper-gray px-3 pt-3 sm:px-5 sm:py-4",
+          focusMode ? "pb-4" : "pb-28 lg:pb-8",
+        ].join(" ")}
+      >
+        {/* Studio Header (hidden in Focus Mode so Score + Instrument claim >=75% viewport) */}
+        {!focusMode ? (
+          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-black/10 bg-canvas-white/95 px-3 py-2 shadow-card backdrop-blur sm:px-4 dark:border-white/10">
+            <div className="flex items-center gap-2.5">
+              <h1 className="font-display text-midnight-ink text-xl sm:text-2xl">Music Mode</h1>
+              <span className="hidden rounded-full bg-whisper-gray px-2.5 py-0.5 font-mono text-[11px] text-muted-ash md:inline-flex">
+                Day {state.currentDay}/30 · Lv.{state.adaptiveDifficulty} ·{" "}
+                {Math.round(state.rollingAccuracy * 100)}% Flow
+              </span>
             </div>
-            <button
-              type="button"
-              aria-label={state.preferences.muted ? "Unmute audio" : "Mute audio"}
-              onClick={() =>
-                onUpdateState((prev) => ({
-                  ...prev,
-                  preferences: { ...prev.preferences, muted: !prev.preferences.muted },
-                }))
-              }
-              className="grid size-8 place-items-center rounded-lg border border-black/10 bg-whisper-gray text-midnight-ink transition-colors hover:bg-light-taupe dark:border-white/10"
-            >
-              {state.preferences.muted ? (
-                <VolumeX className="size-4 text-rose-600" />
-              ) : (
-                <Volume2 className="size-4 text-intelligence-blue" />
-              )}
-            </button>
-          </div>
-        </header>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="flex min-w-0 flex-col gap-4">
-            {view === "ritual" ? (
-              <SightReadingRitual
-                passage={activePassage}
-                step={state.ritualStep}
-                bpmOffset={state.preferences.metronomeBpmOffset}
-                blindKeyboard={state.preferences.blindKeyboard}
-                lookAheadMasking={state.preferences.lookAheadMasking}
-                showIntervalsOverlay={state.preferences.showIntervalsOverlay}
-                showRomanNumerals={state.preferences.showRomanNumerals}
-                onStepChange={(nextStep) =>
-                  onUpdateState((prev) => ({ ...prev, ritualStep: nextStep }))
-                }
-                onRate={handleRitualRate}
-                onNextPassage={() => {
-                  const pool = getPassagesForDifficulty(state.adaptiveDifficulty);
-                  const candidates = pool.length > 0 ? pool : SCORE_LIBRARY;
-                  const idx = candidates.findIndex((p) => p.id === activePassage.id);
-                  const next = candidates[(idx + 1) % candidates.length];
-                  if (next) setActivePassage(next);
-                }}
-              />
-            ) : null}
-
-            {view === "drills" ? (
-              <EarTrainingDrill
-                exerciseKind={drillKind}
-                difficulty={state.adaptiveDifficulty}
-                blindKeyboard={state.preferences.blindKeyboard}
-                {...flowReasonProps}
-                onExerciseKindChange={setDrillKind}
-                onDrillResult={handleDrillResult}
-              />
-            ) : null}
-
-            {view === "library" ? (
-              <ScoreLibraryBrowser
-                selectedPassageId={activePassage.id}
-                difficulty={state.adaptiveDifficulty}
-                onSelectPassage={(passage) => {
-                  setActivePassage(passage);
-                  onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
-                  setView("ritual");
-                }}
-                onGenerateProcedural={(keyId) => {
-                  const fresh = generateProceduralSightReadingPassage({
-                    keyId,
-                    difficulty: state.adaptiveDifficulty,
-                    bars: 4,
-                    seed: proceduralSeed,
-                  });
-                  setProceduralSeed((prev) => prev + 1);
-                  setActivePassage(fresh);
-                  onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
-                  setView("ritual");
-                }}
-              />
-            ) : null}
-
-            {view === "roadmap" ? (
-              <div className="lg:hidden">
-                <DayRoadmapDrawer
-                  currentDay={state.currentDay}
-                  activeSprintIndex={state.activeSprintIndex}
-                  completedSprintsByDay={state.completedSprintsByDay}
-                  streakDays={state.streakDays}
-                  totalMinutesPracticed={state.totalMinutesPracticed}
-                  habitIdentityCue={state.preferences.habitIdentityCue}
-                  onSelectDay={(day) =>
-                    onUpdateState((prev) => ({ ...prev, currentDay: day, activeSprintIndex: 0 }))
-                  }
-                  onSelectSprint={(sprintIndex) =>
-                    onUpdateState((prev) => ({ ...prev, activeSprintIndex: sprintIndex }))
-                  }
-                  onCompleteSprint={handleCompleteSprint}
-                />
+            <div className="flex items-center gap-1.5">
+              <div className="hidden items-center gap-1 sm:flex">
+                {navItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={view === item.id}
+                    onClick={() => setView(item.id)}
+                    className={[
+                      "inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 font-medium text-xs transition-colors",
+                      view === item.id
+                        ? "bg-intelligence-blue text-white"
+                        : "text-muted-ash hover:bg-whisper-gray hover:text-midnight-ink",
+                    ].join(" ")}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
               </div>
-            ) : null}
-          </div>
 
-          <aside className="hidden flex-col gap-4 lg:flex">
-            <StudioControlsCard state={state} onUpdateState={onUpdateState} />
-            <DayRoadmapDrawer
-              currentDay={state.currentDay}
-              activeSprintIndex={state.activeSprintIndex}
-              completedSprintsByDay={state.completedSprintsByDay}
-              streakDays={state.streakDays}
-              totalMinutesPracticed={state.totalMinutesPracticed}
-              habitIdentityCue={state.preferences.habitIdentityCue}
-              onSelectDay={(day) =>
-                onUpdateState((prev) => ({ ...prev, currentDay: day, activeSprintIndex: 0 }))
-              }
-              onSelectSprint={(sprintIndex) =>
-                onUpdateState((prev) => ({ ...prev, activeSprintIndex: sprintIndex }))
-              }
-              onCompleteSprint={handleCompleteSprint}
+              <button
+                type="button"
+                aria-label="Open Studio Controls"
+                aria-expanded={controlsOpen}
+                onClick={() => setControlsOpen(true)}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+              >
+                <SlidersHorizontal className="size-4 text-intelligence-blue" aria-hidden="true" />
+                <span className="hidden sm:inline">Controls</span>
+              </button>
+
+              <button
+                type="button"
+                aria-label="Open 30-Day Coach Plan"
+                aria-expanded={coachOpen}
+                onClick={() => setCoachOpen(true)}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-black/10 bg-whisper-gray px-3 py-2 font-medium text-midnight-ink text-xs transition-colors hover:bg-light-taupe dark:border-white/10"
+              >
+                <CalendarDays className="size-4 text-intelligence-blue" aria-hidden="true" />
+                <span className="hidden sm:inline">Plan</span>
+              </button>
+
+              <button
+                type="button"
+                aria-label="Keyboard shortcuts"
+                onClick={() => setShortcutsOpen(true)}
+                className="hidden size-11 items-center justify-center rounded-lg border border-black/10 bg-whisper-gray text-muted-ash transition-colors hover:bg-light-taupe hover:text-midnight-ink sm:inline-flex dark:border-white/10"
+              >
+                <HelpCircle className="size-4" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                aria-label={state.preferences.muted ? "Unmute audio" : "Mute audio"}
+                aria-pressed={state.preferences.muted}
+                onClick={() =>
+                  onUpdateState((prev) => ({
+                    ...prev,
+                    preferences: { ...prev.preferences, muted: !prev.preferences.muted },
+                  }))
+                }
+                className="grid size-11 place-items-center rounded-lg border border-black/10 bg-whisper-gray text-midnight-ink transition-colors hover:bg-light-taupe dark:border-white/10"
+              >
+                {state.preferences.muted ? (
+                  <VolumeX className="size-4 text-rose-600" aria-hidden="true" />
+                ) : (
+                  <Volume2 className="size-4 text-intelligence-blue" aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </header>
+        ) : null}
+
+        {/* Full-Width Playfield (no permanent 360px Coach Rail) */}
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {view === "ritual" ? (
+            <SightReadingRitual
+              passage={activePassage}
+              step={state.ritualStep}
+              bpmOffset={state.preferences.metronomeBpmOffset}
+              blindKeyboard={state.preferences.blindKeyboard}
+              lookAheadMasking={state.preferences.lookAheadMasking}
+              showIntervalsOverlay={state.preferences.showIntervalsOverlay}
+              showRomanNumerals={state.preferences.showRomanNumerals}
+              showQwertyHints={state.preferences.showQwertyHints}
+              autoFocusOnPlay={state.preferences.autoFocusOnPlay}
+              focusMode={focusMode}
+              {...bestTakeProps}
+              onFocusModeChange={setFocusMode}
+              onOpenControls={() => setControlsOpen(true)}
+              onStepChange={(nextStep) => {
+                if (nextStep !== "look-ahead-play" && nextStep !== "rhythm-isolate") {
+                  setFocusMode(false);
+                }
+                onUpdateState((prev) => ({ ...prev, ritualStep: nextStep }));
+              }}
+              onRate={handleRitualRate}
+              onNextPassage={() => {
+                const pool = getPassagesForDifficulty(state.adaptiveDifficulty);
+                const candidates = pool.length > 0 ? pool : SCORE_LIBRARY;
+                const idx = candidates.findIndex((p) => p.id === activePassage.id);
+                const next = candidates[(idx + 1) % candidates.length];
+                if (next) setActivePassage(next);
+              }}
             />
-          </aside>
+          ) : null}
+
+          {view === "drills" ? (
+            <EarTrainingDrill
+              exerciseKind={drillKind}
+              difficulty={state.adaptiveDifficulty}
+              blindKeyboard={state.preferences.blindKeyboard}
+              showQwertyHints={state.preferences.showQwertyHints}
+              {...flowReasonProps}
+              onExerciseKindChange={setDrillKind}
+              onDrillResult={handleDrillResult}
+            />
+          ) : null}
+
+          {view === "library" ? (
+            <ScoreLibraryBrowser
+              selectedPassageId={activePassage.id}
+              difficulty={state.adaptiveDifficulty}
+              onSelectPassage={(passage) => {
+                setActivePassage(passage);
+                onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
+                setView("ritual");
+              }}
+              onGenerateProcedural={(keyId) => {
+                const fresh = generateProceduralSightReadingPassage({
+                  keyId,
+                  difficulty: state.adaptiveDifficulty,
+                  bars: 4,
+                  seed: proceduralSeed,
+                });
+                setProceduralSeed((prev) => prev + 1);
+                setActivePassage(fresh);
+                onUpdateState((prev) => ({ ...prev, ritualStep: "preview-30s" }));
+                setView("ritual");
+              }}
+            />
+          ) : null}
         </div>
 
-        <nav
-          aria-label="Music Mode mobile navigation"
-          className="fixed right-3 bottom-3 left-3 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-black/10 bg-canvas-white/95 p-1.5 shadow-card backdrop-blur lg:hidden dark:border-white/10"
-        >
-          {navItems.map((item) => (
+        {/* Slide-Over Coach Drawer (collapsed by default on all viewports) */}
+        {coachOpen ? (
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/35">
             <button
-              key={item.id}
               type="button"
-              onClick={() => setView(item.id)}
-              className={[
-                "flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 text-[11px] font-medium transition-colors",
-                view === item.id
-                  ? "bg-intelligence-blue text-white"
-                  : "text-muted-ash hover:text-midnight-ink",
-              ].join(" ")}
+              aria-label="Close 30-Day Plan drawer"
+              onClick={() => setCoachOpen(false)}
+              className="flex-1 cursor-default"
+            />
+            <dialog
+              open
+              aria-label="30-Day Practice Plan"
+              className="m-0 flex h-full w-full max-w-md flex-col overflow-y-auto border-0 bg-whisper-gray p-3 text-midnight-ink shadow-card sm:p-4"
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="font-semibold text-midnight-ink text-sm">
+                  Practice Coach &amp; Pacing
+                </span>
+                <button
+                  type="button"
+                  aria-label="Close coach drawer"
+                  onClick={() => setCoachOpen(false)}
+                  className="inline-flex size-11 items-center justify-center rounded-lg border border-black/10 bg-canvas-white text-midnight-ink transition-colors hover:bg-light-taupe dark:border-white/10"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+              <DayRoadmapDrawer
+                currentDay={state.currentDay}
+                activeSprintIndex={state.activeSprintIndex}
+                completedSprintsByDay={state.completedSprintsByDay}
+                streakDays={state.streakDays}
+                totalMinutesPracticed={state.totalMinutesPracticed}
+                habitIdentityCue={state.preferences.habitIdentityCue}
+                cadence={state.cadence}
+                onUpdateCadence={handleUpdateCadence}
+                onSelectDay={(day) =>
+                  onUpdateState((prev) => ({ ...prev, currentDay: day, activeSprintIndex: 0 }))
+                }
+                onSelectSprint={(sprintIndex) =>
+                  onUpdateState((prev) => ({ ...prev, activeSprintIndex: sprintIndex }))
+                }
+                onCompleteSprint={handleCompleteSprint}
+              />
+            </dialog>
+          </div>
+        ) : null}
+
+        {controlsOpen ? (
+          <StudioControlsPopover
+            state={state}
+            onUpdateState={onUpdateState}
+            onClose={() => setControlsOpen(false)}
+          />
+        ) : null}
+
+        {shortcutsOpen ? <ShortcutLegendPopover onClose={() => setShortcutsOpen(false)} /> : null}
+
+        {/* Mobile Bottom Dock (hidden in Focus Mode; safe bottom padding above prevents keyboard collision) */}
+        {!focusMode ? (
+          <nav
+            aria-label="Music Mode mobile navigation"
+            className="fixed right-3 bottom-3 left-3 z-30 grid grid-cols-4 gap-1 rounded-2xl border border-black/10 bg-canvas-white/95 p-1.5 shadow-card backdrop-blur sm:hidden dark:border-white/10"
+          >
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={view === item.id}
+                onClick={() => setView(item.id)}
+                className={[
+                  "flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium transition-colors",
+                  view === item.id
+                    ? "bg-intelligence-blue text-white"
+                    : "text-muted-ash hover:text-midnight-ink",
+                ].join(" ")}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-expanded={coachOpen}
+              onClick={() => setCoachOpen(true)}
+              className="flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium text-muted-ash transition-colors hover:text-midnight-ink"
+            >
+              <CalendarDays className="size-4" aria-hidden="true" />
+              <span>Plan</span>
             </button>
-          ))}
-        </nav>
+          </nav>
+        ) : null}
       </div>
     );
   },

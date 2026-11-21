@@ -1,11 +1,26 @@
-import { CheckCircle2, Clock, Flame, Pause, Play, RotateCcw, Sparkles } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Flame,
+  Pause,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import * as z from "zod";
 
 import { playMusicSfx } from "~/audio/music-mode";
 import { defineComponent } from "~/lib/define-component";
 import { CURRICULUM_DAYS, getDayPlan } from "~/lib/music-mode/curriculum";
-import type { CurriculumPhase, DailySprint } from "~/lib/music-mode/schemas";
+import {
+  type CurriculumPhase,
+  type DailyGoalMinutes,
+  type DailySprint,
+  type PracticeCadence,
+  PracticeCadenceSchema,
+} from "~/lib/music-mode/schemas";
 
 export const DayRoadmapDrawerPropsSchema = z.object({
   currentDay: z.int().min(1).max(30),
@@ -14,10 +29,31 @@ export const DayRoadmapDrawerPropsSchema = z.object({
   streakDays: z.int().min(0),
   totalMinutesPracticed: z.int().min(0),
   habitIdentityCue: z.string().min(1),
+  cadence: PracticeCadenceSchema.optional(),
+  onUpdateCadence: z.custom<(next: PracticeCadence) => void>().optional(),
   onSelectDay: z.custom<(day: number) => void>(),
   onSelectSprint: z.custom<(sprintIndex: number) => void>(),
   onCompleteSprint: z.custom<(day: number, sprintIndex: number, minutes: number) => void>(),
 });
+
+const GOAL_TIERS: ReadonlyArray<{
+  readonly value: DailyGoalMinutes;
+  readonly label: string;
+  readonly sprintsHint: string;
+}> = [
+  { value: "15", label: "15m", sprintsHint: "1 short block" },
+  { value: "30", label: "30m", sprintsHint: "1–2 sprints" },
+  { value: "60", label: "60m", sprintsHint: "2–3 sprints" },
+  { value: "240", label: "4h", sprintsHint: "Full 8 sprints" },
+];
+
+function currentIsoWeekKey(): string {
+  const now = new Date();
+  const jan1 = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  const dayOfYear = Math.floor((now.getTime() - jan1.getTime()) / 86_400_000) + 1;
+  const week = Math.ceil(dayOfYear / 7);
+  return `${now.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
 
 const PHASE_META: Record<CurriculumPhase, { label: string; range: string; tone: string }> = {
   foundations: {
@@ -118,10 +154,10 @@ function SprintPomodoroCard({
         <button
           type="button"
           onClick={() => setRunning((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-intelligence-blue px-3 py-1.5 font-medium text-white text-xs transition-colors hover:bg-intelligence-blue/90"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-intelligence-blue px-3.5 py-2 font-medium text-white text-xs transition-colors hover:bg-intelligence-blue/90"
         >
           {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-          {running ? "Pause" : "Start 25m Sprint"}
+          {running ? "Pause" : "Start Sprint"}
         </button>
         <button
           type="button"
@@ -130,7 +166,7 @@ function SprintPomodoroCard({
             secondsLeftRef.current = targetSeconds;
             setSecondsLeft(targetSeconds);
           }}
-          className="inline-flex items-center gap-1 rounded-lg border border-black/10 bg-canvas-white px-2.5 py-1.5 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
+          className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-black/10 bg-canvas-white px-3 py-2 text-muted-ash text-xs transition-colors hover:text-midnight-ink dark:border-white/10"
         >
           <RotateCcw className="size-3.5" />
           Reset
@@ -142,7 +178,7 @@ function SprintPomodoroCard({
             playMusicSfx("streakMilestone");
             onCompleteSprint(day, sprint.index, sprint.focusMinutes);
           }}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/12 px-2.5 py-1.5 font-medium text-emerald-700 text-xs transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+          className="ml-auto inline-flex min-h-11 items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/12 px-3 py-2 font-medium text-emerald-700 text-xs transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
         >
           <CheckCircle2 className="size-3.5" />
           {completed ? "Logged" : "Mark Done"}
@@ -161,6 +197,8 @@ export const DayRoadmapDrawer = defineComponent(
     streakDays,
     totalMinutesPracticed,
     habitIdentityCue,
+    cadence: incomingCadence,
+    onUpdateCadence,
     onSelectDay,
     onSelectSprint,
     onCompleteSprint,
@@ -170,6 +208,28 @@ export const DayRoadmapDrawer = defineComponent(
     const completedToday = new Set(completedSprintsByDay[String(currentDay)] ?? []);
     const activeSprint = plan.sprints[activeSprintIndex] ?? plan.sprints[0];
     const totalHours = (totalMinutesPracticed / 60).toFixed(1);
+    const weekKey = currentIsoWeekKey();
+    const cadence: PracticeCadence = incomingCadence ?? PracticeCadenceSchema.parse({});
+    const graceRemaining = cadence.graceWeekIso === weekKey ? cadence.weeklyGraceDaysRemaining : 1;
+    const selectedTierMeta =
+      GOAL_TIERS.find((t) => t.value === cadence.dailyGoalMinutes) ?? GOAL_TIERS[0];
+
+    function handleSelectGoal(goal: DailyGoalMinutes): void {
+      onUpdateCadence?.({
+        dailyGoalMinutes: goal,
+        weeklyGraceDaysRemaining: graceRemaining,
+        graceWeekIso: weekKey,
+      });
+    }
+
+    function handleUseGraceDay(): void {
+      if (graceRemaining <= 0) return;
+      onUpdateCadence?.({
+        dailyGoalMinutes: cadence.dailyGoalMinutes,
+        weeklyGraceDaysRemaining: 0,
+        graceWeekIso: weekKey,
+      });
+    }
 
     return (
       <section className="flex flex-col gap-4 rounded-2xl border border-black/10 bg-canvas-white p-4 shadow-card dark:border-white/10">
@@ -187,12 +247,60 @@ export const DayRoadmapDrawer = defineComponent(
           <div className="flex items-center gap-2 font-mono text-xs">
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/12 px-2.5 py-1 text-amber-700 dark:text-amber-300">
               <Flame className="size-3.5" aria-hidden="true" />
-              {streakDays}d streak
+              {streakDays}d rhythm
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-whisper-gray px-2.5 py-1 text-muted-ash">
               <Clock className="size-3.5" aria-hidden="true" />
-              {totalHours}h / 120h
+              {totalHours}h logged
             </span>
+          </div>
+        </div>
+
+        {/* Prosocial Daily Pacing: Selectable Goal Tiers + 1 Weekly Grace Day */}
+        <div className="rounded-xl border border-black/10 bg-whisper-gray/60 p-3 dark:border-white/10">
+          <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+            <span className="font-medium text-midnight-ink">Daily Practice Goal</span>
+            <span className="font-mono text-[11px] text-muted-ash">
+              {selectedTierMeta?.label} · {selectedTierMeta?.sprintsHint}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {GOAL_TIERS.map((tier) => {
+              const active = tier.value === cadence.dailyGoalMinutes;
+              return (
+                <button
+                  key={tier.value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => handleSelectGoal(tier.value)}
+                  className={[
+                    "min-h-11 rounded-lg border font-mono text-xs font-medium transition-colors",
+                    active
+                      ? "border-intelligence-blue bg-intelligence-blue text-white"
+                      : "border-black/10 bg-canvas-white text-muted-ash hover:text-midnight-ink dark:border-white/10",
+                  ].join(" ")}
+                >
+                  {tier.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+              <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
+              {graceRemaining > 0
+                ? "1 weekly Grace Day available — rest without breaking continuity"
+                : "Weekly Grace Day used — your rhythm stays protected"}
+            </span>
+            {graceRemaining > 0 && onUpdateCadence ? (
+              <button
+                type="button"
+                onClick={handleUseGraceDay}
+                className="min-h-11 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 font-medium text-emerald-700 text-xs transition-colors hover:bg-emerald-500/20 dark:text-emerald-300"
+              >
+                Take Grace Day
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -218,8 +326,10 @@ export const DayRoadmapDrawer = defineComponent(
 
         <div>
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-medium text-midnight-ink">Today&apos;s 8 × 25m Sprints (4h)</span>
-            <span className="font-mono text-muted-ash">{completedToday.size}/8 complete</span>
+            <span className="font-medium text-midnight-ink">
+              Today&apos;s Practice Blocks ({selectedTierMeta?.label} goal)
+            </span>
+            <span className="font-mono text-muted-ash">{completedToday.size}/8 blocks</span>
           </div>
           <div className="grid gap-1.5">
             {plan.sprints.map((sprint) => {
@@ -231,7 +341,7 @@ export const DayRoadmapDrawer = defineComponent(
                   type="button"
                   onClick={() => onSelectSprint(sprint.index)}
                   className={[
-                    "flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition-colors",
+                    "flex min-h-11 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition-colors",
                     isSelected
                       ? "border-intelligence-blue bg-intelligence-blue/8 text-midnight-ink"
                       : "border-black/8 bg-canvas-white text-muted-ash hover:bg-whisper-gray hover:text-midnight-ink dark:border-white/8",
@@ -256,7 +366,7 @@ export const DayRoadmapDrawer = defineComponent(
 
         <div>
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-medium text-midnight-ink">30-Day Ultralearning Roadmap</span>
+            <span className="font-medium text-midnight-ink">30-Day Repertoire Roadmap</span>
             <span className="font-mono text-[11px] text-muted-ash">
               Target {plan.targetBpmRange[0]}–{plan.targetBpmRange[1]} BPM
             </span>
@@ -270,7 +380,7 @@ export const DayRoadmapDrawer = defineComponent(
                   type="button"
                   onClick={() => onSelectDay(item.day)}
                   aria-label={`Day ${item.day}: ${item.title}`}
-                  className={`rounded-lg border py-1.5 font-mono text-xs transition-colors ${dayPillClass(item.day === currentDay, doneCount)}`}
+                  className={`min-h-11 rounded-lg border py-1.5 font-mono text-xs transition-colors ${dayPillClass(item.day === currentDay, doneCount)}`}
                 >
                   {item.day}
                 </button>

@@ -10,6 +10,7 @@ const meta: Meta<typeof EarTrainingDrill> = {
     exerciseKind: "ear-interval",
     difficulty: 3,
     blindKeyboard: true,
+    showQwertyHints: false,
     onExerciseKindChange: () => undefined,
     onDrillResult: () => undefined,
   },

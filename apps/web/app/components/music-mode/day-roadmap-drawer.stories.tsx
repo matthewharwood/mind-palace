@@ -13,6 +13,12 @@ const meta: Meta<typeof DayRoadmapDrawer> = {
     streakDays: 4,
     totalMinutesPracticed: 175,
     habitIdentityCue: "I read intervals and shapes ahead of my hands, one bar at a time.",
+    cadence: {
+      dailyGoalMinutes: "15",
+      weeklyGraceDaysRemaining: 1,
+      graceWeekIso: "2026-W47",
+    },
+    onUpdateCadence: () => undefined,
     onSelectDay: () => undefined,
     onSelectSprint: () => undefined,
     onCompleteSprint: () => undefined,

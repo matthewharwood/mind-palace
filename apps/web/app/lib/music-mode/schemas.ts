@@ -532,6 +532,42 @@ export type DayPlan = z.infer<typeof DayPlanSchema>;
 // Persisted Music Mode State / Progress (IDB singleton "music-mode")
 // ---------------------------------------------------------------------------
 
+export const RecitalTakeEventSchema = z.object({
+  beatOffset: z.number().nonnegative(),
+  midi: z.int().min(21).max(108),
+  hit: z.boolean(),
+});
+export type RecitalTakeEvent = z.infer<typeof RecitalTakeEventSchema>;
+
+export const RecitalTakeSchema = z.object({
+  passageId: z.string().min(1),
+  recordedAtMs: z.int().nonnegative(),
+  bpm: z.int().min(30).max(220),
+  accuracy: z.number().min(0).max(1),
+  unbroken: z.boolean(),
+  events: z.array(RecitalTakeEventSchema).default([]),
+});
+export type RecitalTake = z.infer<typeof RecitalTakeSchema>;
+
+export const DailyGoalMinutesSchema = z.enum(["15", "30", "60", "240"]);
+export type DailyGoalMinutes = z.infer<typeof DailyGoalMinutesSchema>;
+
+export const PracticeCadenceSchema = z.object({
+  dailyGoalMinutes: DailyGoalMinutesSchema.default("15"),
+  weeklyGraceDaysRemaining: z.int().min(0).max(1).default(1),
+  graceWeekIso: z.string().default(""),
+});
+export type PracticeCadence = z.infer<typeof PracticeCadenceSchema>;
+
+export const PlaythroughResultSchema = z.object({
+  accuracy: z.number().min(0).max(1),
+  weakestBarNumber: z.int().min(1),
+  suggestedRating: FSRSRatingSchema,
+  unbroken: z.boolean(),
+  take: RecitalTakeSchema,
+});
+export type PlaythroughResult = z.infer<typeof PlaythroughResultSchema>;
+
 export const MusicModePreferencesSchema = z.object({
   blindKeyboard: z.boolean().default(true),
   lookAheadMasking: z.boolean().default(true),
@@ -541,6 +577,8 @@ export const MusicModePreferencesSchema = z.object({
   volume: z.number().min(0).max(1).default(0.8),
   muted: z.boolean().default(false),
   sustainPedal: z.boolean().default(true),
+  autoFocusOnPlay: z.boolean().default(true),
+  showQwertyHints: z.boolean().default(false),
   habitIdentityCue: z
     .string()
     .default("I read intervals and shapes ahead of my hands, one bar at a time."),
@@ -560,6 +598,8 @@ export const MusicModeStateSchema = z.object({
   cards: z.record(z.string(), FSRSCardSchema).default({}),
   reviewLogs: z.array(FSRSReviewLogSchema).default([]),
   flowState: AdaptiveFlowStateSchema.optional(),
+  cadence: PracticeCadenceSchema.default(() => PracticeCadenceSchema.parse({})),
+  bestTakes: z.record(z.string(), RecitalTakeSchema).default({}),
   preferences: MusicModePreferencesSchema.default(() => MusicModePreferencesSchema.parse({})),
 });
 export type MusicModeState = z.infer<typeof MusicModeStateSchema>;
