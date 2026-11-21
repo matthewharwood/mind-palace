@@ -25,7 +25,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VITE_GAME_TITLE: ${{ vars.VITE_GAME_TITLE || 'Mind Palace' }}
       VITE_SITE_URL: ${{ vars.VITE_SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
