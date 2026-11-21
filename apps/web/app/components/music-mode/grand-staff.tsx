@@ -471,6 +471,174 @@ const PREVIEW_TABS: { id: PreviewFocus; label: string }[] = [
   { id: "hardest-bar", label: "Hardest Bar" },
 ];
 
+function collectLedgerSteps(item: PlacedNoteEvent, isRhythmOnly: boolean): number[] {
+  if (isRhythmOnly) return [];
+  const ledgerSteps = new Set<number>();
+  for (const pt of item.pitchPoints) {
+    for (const ls of getLedgerLineSteps(pt.step, item.event.staff)) {
+      ledgerSteps.add(ls);
+    }
+  }
+  return [...ledgerSteps];
+}
+
+function NoteFlags({
+  item,
+  beams,
+  strokeCls,
+}: {
+  item: PlacedNoteEvent;
+  beams: number;
+  strokeCls: string;
+}): ReactNode {
+  if (beams <= 0) return null;
+  const dir = item.stemUp ? 1 : -1;
+  return (
+    <g className={strokeCls}>
+      <path
+        d={`M ${item.stemX} ${item.stemEndY} C ${item.stemX + 8} ${item.stemEndY + 4 * dir}, ${item.stemX + 9} ${item.stemEndY + 12 * dir}, ${item.stemX + 4} ${item.stemEndY + 18 * dir}`}
+        className="fill-none"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+      {beams === 2 && (
+        <path
+          d={`M ${item.stemX} ${item.stemEndY + 6 * dir} C ${item.stemX + 8} ${item.stemEndY + 10 * dir}, ${item.stemX + 9} ${item.stemEndY + 18 * dir}, ${item.stemX + 4} ${item.stemEndY + 24 * dir}`}
+          className="fill-none"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+        />
+      )}
+    </g>
+  );
+}
+
+function NoteArticulation({
+  item,
+  fillCls,
+  strokeCls,
+}: {
+  item: PlacedNoteEvent;
+  fillCls: string;
+  strokeCls: string;
+}): ReactNode {
+  const artY = item.stemUp ? item.maxY + 9 : item.minY - 9;
+  if (item.event.articulation === "staccato") {
+    return <circle cx={item.x} cy={artY} r={1.7} className={fillCls} />;
+  }
+  if (item.event.articulation === "tenuto") {
+    return (
+      <line
+        x1={item.x - 4.5}
+        y1={artY}
+        x2={item.x + 4.5}
+        y2={artY}
+        strokeWidth={1.6}
+        className={strokeCls}
+      />
+    );
+  }
+  return null;
+}
+
+function NoteIntervalBadge({
+  x,
+  isTreble,
+  label,
+}: {
+  x: number;
+  isTreble: boolean;
+  label: string;
+}): ReactNode {
+  const rectY = isTreble ? TREBLE_TOP_Y - 20 : BASS_BOTTOM_Y + 8;
+  const textY = isTreble ? TREBLE_TOP_Y - 10 : BASS_BOTTOM_Y + 18;
+  return (
+    <g>
+      <rect
+        x={x - 16}
+        y={rectY}
+        width={32}
+        height={14}
+        rx={7}
+        className="fill-emerald-500/15 stroke-emerald-600/50 dark:stroke-emerald-400/50"
+        strokeWidth={1}
+      />
+      <text
+        x={x}
+        y={textY}
+        textAnchor="middle"
+        className="fill-emerald-700 font-mono text-[9px] font-bold dark:fill-emerald-300"
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
+function NoteOverlays({
+  item,
+  fillCls,
+  strokeCls,
+  isRhythmOnly,
+  showFingerings,
+  showIntervalShapes,
+  showRomanNumerals,
+}: {
+  item: PlacedNoteEvent;
+  fillCls: string;
+  strokeCls: string;
+  isRhythmOnly: boolean;
+  showFingerings: boolean;
+  showIntervalShapes: boolean;
+  showRomanNumerals: boolean;
+}): ReactNode {
+  const { event } = item;
+  const isTreble = event.staff === "treble";
+
+  if (isRhythmOnly) {
+    return <NoteArticulation item={item} fillCls={fillCls} strokeCls={strokeCls} />;
+  }
+
+  return (
+    <>
+      <NoteArticulation item={item} fillCls={fillCls} strokeCls={strokeCls} />
+      {event.dynamic && (
+        <text
+          x={item.x}
+          y={(TREBLE_BOTTOM_Y + BASS_TOP_Y) / 2 + 4}
+          textAnchor="middle"
+          className="fill-current font-display text-[13px] font-bold italic"
+        >
+          {event.dynamic}
+        </text>
+      )}
+      {showFingerings && event.finger !== undefined && (
+        <text
+          x={item.x}
+          y={isTreble ? item.minY - 12 : item.maxY + 16}
+          textAnchor="middle"
+          className="fill-muted-ash font-mono text-[10px] font-semibold"
+        >
+          {event.finger}
+        </text>
+      )}
+      {showIntervalShapes && event.intervalLabel && (
+        <NoteIntervalBadge x={item.x} isTreble={isTreble} label={event.intervalLabel} />
+      )}
+      {showRomanNumerals && event.romanNumeral && (
+        <text
+          x={item.x}
+          y={BASS_BOTTOM_Y + 36}
+          textAnchor="middle"
+          className="fill-intelligence-blue font-mono text-[11px] font-semibold"
+        >
+          {event.romanNumeral}
+        </text>
+      )}
+    </>
+  );
+}
+
 function StaffNoteNode({
   item,
   fifths,
@@ -491,34 +659,30 @@ function StaffNoteNode({
   showRomanNumerals: boolean;
 }): ReactNode {
   const { event } = item;
-  const isHollow = isHollowDuration(event.duration);
-  const hasStem = hasStemDuration(event.duration);
-  const dotted = isDottedDuration(event.duration);
-  const beams = beamCountForDuration(event.duration);
   const fillCls = statusFillClass(event.status);
   const strokeCls = statusStrokeClass(event.status);
 
   if (event.isRest || item.pitchPoints.length === 0) {
-    const restY = resolveRestCenterY(isRhythmOnly, event.staff);
     return (
       <g className={fillCls}>
-        <RestGlyph duration={event.duration} x={item.x} centerY={restY} />
+        <RestGlyph
+          duration={event.duration}
+          x={item.x}
+          centerY={resolveRestCenterY(isRhythmOnly, event.staff)}
+        />
       </g>
     );
   }
 
-  const ledgerSteps = new Set<number>();
-  if (!isRhythmOnly) {
-    for (const pt of item.pitchPoints) {
-      for (const ls of getLedgerLineSteps(pt.step, event.staff)) {
-        ledgerSteps.add(ls);
-      }
-    }
-  }
+  const isHollow = isHollowDuration(event.duration);
+  const hasStem = hasStemDuration(event.duration);
+  const dotted = isDottedDuration(event.duration);
+  const beams = beamCountForDuration(event.duration);
+  const ledgerSteps = collectLedgerSteps(item, isRhythmOnly);
 
   return (
     <g>
-      {[...ledgerSteps].map((ls) => {
+      {ledgerSteps.map((ls) => {
         const ly = stepToY(ls, event.staff);
         return (
           <line
@@ -550,9 +714,7 @@ function StaffNoteNode({
                 strokeWidth={1.4}
               />
             )}
-
             {acc && <AccidentalGlyph kind={acc} x={item.x - 13 - (pIdx % 2) * 5} y={pt.y} />}
-
             <ellipse
               cx={nx}
               cy={pt.y}
@@ -562,7 +724,6 @@ function StaffNoteNode({
               className={isHollow ? `fill-canvas-white ${strokeCls}` : fillCls}
               strokeWidth={isHollow ? 1.8 : 0}
             />
-
             {dotted && (
               <circle cx={nx + NOTE_RX + 4.5} cy={pt.y - 1.5} r={1.7} className={fillCls} />
             )}
@@ -580,107 +741,16 @@ function StaffNoteNode({
           className={strokeCls}
         />
       )}
-
-      {hasStem && !isBeamed && beams > 0 && (
-        <g className={strokeCls}>
-          <path
-            d={
-              item.stemUp
-                ? `M ${item.stemX} ${item.stemEndY} C ${item.stemX + 8} ${item.stemEndY + 4}, ${item.stemX + 9} ${item.stemEndY + 12}, ${item.stemX + 4} ${item.stemEndY + 18}`
-                : `M ${item.stemX} ${item.stemEndY} C ${item.stemX + 8} ${item.stemEndY - 4}, ${item.stemX + 9} ${item.stemEndY - 12}, ${item.stemX + 4} ${item.stemEndY - 18}`
-            }
-            className="fill-none"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-          />
-          {beams === 2 && (
-            <path
-              d={
-                item.stemUp
-                  ? `M ${item.stemX} ${item.stemEndY + 6} C ${item.stemX + 8} ${item.stemEndY + 10}, ${item.stemX + 9} ${item.stemEndY + 18}, ${item.stemX + 4} ${item.stemEndY + 24}`
-                  : `M ${item.stemX} ${item.stemEndY - 6} C ${item.stemX + 8} ${item.stemEndY - 10}, ${item.stemX + 9} ${item.stemEndY - 18}, ${item.stemX + 4} ${item.stemEndY - 24}`
-              }
-              className="fill-none"
-              strokeWidth={1.8}
-              strokeLinecap="round"
-            />
-          )}
-        </g>
-      )}
-
-      {event.articulation === "staccato" && (
-        <circle
-          cx={item.x}
-          cy={item.stemUp ? item.maxY + 9 : item.minY - 9}
-          r={1.7}
-          className={fillCls}
-        />
-      )}
-      {event.articulation === "tenuto" && (
-        <line
-          x1={item.x - 4.5}
-          y1={item.stemUp ? item.maxY + 9 : item.minY - 9}
-          x2={item.x + 4.5}
-          y2={item.stemUp ? item.maxY + 9 : item.minY - 9}
-          strokeWidth={1.6}
-          className={strokeCls}
-        />
-      )}
-
-      {event.dynamic && !isRhythmOnly && (
-        <text
-          x={item.x}
-          y={(TREBLE_BOTTOM_Y + BASS_TOP_Y) / 2 + 4}
-          textAnchor="middle"
-          className="fill-current font-display text-[13px] font-bold italic"
-        >
-          {event.dynamic}
-        </text>
-      )}
-
-      {showFingerings && event.finger !== undefined && !isRhythmOnly && (
-        <text
-          x={item.x}
-          y={event.staff === "treble" ? item.minY - 12 : item.maxY + 16}
-          textAnchor="middle"
-          className="fill-muted-ash font-mono text-[10px] font-semibold"
-        >
-          {event.finger}
-        </text>
-      )}
-
-      {showIntervalShapes && event.intervalLabel && !isRhythmOnly && (
-        <g>
-          <rect
-            x={item.x - 16}
-            y={event.staff === "treble" ? TREBLE_TOP_Y - 20 : BASS_BOTTOM_Y + 8}
-            width={32}
-            height={14}
-            rx={7}
-            className="fill-emerald-500/15 stroke-emerald-600/50 dark:stroke-emerald-400/50"
-            strokeWidth={1}
-          />
-          <text
-            x={item.x}
-            y={event.staff === "treble" ? TREBLE_TOP_Y - 10 : BASS_BOTTOM_Y + 18}
-            textAnchor="middle"
-            className="fill-emerald-700 font-mono text-[9px] font-bold dark:fill-emerald-300"
-          >
-            {event.intervalLabel}
-          </text>
-        </g>
-      )}
-
-      {showRomanNumerals && event.romanNumeral && !isRhythmOnly && (
-        <text
-          x={item.x}
-          y={BASS_BOTTOM_Y + 36}
-          textAnchor="middle"
-          className="fill-intelligence-blue font-mono text-[11px] font-semibold"
-        >
-          {event.romanNumeral}
-        </text>
-      )}
+      {hasStem && !isBeamed && <NoteFlags item={item} beams={beams} strokeCls={strokeCls} />}
+      <NoteOverlays
+        item={item}
+        fillCls={fillCls}
+        strokeCls={strokeCls}
+        isRhythmOnly={isRhythmOnly}
+        showFingerings={showFingerings}
+        showIntervalShapes={showIntervalShapes}
+        showRomanNumerals={showRomanNumerals}
+      />
     </g>
   );
 }

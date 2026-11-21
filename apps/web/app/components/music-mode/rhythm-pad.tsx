@@ -315,7 +315,7 @@ export const RhythmPad = defineComponent(
             <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-midnight-ink/40" />
             {/* Live needle */}
             <div
-              className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-canvas-white bg-midnight-ink shadow-sm transition-all duration-100"
+              className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-canvas-white bg-midnight-ink shadow-sm transition-[left] duration-100"
               style={{ left: `${meterPercent}%` }}
             />
           </div>
